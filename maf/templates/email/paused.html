@@ -1,11 +1,10 @@
 {#
   email/paused.html: tells the maintainer sign-ins paused because of too many wrong codes.
-  Context: subject, headline, stamp ("As of …"), detail
+  Context: subject, headline, stamp ("Resumes by …, as of …")
 #}
 {% extends "email/base.html" %}
 {% block content %}
 <p style="margin:0 0 4px; font-size:20px; line-height:1.35; font-weight:600;">{{ headline }}</p>
-<p style="margin:0 0 18px; font:15px/1.5 'Gill Sans', 'Gill Sans MT', Seravek, 'Trebuchet MS', Calibri, sans-serif; color:#6b6b6b;">{{ stamp }}</p>
-<p style="margin:0 0 22px; font-size:16px; line-height:1.5;">{{ detail }}</p>
-<p style="margin:0; padding-top:14px; border-top:1px solid #e4e4e4; font:14px/1.5 'Gill Sans', 'Gill Sans MT', Seravek, 'Trebuchet MS', Calibri, sans-serif; color:#6b6b6b;">Nothing to do unless it keeps happening.</p>
+<p style="margin:0 0 22px; font:15px/1.5 'Gill Sans', 'Gill Sans MT', Seravek, 'Trebuchet MS', Calibri, sans-serif; color:#6b6b6b;">{{ stamp }}</p>
+<p style="margin:0; padding-top:14px; border-top:1px solid #e4e4e4; font:14px/1.5 'Gill Sans', 'Gill Sans MT', Seravek, 'Trebuchet MS', Calibri, sans-serif; color:#6b6b6b;">No action needed.</p>
 {% endblock %}

@@ -337,7 +337,6 @@ def test_maintainer_gets_one_email_when_sign_ins_pause(client, app, capsys):
     client.post("/sign-in/blind-sign", data={"email": "s@uni.minerva.edu", "code": "000003", "blinded": "x"})
     out = capsys.readouterr().out
     assert out.count("[email to maintainer@example.com] Sign-ins paused: 30 wrong codes in the last hour") == 1
-    assert "People already signed in aren't affected." in out
 
 
 def test_paused_email_layout():
@@ -346,7 +345,5 @@ def test_paused_email_layout():
     from maf.email import sign_in_paused_email
 
     email = sign_in_paused_email("hello@maforum.net", 45, now=datetime(2026, 11, 23, 22, 0, tzinfo=UTC))
-    assert email.body == ("Sign-ins paused: 30 wrong codes in the last hour\nAs of 23/11/26 22:00 UTC\n\n"
-                          "Someone is probably guessing codes. Sign-ins resume on their own by 22:45 UTC. "
-                          "People already signed in aren't affected.\n")
+    assert email.body == "Sign-ins paused: 30 wrong codes in the last hour\nResumes by 22:45 UTC, as of 23/11/26 22:00 UTC\n"
     assert ">MAF</p>" in email.html

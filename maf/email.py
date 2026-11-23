@@ -66,14 +66,12 @@ def sign_in_paused_email(to: str, minutes_left: int, now: datetime | None = None
 
     sent = now or datetime.now(UTC)
     headline = f"Sign-ins paused: {SITE_WRONG_CODES_LIMIT} wrong codes in the last hour"
-    stamp = f"As of {sent:%d/%m/%y %H:%M} UTC"
-    detail = (f"Someone is probably guessing codes. Sign-ins resume on their own by "
-              f"{sent + timedelta(minutes=minutes_left):%H:%M} UTC. People already signed in aren't affected.")
+    stamp = f"Resumes by {sent + timedelta(minutes=minutes_left):%H:%M} UTC, as of {sent:%d/%m/%y %H:%M} UTC"
     return Email(
         to=to,
         subject=headline,
-        body=f"{headline}\n{stamp}\n\n{detail}\n",
-        html=_render("paused.html", subject=headline, headline=headline, stamp=stamp, detail=detail),
+        body=f"{headline}\n{stamp}\n",
+        html=_render("paused.html", subject=headline, headline=headline, stamp=stamp),
     )
 
 
