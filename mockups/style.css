@@ -220,8 +220,4 @@ span.arrow { color: var(--line); }
 .faded .post-body p:last-child { margin-bottom: 6px; }
 
 /* Empty front page */
-.empty { text-align: center; padding: 120px 0 100px; }
-.empty-title { font: italic 24px var(--serif); color: var(--meta); margin: 0; }
-.empty-sub { font: 15px var(--sans); margin: 10px 0 0; }
-.empty-sub a { color: var(--soft); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
-.empty-sub a:hover { color: var(--ink); }
+.empty { text-align: center; color: var(--meta); margin: 64px 0 40px; }
