@@ -4,9 +4,10 @@ import hashlib
 import secrets
 from datetime import UTC, date, datetime, timedelta
 
-# Unambiguous base32 alphabet (no i, l, o, u), so ids read cleanly.
+from .wordlist import ADJECTIVES, THINGS
+
+# Unambiguous base32 alphabet (no i, l, o, u), so pass ids read cleanly.
 ID_ALPHABET = "0123456789abcdefghjkmnpqrstvwxyz"
-ID_LENGTH = 12
 PASS_ID_LENGTH = 16
 
 
@@ -16,7 +17,10 @@ def _random_id(length: int) -> str:
 
 
 def new_item_id() -> str:
-    return _random_id(ID_LENGTH)
+    """adjective-thing-thing, e.g. quiet-river-lantern (256 x 256 x 255 ids)."""
+    adjective = secrets.choice(ADJECTIVES)
+    first, second = secrets.SystemRandom().sample(THINGS, 2)
+    return f"{adjective}-{first}-{second}"
 
 
 def new_pass_id() -> str:

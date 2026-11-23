@@ -27,6 +27,36 @@ def make_comment(app, pass_id, parent, text="A comment", private_to=None):
     return store.create_comment(app.conn, pass_id, parent, text, private_to)
 
 
+# -- item ids ------------------------------------------------------------
+
+
+def test_things_list_is_clean():
+    from maf.wordlist import ADJECTIVES, ANIMALS, THINGS
+
+    assert len(THINGS) == 256 and len(set(THINGS)) == 256
+    assert all(word.isalpha() and word.islower() for word in THINGS)
+    assert not set(THINGS) & (set(ADJECTIVES) | set(ANIMALS))
+
+
+def test_item_id_is_adjective_thing_thing():
+    from maf.util import new_item_id
+    from maf.wordlist import ADJECTIVES, THINGS
+
+    for _ in range(200):
+        adjective, first, second = new_item_id().split("-")
+        assert adjective in ADJECTIVES and first in THINGS and second in THINGS
+        assert first != second
+
+
+def test_created_items_get_three_word_ids_and_never_reuse_one(app, pass_id, monkeypatch):
+    taken = store.create_post(app.conn, pass_id, "First", None, None, []).id
+    ids = iter([taken, taken, "quiet-river-lantern"])
+    monkeypatch.setattr(store, "new_item_id", lambda: next(ids))
+    second = store.create_post(app.conn, pass_id, "Second", None, None, [])
+    assert second.id == "quiet-river-lantern"
+    assert len(taken.split("-")) == 3
+
+
 # -- labels --------------------------------------------------------------
 
 

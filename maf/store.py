@@ -156,6 +156,13 @@ def _fts_values(title: str | None, text: str | None) -> tuple[str, str]:
     return title or "", text or ""
 
 
+def unused_item_id(conn: sqlite3.Connection) -> str:
+    while True:
+        item_id = new_item_id()
+        if conn.execute("SELECT 1 FROM item WHERE id = ?", (item_id,)).fetchone() is None:
+            return item_id
+
+
 def create_post(
     conn: sqlite3.Connection,
     pass_id: str,
@@ -165,7 +172,7 @@ def create_post(
     tags: list[str],
     created_at: str | None = None,
 ) -> Item:
-    item_id = new_item_id()
+    item_id = unused_item_id(conn)
     created_at = created_at or iso(utc_now())
     with conn:
         conn.execute(
@@ -194,7 +201,7 @@ def create_comment(
     private_to: str | None,
     created_at: str | None = None,
 ) -> Item:
-    item_id = new_item_id()
+    item_id = unused_item_id(conn)
     created_at = created_at or iso(utc_now())
     with conn:
         conn.execute(

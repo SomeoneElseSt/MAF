@@ -1,7 +1,10 @@
-"""The per-thread label word list: 256 adjectives x 256 animals.
+"""Word lists: 256 adjectives, 256 animals and 256 things.
 
-A label is `adjective-animal` drawn from these by HMAC, so it reveals nothing
-about who posted: the same pass gets unrelated names in different threads.
+Two uses, both reveal nothing about who posted:
+- Per-thread labels are `adjective-animal`, drawn by HMAC, so the same pass
+  gets unrelated names in different threads.
+- Item ids (posts and comments) are `adjective-thing-thing`, drawn at random.
+  THINGS holds no animals, so a thread id never looks like a person's label.
 """
 
 ADJECTIVES = [
@@ -73,3 +76,41 @@ ANIMALS = [
     "wigeon", "wolverine", "worm", "auk", "bongo", "caiman", "dugong", "ermine",
     "fossa", "gerbil", "impala", "jackrabbit", "kakapo", "loris", "marmoset", "numbat",
 ]
+
+THINGS = [
+    "river", "lantern", "harbor", "meadow", "valley", "orchard", "garden", "island",
+    "lake", "pond", "brook", "stream", "creek", "canyon", "glacier", "summit",
+    "ridge", "hill", "mountain", "forest", "grove", "thicket", "prairie", "desert",
+    "dune", "beach", "shore", "cove", "bay", "lagoon", "reef", "cave",
+    "tunnel", "bridge", "tower", "castle", "cottage", "cabin", "barn", "mill",
+    "farm", "village", "street", "alley", "plaza", "market", "library", "station",
+    "airport", "lighthouse", "windmill", "fountain", "porch", "attic", "cellar", "kitchen",
+    "window", "door", "gate", "fence", "ladder", "stairs", "roof", "chimney",
+    "balcony", "rain", "snow", "frost", "breeze", "thunder", "lightning", "rainbow",
+    "sunrise", "sunset", "moon", "star", "comet", "planet", "horizon", "cloud",
+    "mist", "dew", "storm", "gust", "tide", "wave", "current", "shadow",
+    "twilight", "dawn", "midnight", "noon", "pebble", "boulder", "gravel", "sand",
+    "clay", "crystal", "marble", "granite", "quartz", "opal", "copper", "maple",
+    "oak", "pine", "birch", "elm", "cypress", "bamboo", "fern", "moss",
+    "ivy", "clover", "tulip", "orchid", "thistle", "acorn", "pinecone", "seed",
+    "petal", "blossom", "bud", "branch", "leaf", "root", "apple", "pear",
+    "peach", "lemon", "mango", "melon", "grape", "berry", "fig", "walnut",
+    "almond", "hazelnut", "bread", "butter", "honey", "cheese", "noodle", "soup",
+    "biscuit", "pancake", "waffle", "cookie", "muffin", "pie", "cake", "toast",
+    "pepper", "garlic", "mint", "cinnamon", "vanilla", "cocoa", "coffee", "tea",
+    "cider", "syrup", "jam", "pudding", "pretzel", "flute", "violin", "piano",
+    "guitar", "harp", "drum", "trumpet", "cello", "banjo", "clarinet", "oboe",
+    "trombone", "ukulele", "accordion", "whistle", "hammer", "wrench", "chisel", "anvil",
+    "saw", "drill", "needle", "thread", "button", "kettle", "teapot", "lamp",
+    "candle", "compass", "telescope", "anchor", "barrel", "basket", "bucket", "bottle",
+    "jar", "mug", "spoon", "bowl", "plate", "blanket", "pillow", "quilt",
+    "umbrella", "scarf", "mitten", "ribbon", "envelope", "postcard", "notebook", "pencil",
+    "crayon", "marker", "eraser", "stapler", "clock", "watch", "mirror", "magnet",
+    "lens", "prism", "balloon", "puzzle", "domino", "sail", "paddle", "oar",
+    "raft", "canoe", "wagon", "bicycle", "tram", "train", "ferry", "rocket",
+    "trail", "path", "glade", "spring", "harvest", "courtyard", "arch", "pillar",
+    "parcel", "ticket", "stamp", "map", "globe", "ruler", "satchel", "hearth",
+]
+
+assert len(THINGS) == 256 and len(set(THINGS)) == 256
+assert not set(THINGS) & (set(ADJECTIVES) | set(ANIMALS))
