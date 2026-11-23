@@ -14,7 +14,8 @@
 }
 
 /* Dark mode mirrors light mode exactly: each color is 255 minus its light value per channel,
-   so every tone keeps the same distance from the background in both themes. */
+   so every tone keeps the same distance from the background in both themes.
+   Exception: --tint is lifted to #1c1c1c, because a 4% shade that reads as a box on white disappears on black. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --paper: #000000;
@@ -22,7 +23,7 @@
     --soft: #aaaaaa;
     --meta: #858585;
     --line: #1b1b1b;
-    --tint: #0a0a0c;
+    --tint: #1c1c1c;
     --visited: #909090;
   }
 }
@@ -33,7 +34,7 @@
   --soft: #aaaaaa;
   --meta: #858585;
   --line: #1b1b1b;
-  --tint: #0a0a0c;
+  --tint: #1c1c1c;
   --visited: #909090;
 }
 
