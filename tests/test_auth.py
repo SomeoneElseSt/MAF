@@ -116,9 +116,10 @@ def test_cooldown_allows_one_code_per_thirty_seconds(client, app):
     assert second.status_code == 429
     import re
 
-    seconds = int(re.search(r'data-seconds="(\d+)"', second.text).group(1))
+    seconds = int(re.search(r'data-wait="(\d+)"', second.text).group(1))
     assert 20 <= seconds <= 30
-    assert second.text.count("A code was already sent to this address.") == 1
+    assert f"Wait {seconds} seconds</button>" in second.text
+    assert 'class="notice"' not in second.text
 
 
 def test_code_expires_after_ten_minutes(client, app, monkeypatch):

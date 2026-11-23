@@ -12,17 +12,20 @@
 <p class="lede">MAF is for Minerva University students. Enter your university email and we'll send you a code. Your email is only used for login and is never stored.</p>
 
 
-{% if error and cooldown_seconds %}
-{# No role="alert": the live countdown would be read out every second. #}
-<div class="notice" id="login-error"><p>{{ error }} Try again in <span class="countdown" data-seconds="{{ cooldown_seconds }}">{{ cooldown_seconds }}</span> seconds.</p></div>
-{% elif error %}<div class="notice" id="login-error" role="alert"><p>{{ error }}</p></div>{% endif %}
+{% if error and not cooldown_seconds %}<div class="notice" id="login-error" role="alert"><p>{{ error }}</p></div>{% endif %}
 
 <form action="/login" method="post" novalidate>
   <div class="field">
     <label for="email">University email</label>
-    <input id="email" name="email" type="email" placeholder="you@uni.minerva.edu" autocomplete="email" value="{{ email|default('') }}"{% if error %} aria-describedby="login-error"{% endif %}>
+    <input id="email" name="email" type="email" placeholder="you@uni.minerva.edu" autocomplete="email" value="{{ email|default('') }}"{% if error and not cooldown_seconds %} aria-describedby="login-error"{% endif %}>
   </div>
+  {% if cooldown_seconds %}
+  {# Clicked during the cooldown: the button itself counts down (countdown.js), then unfreezes. Read once by screen readers. #}
+  <p class="sr-only" role="status">A code was already sent to this address. Try again in {{ cooldown_seconds }} seconds.</p>
+  <button class="button" type="submit" data-wait="{{ cooldown_seconds }}">Wait {{ cooldown_seconds }} seconds</button>
+  {% else %}
   <button class="button" type="submit">Send code</button>
+  {% endif %}
 </form>
 
 {% endblock %}
