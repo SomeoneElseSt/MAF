@@ -49,7 +49,7 @@ def code_email(to: str, code: str) -> Email:
 
 def moderation_email(to: str, kind: str, item_id: str, count: int, base_url: str, now: datetime | None = None) -> Email:
     label = "Unhide" if kind == "unhide" else "Deletion"
-    subject = f"{label} requested for post {item_id}"
+    subject = f"MAF {label.lower()} requested for post {item_id}"
     link = f"{base_url}/thread/{item_id}"
     tally = f"{count} request{'' if count == 1 else 's'} so far as of {(now or datetime.now(UTC)):%d/%m/%y %H:%M} UTC"
     return Email(
@@ -69,9 +69,9 @@ def sign_in_paused_email(to: str, minutes_left: int, now: datetime | None = None
     stamp = f"Resumes by {sent + timedelta(minutes=minutes_left):%H:%M} UTC, as of {sent:%d/%m/%y %H:%M} UTC"
     return Email(
         to=to,
-        subject=headline,
+        subject=f"MAF sign-ins paused: {SITE_WRONG_CODES_LIMIT} wrong codes in the last hour",
         body=f"{headline}\n{stamp}\n\nTo resume sign-ins early, restart MAF on the server with sudo systemctl restart maf.\n",
-        html=_render("paused.html", subject=headline, headline=headline, stamp=stamp),
+        html=_render("paused.html", subject=f"MAF sign-ins paused: {SITE_WRONG_CODES_LIMIT} wrong codes in the last hour", headline=headline, stamp=stamp),
     )
 
 
