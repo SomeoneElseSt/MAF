@@ -8,7 +8,7 @@ dropped.
 """
 
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -57,6 +57,23 @@ def moderation_email(to: str, kind: str, item_id: str, count: int, base_url: str
         subject=subject,
         body=f"{label} requested for post: {item_id}\n{link}\n\n{tally}\n",
         html=_render("moderation.html", subject=subject, label=label, item_id=item_id, tally=tally, link=link),
+    )
+
+
+def sign_in_paused_email(to: str, minutes_left: int, now: datetime | None = None) -> Email:
+    """Sent once when wrong codes hit the site-wide cap and sign-ins pause."""
+    from .memory import SITE_WRONG_CODES_LIMIT
+
+    sent = now or datetime.now(UTC)
+    headline = f"Sign-ins paused: {SITE_WRONG_CODES_LIMIT} wrong codes in the last hour"
+    stamp = f"As of {sent:%d/%m/%y %H:%M} UTC"
+    detail = (f"Someone is probably guessing codes. Sign-ins resume on their own by "
+              f"{sent + timedelta(minutes=minutes_left):%H:%M} UTC. People already signed in aren't affected.")
+    return Email(
+        to=to,
+        subject=headline,
+        body=f"{headline}\n{stamp}\n\n{detail}\n",
+        html=_render("paused.html", subject=headline, headline=headline, stamp=stamp, detail=detail),
     )
 
 

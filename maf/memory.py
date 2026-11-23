@@ -42,6 +42,7 @@ class Memory:
     rate: dict[str, list[float]] = field(default_factory=dict)
     wrong_codes: list[float] = field(default_factory=list)
     code_locks: dict[str, float] = field(default_factory=dict)
+    pause_alerted_at: float = float("-inf")
 
     # -- login codes -------------------------------------------------------
 
@@ -92,6 +93,17 @@ class Memory:
     def code_guessing_paused(self) -> bool:
         with self._lock:
             return self._recent_wrong_codes() >= SITE_WRONG_CODES_LIMIT
+
+    def take_pause_alert(self) -> bool:
+        """True once when sign-ins pause, so the maintainer gets one email per hour of guessing, not one per guess."""
+        with self._lock:
+            current = now()
+            if self._recent_wrong_codes() < SITE_WRONG_CODES_LIMIT:
+                return False
+            if current - self.pause_alerted_at < SITE_WRONG_CODES_WINDOW_SECONDS:
+                return False
+            self.pause_alerted_at = current
+            return True
 
     def code_guessing_minutes_left(self) -> int:
         with self._lock:
