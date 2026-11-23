@@ -9,6 +9,7 @@
   --line: #e4e4e4;
   --tint: #f5f5f3;
   --hot: #b4441c;
+  --hot-wash: color-mix(in srgb, var(--hot) 7%, var(--paper));
   --visited: #6f6f6f;
   --serif: "Iowan Old Style", Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
   --sans: "Gill Sans", "Gill Sans MT", Seravek, "Trebuchet MS", Calibri, sans-serif;
@@ -26,6 +27,7 @@
     --line: #1b1b1b;
     --tint: #1c1c1c;
     --hot: #e2805a;
+    --hot-wash: color-mix(in srgb, var(--hot) 15%, var(--paper));
     --visited: #909090;
   }
 }
@@ -38,6 +40,8 @@
   --line: #1b1b1b;
   --tint: #1c1c1c;
   --visited: #909090;
+  --hot: #e2805a;
+  --hot-wash: color-mix(in srgb, var(--hot) 15%, var(--paper));
 }
 
 * { box-sizing: border-box; }
@@ -274,5 +278,6 @@ span.arrow { color: var(--line); }
 }
 .find input::-webkit-search-cancel-button:hover { background-color: var(--ink); }
 
-/* #hottake: the tag takes the ember colour, the site's only accent. Row marker still being chosen (see hottake-options.html). */
+/* #hottake: the row sits on a faint ember wash and the tag takes the ember colour, the site's only accent. */
+.list li.hot { background: var(--hot-wash); border-radius: 4px; margin: 0 -12px; padding: 8px 12px; }
 .meta .hot-tag { color: var(--hot); }
