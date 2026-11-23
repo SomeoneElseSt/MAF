@@ -5,12 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sign in · MAF</title>
 <link rel="stylesheet" href="style.css">
+<script>try { const saved = localStorage.getItem("theme"); if (saved) document.documentElement.dataset.theme = saved; } catch {}</script>
 </head>
 <body>
 <div class="page">
   <header class="top">
     <a class="brand" href="index.html">MAF</a>
     <nav><a href="how.html">How it works</a></nav>
+    <button class="theme-toggle" type="button">Dark</button>
   </header>
 
   <h1 class="heading">Sign in</h1>
@@ -26,5 +28,6 @@
 
   <p class="small">Please don't name students or staff. Public figures are fine. <a href="how.html">How anonymity works</a></p>
 </div>
+<script src="theme.js"></script>
 </body>
 </html>

@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Submit · MAF</title>
 <link rel="stylesheet" href="style.css">
+<script>try { const saved = localStorage.getItem("theme"); if (saved) document.documentElement.dataset.theme = saved; } catch {}</script>
 </head>
 <body>
 <div class="page">
@@ -12,6 +13,7 @@
     <a class="brand" href="index.html">MAF</a>
     <nav><a href="submit.html" aria-current="page">Submit</a><a href="how.html">How it works</a></nav>
     <form class="find" action="index.html"><input type="search" name="q" placeholder="Search" aria-label="Search posts and comments"></form>
+    <button class="theme-toggle" type="button">Dark</button>
   </header>
 
   <h1 class="heading">Submit a post</h1>
@@ -29,7 +31,6 @@
     <div class="field">
       <label for="text">Text (optional)</label>
       <textarea id="text">I know this will be controversial, but after talking to people in my cohort, the capstone feels like a requirement that helps some students and drains others.</textarea>
-      <p class="help">Plain text. Images aren't supported.</p>
     </div>
     <div class="row">
       <button class="button" type="submit">Submit</button>
@@ -39,5 +40,6 @@
 
   <p class="small">Please don't name students or staff. Public figures are fine.</p>
 </div>
+<script src="theme.js"></script>
 </body>
 </html>
