@@ -50,7 +50,7 @@ function rowFromSnapshot(pin) {
   const row = document.createElement("li");
   Object.assign(row.dataset, { id: pin.id, title: pin.title, host: pin.host, tags: pin.tags.join(" ") });
   if (pin.tags.some(tag => hotTags.includes(tag))) row.classList.add("hot");
-  const title = Object.assign(document.createElement("a"), { className: "title", href: `/item/${pin.id}`, textContent: pin.title });
+  const title = Object.assign(document.createElement("a"), { className: "title", href: `/thread/${pin.id}`, textContent: pin.title });
   row.append(title);
   if (pin.host) row.append(Object.assign(document.createElement("span"), { className: "host", textContent: pin.host }));
   const meta = Object.assign(document.createElement("div"), { className: "meta", textContent: "Pinned by you" });

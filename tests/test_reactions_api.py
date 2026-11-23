@@ -94,7 +94,7 @@ def test_api_excludes_hidden_posts(client, app, pass_id):
 def test_api_thread_has_labels_and_op(client, app, pass_id):
     post = make_post(app, pass_id)
     store.create_comment(app.conn, pass_id, post, "hello", None)
-    body = client.get(f"/api/v1/items/{post.id}", headers=bearer(make_token(app, pass_id))).json()
+    body = client.get(f"/api/v1/threads/{post.id}", headers=bearer(make_token(app, pass_id))).json()
     assert body["op"] is True
     assert body["author_id"] == app.labeler.label(pass_id, post.id)
     assert body["comments"][0]["author_id"] == body["author_id"]
@@ -105,12 +105,12 @@ def test_api_thread_omits_private_replies(client, app, pass_id):
     post = make_post(app, pass_id)
     recipient = store.create_pass(app.conn)
     store.create_comment(app.conn, pass_id, post, "private words", recipient)
-    body = client.get(f"/api/v1/items/{post.id}", headers=bearer(make_token(app, pass_id))).json()
+    body = client.get(f"/api/v1/threads/{post.id}", headers=bearer(make_token(app, pass_id))).json()
     assert body["comments"] == []
 
 
 def test_api_unknown_item_is_404(client, app, pass_id):
-    assert client.get("/api/v1/items/nope", headers=bearer(make_token(app, pass_id))).status_code == 404
+    assert client.get("/api/v1/threads/nope", headers=bearer(make_token(app, pass_id))).status_code == 404
 
 
 def test_api_search_and_tags(client, app, pass_id):

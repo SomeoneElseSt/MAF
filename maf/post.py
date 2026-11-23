@@ -19,7 +19,7 @@ TOKEN_BYTES = 32
 
 
 def _login(page) -> Response:
-    return redirect("/login")
+    return redirect("/sign-in")
 
 
 def _allowed(page, key: str, limit: int) -> bool:
@@ -51,7 +51,7 @@ async def submit_post(request: Request) -> Response:
     post = store.create_post(
         page.conn, page.pass_id, values["title"], values["text"] or None, values["url"] or None, tags
     )
-    return redirect(f"/item/{post.id}")
+    return redirect(f"/thread/{post.id}")
 
 
 def _validate_post(values: dict[str, str], too_many: bool) -> dict[str, str]:
@@ -93,14 +93,14 @@ async def comment(request: Request) -> Response:
     if page.pass_id is None or parent is None:
         return _login(page)
     if not values["text"]:
-        return redirect(f"/item/{parent.thread_id}?notice=Write+something+first.")
+        return redirect(f"/thread/{parent.thread_id}?notice=Write+something+first.")
     if values["confirm_names"] != "1" and page.app.name_filter.finds_name(values["text"]):
-        return redirect(f"/item/{parent.thread_id}?notice=This+looks+like+it+names+someone.+Edit+it+and+try+again.")
+        return redirect(f"/thread/{parent.thread_id}?notice=This+looks+like+it+names+someone.+Edit+it+and+try+again.")
     if not _allowed(page, "comment", COMMENTS_PER_MINUTE):
-        return redirect(f"/item/{parent.thread_id}?notice=You're+replying+fast.+Wait+a+minute.")
+        return redirect(f"/thread/{parent.thread_id}?notice=You're+replying+fast.+Wait+a+minute.")
     private_to = _private_recipient(page, parent, values["private"] == "on")
     store.create_comment(page.conn, page.pass_id, parent, values["text"], private_to)
-    return redirect(f"/item/{parent.thread_id}#comments")
+    return redirect(f"/thread/{parent.thread_id}#comments")
 
 
 def _private_recipient(page, parent: store.Item, wants_private: bool) -> str | None:
@@ -126,7 +126,7 @@ async def flag(request: Request) -> Response:
     # Clicking again takes the flag back.
     if item.private_to is None and not store.remove_flag(page.conn, page.pass_id, item.id):
         store.add_flag(page.conn, page.pass_id, item.id)
-    return redirect(f"/item/{item.thread_id}#{item.id}")
+    return redirect(f"/thread/{item.thread_id}#{item.id}")
 
 
 async def moderation_request(request: Request) -> Response:
@@ -140,7 +140,7 @@ async def moderation_request(request: Request) -> Response:
         page.app.emailer.send(
             moderation_email(page.settings.maintainer_email, values["kind"], item.id, count, page.settings.base_url)
         )
-    return redirect(f"/item/{item.id}?notice=Request+sent.+Thank+you.")
+    return redirect(f"/thread/{item.id}?notice=Request+sent.+Thank+you.")
 
 
 async def create_token(request: Request) -> Response:
@@ -149,7 +149,7 @@ async def create_token(request: Request) -> Response:
         return _login(page)
     token = secrets.token_urlsafe(TOKEN_BYTES)
     store.create_api_token(page.conn, sha256_hex(token), page.pass_id, token[-4:])
-    return redirect(f"/guide/data?token={token}")
+    return redirect(f"/guide/use-this-data?token={token}")
 
 
 async def revoke_token(request: Request) -> Response:
@@ -157,7 +157,7 @@ async def revoke_token(request: Request) -> Response:
     values = await form_values(request, "token_hash")
     if page.pass_id is not None:
         store.revoke_api_token(page.conn, values["token_hash"], page.pass_id)
-    return redirect("/guide/data?notice=Token+revoked.")
+    return redirect("/guide/use-this-data?notice=Token+revoked.")
 
 
 routes = [

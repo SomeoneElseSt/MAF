@@ -38,7 +38,7 @@
   </ul>
   {% endif %}
   {% else %}
-  <p><a href="/login">Sign in</a> to create a token.</p>
+  <p><a href="/sign-in">Sign in</a> to create a token.</p>
   {% endif %}
 
   <h2>MCP server</h2>
@@ -57,7 +57,7 @@
   <pre><code>curl -H "Authorization: Bearer $MAF_TOKEN" {{ base_url }}/api/v1/posts
 curl -H "Authorization: Bearer $MAF_TOKEN" "{{ base_url }}/api/v1/posts?sort=views&amp;before=2026-11-20"
 curl -H "Authorization: Bearer $MAF_TOKEN" {{ base_url }}/api/v1/tags
-curl -H "Authorization: Bearer $MAF_TOKEN" {{ base_url }}/api/v1/items/ITEM_ID
+curl -H "Authorization: Bearer $MAF_TOKEN" {{ base_url }}/api/v1/threads/THREAD_ID
 curl -H "Authorization: Bearer $MAF_TOKEN" "{{ base_url }}/api/v1/search?q=berlin&amp;page=1"</code></pre>
 
   <h2>From a script</h2>

@@ -1,6 +1,6 @@
 // Login blind-signature step. After the code is accepted, this blinds a random
 // token, sends only the blinded value, unblinds the signature and redeems it.
-// The token never leaves the browser unblinded until /redeem.
+// The token never leaves the browser unblinded until /sign-in/redeem.
 (function () {
   const form = document.querySelector("form[data-blind]");
   if (!form || !window.BlindRSA) return;
@@ -20,7 +20,7 @@
   }
 
   async function publicKey() {
-    const response = await fetch("/login/blind", { headers: { accept: "application/json" } });
+    const response = await fetch("/sign-in/key", { headers: { accept: "application/json" } });
     const { n, e } = await response.json();
     const toB64 = hex => base64url(Uint8Array.from(hex.match(/../g).map(b => parseInt(b, 16))));
     return crypto.subtle.importKey(
@@ -42,7 +42,7 @@
       const { blindedMsg, inv } = await suite.blind(key, prepared);
       const body = new FormData(form);
       body.set("blinded", base64url(blindedMsg));
-      const signed = await fetch("/login/blind-sign", { method: "POST", body });
+      const signed = await fetch("/sign-in/blind-sign", { method: "POST", body });
       const { blind_sig: blindSig } = await signed.json();
       if (!blindSig) throw new Error("not signed");
       const signature = await suite.finalize(key, prepared, fromBase64url(blindSig), inv);
@@ -50,8 +50,8 @@
       redeem.set("token", base64url(token));
       redeem.set("prepared", base64url(prepared));
       redeem.set("signature", base64url(signature));
-      const redeemed = await fetch("/redeem", { method: "POST", body: redeem, redirect: "follow" });
-      window.location.assign(redeemed.ok ? "/" : "/redeem");
+      const redeemed = await fetch("/sign-in/redeem", { method: "POST", body: redeem, redirect: "follow" });
+      window.location.assign(redeemed.ok ? "/" : "/sign-in/redeem");
     } catch {
       status.textContent = "Something went wrong making your pass.";
       retry.hidden = false;

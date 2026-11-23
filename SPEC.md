@@ -31,7 +31,7 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 2. **Cooldown:** each email can request one code per 30 seconds. The cooldown lives in memory only. Its job is to keep anyone from flooding a classmate's inbox and to make collecting extra passes slow.
 3. The server sends a 6-digit code through SES. The email is short: subject `Your code: 482913`, an HTML version in the site's style (MAF wordmark top left, always light) plus a plain-text fallback. Templates: `maf/templates/email/`. Codes expire after 10 minutes and are held in memory only.
 4. The user enters the code. If it matches, the browser generates a random token, blinds it, and sends only the blinded value. The server signs it and forgets the email.
-5. The browser unblinds the token and redeems it at `/redeem`. The server verifies the signature, stores `sha256(token)` to block reuse, creates a `pass`, and sets a long-lived HttpOnly session cookie.
+5. The browser unblinds the token and redeems it at `/sign-in/redeem`. The server verifies the signature, stores `sha256(token)` to block reuse, creates a `pass`, and sets a long-lived HttpOnly session cookie.
 6. Switching devices means doing this again. There are no cross-device accounts, no recovery key and no cap on passes.
 
 **Rules:** don't store `created_at` on passes, and never log emails or IPs.
@@ -54,10 +54,10 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 - **Four-day pages:** `/` shows posts from the 4 days ending today, grouped under day headings (Today, Yesterday, then e.g. Thursday 19 November). `?before=YYYY-MM-DD` shows the 4 days ending the day before that date, with ‹ / › arrows beside the date range at the top (no bottom pager). `sort` applies within those 4 days. Switching sort resets the page: `new` and `views` open the latest 4 days, `old` opens the earliest 4 days that have posts (`?after=YYYY-MM-DD` for later pages in that mode), so the range label always matches the posts shown. Search results span all time, 30 per page.
 - **List rows show no IDs:** title, link host, then plain-language metadata ("2 hours ago, 14 comments, 61 views"), then ` · #tag1, #tag2` if the post has tags.
 - **Pinned:** posts with `pinned = 1` render in a "Pinned" group above Today, only when `sort=new` and on the latest page (no `before`). They aren't repeated in their day group there. Under `old` and `views` they appear in their normal day. Set with `maf pin` / `maf unpin`.
-- **Personal pins (client-side only):** each list row gets a pin button at its right, shown on hover or focus and always on touch screens (`@media (hover: none)`), `aria-pressed` with label "Pin to top" / "Unpin". Clicking saves the post to `localStorage["maf.pins"]` as `{id, title, host, tags}` (newest first) and moves the row into Pinned after the maintainer's pins; unpinning moves it back to its day. Pinned posts not on the current page render from the stored snapshot, linking to `/item/<id>`. Changes are announced in an `aria-live` region. Nothing about pins is sent to the server. Wrap storage access in try/catch; with storage unavailable the button does nothing and the page still works. See `mockups/pins.js`.
+- **Personal pins (client-side only):** each list row gets a pin button at its right, shown on hover or focus and always on touch screens (`@media (hover: none)`), `aria-pressed` with label "Pin to top" / "Unpin". Clicking saves the post to `localStorage["maf.pins"]` as `{id, title, host, tags}` (newest first) and moves the row into Pinned after the maintainer's pins; unpinning moves it back to its day. Pinned posts not on the current page render from the stored snapshot, linking to `/thread/<id>`. Changes are announced in an `aria-live` region. Nothing about pins is sent to the server. Wrap storage access in try/catch; with storage unavailable the button does nothing and the page still works. See `mockups/pins.js`.
 - **Header:** brand, Submit, the search box (with the # button) and the Dark/Light text toggle to its right. **Footer on every page:** About, User Guide, Source Code, pinned to the bottom of short pages.
 - **Empty state:** when there are no posts at all, `/` keeps the sort row and shows "No posts yet." near the top.
-- **Pages:** `/` (four days of posts with search bar and sorter), `/item/<id>`, `/submit`, `/about`, `/guide` (User Guide), `/guide/data` (Use this data), `/login`
+- **Pages:** `/` (four days of posts with search bar and sorter), `/thread/<id>`, `/submit`, `/about`, `/guide` (User Guide), `/guide/use-this-data` (Use this data), `/sign-in`
 
 ## Hashtags
 
@@ -102,7 +102,7 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 No admin roles, codes or buttons. Moderation is community flags plus the maintainer using the `maf` CLI over SSH.
 
 - **Flag:** any pass, once per item. At 5 flags from distinct passes the item is `hidden`: excluded from `/`, from search and from comment trees, unless `restored = 1`.
-- **Hidden items stay reachable** at `/item/<id>`, faded, with a banner, "Five people flagged this post, so it's been unlisted. You can still read it here and ask for it to come back or be removed permanently.", and two buttons: **Request unhide** and **Request deletion**.
+- **Hidden items stay reachable** at `/thread/<id>`, faded, with a banner, "Five people flagged this post, so it's been unlisted. You can still read it here and ask for it to come back or be removed permanently.", and two buttons: **Request unhide** and **Request deletion**.
 - **Requests:** once per pass per item per kind. Stored as `moderation_request(pass_id, item_id, kind)` for deduplication only. On each new request, immediately send an SES email to `MAINTAINER_EMAIL`, for example `Unhide requested for post #123 (4 requests so far) <link>`. No pass or identity goes in the email.
 - **`maf` CLI** (maintainer, run on the server over SSH: `ssh maf-server maf <command>`). It's a console script in the same uv project (`[project.scripts] maf = "maf.cli:main"`), built with stdlib `argparse` and `sqlite3` on the same database file, with no extra dependencies. It reuses the app's own data functions so the logic isn't written twice.
 
@@ -112,7 +112,7 @@ No admin roles, codes or buttons. Moderation is community flags plus the maintai
   | `maf hidden` | Table of items with `hidden = 1` |
   | `maf show <id>` | Prints the item's title, URL or text, flags, hidden/restored state and request counts |
   | `maf unhide <id>` | Sets `hidden = 0, restored = 1` and clears its requests. Once `restored = 1`, flags never hide it again |
-  | `maf nuke <id>` | Prints the item, asks `Delete post #<id> and its N comments? [y/N]`, then deletes the item (and, for a post, its whole thread) along with its flags and requests. FTS rows go via triggers. `/item/<id>` then returns 404 |
+  | `maf nuke <id>` | Prints the item, asks `Delete post #<id> and its N comments? [y/N]`, then deletes the item (and, for a post, its whole thread) along with its flags and requests. FTS rows go via triggers. `/thread/<id>` then returns 404 |
   | `maf dismiss <id>` | Clears its requests without changing anything |
   | `maf pin <id>` | Sets `pinned = 1` on a post (not a comment). Pinned posts show above Today under Newest |
   | `maf unpin <id>` | Sets `pinned = 0` |
@@ -122,7 +122,7 @@ No admin roles, codes or buttons. Moderation is community flags plus the maintai
 
 ## Developer access (read-only API + MCP)
 
-- **Tokens:** on `/guide/data`, a signed-in pass can create a read token: 32 random bytes, base64url, shown once. Store `api_token(token_hash PK, pass_id)` with `sha256(token)`. The page lists the pass's tokens by their last 4 characters, each with a Revoke button. No creation time is stored.
+- **Tokens:** on `/guide/use-this-data`, a signed-in pass can create a read token: 32 random bytes, base64url, shown once. Store `api_token(token_hash PK, pass_id)` with `sha256(token)`. The page lists the pass's tokens by their last 4 characters, each with a Revoke button. No creation time is stored.
 - **Auth:** `Authorization: Bearer <token>`. Tokens are read-only and can't post, comment, flag or request.
 - **Rate limit:** 60 requests per minute per token, kept in memory. Over the limit returns `429` with `Retry-After`.
 - **Endpoints** (JSON; hidden items excluded, same as the site):
@@ -131,18 +131,18 @@ No admin roles, codes or buttons. Moderation is community flags plus the maintai
   |---|---|
   | `GET /api/v1/posts?before=YYYY-MM-DD&sort=new\|old\|views&tag=...` | Four days of posts (or, with `tag`, that tag's posts 30 per page): `id, title, url, text_preview, created_at, comment_count, views, tags, pinned` |
   | `GET /api/v1/tags` | Every tag with its post count |
-  | `GET /api/v1/items/<id>` | A post with its comment tree; each item carries its per-thread `author_id` and an `op` flag |
+  | `GET /api/v1/threads/<id>` | A post with its comment tree; each item carries its per-thread `author_id` and an `op` flag |
   | `GET /api/v1/search?q=...&page=N` | Matching posts and comments, 30 per page |
 
 - **MCP server:** a small stdio server in the same repo (`maf/mcp.py`, console script `maf-mcp`) with three tools, `list_posts(before?, sort?)`, `get_thread(id)` and `search(query, page?)`, which wrap the API. It's configured with `MAF_TOKEN` and `MAF_URL`. Use the official MCP Python SDK; it's the only extra dependency and runs on the user's machine, not the server.
-- **`/guide/data` page:** how to create a token, an MCP config snippet for Claude Code / Cursor, `curl` examples for each endpoint, and a note that anything read this way leaves the students-only site.
+- **`/guide/use-this-data` page:** how to create a token, an MCP config snippet for Claude Code / Cursor, `curl` examples for each endpoint, and a note that anything read this way leaves the students-only site.
 
 ## Data model (sketch)
 
 ```
 pass(id)
 redeemed_token(token_hash PK)
-item(id, parent_id NULL, thread_id, pass_id, title NULL, url NULL, text NULL, created_at, views, flags, hidden, restored, pinned, private_to NULL)
+item(id, parent_id NULL, thread_id, pass_id, title NULL, url NULL, text NULL, created_at, views, flags, hidden, restored, pinned, private_to NULL)  -- id: three words, adjective-thing-thing (e.g. quiet-river-lantern), picked at random and re-picked until unused
 item_tag(item_id, tag, PK both)  -- index on tag
 item_fts  -- FTS5 virtual table over item(title, text) for public items only, kept in sync with triggers
 flag(pass_id, item_id, PK both)

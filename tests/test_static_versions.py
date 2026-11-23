@@ -11,14 +11,14 @@ def file_hash(path) -> str:
 
 
 def test_login_page_links_stylesheet_with_content_hash(client, settings):
-    html = client.get("/login").text
+    html = client.get("/sign-in").text
     match = re.search(r'href="/static/style\.css\?v=([0-9a-f]+)"', html)
     assert match, "style.css must be linked with a ?v= query string"
     assert match.group(1) == file_hash(settings.static_dir / "style.css")
 
 
 def test_every_static_url_in_a_page_is_versioned(client):
-    html = client.get("/login").text
+    html = client.get("/sign-in").text
     urls = re.findall(r'(?:href|src)="(/static/[^"]*)"', html)
     assert urls
     assert all("?v=" in url for url in urls), urls
@@ -44,6 +44,6 @@ def test_unknown_static_file_gets_a_plain_url(tmp_path):
 
 def test_pages_have_no_inline_scripts_or_styles(client):
     """The production Content-Security-Policy allows only same-origin files."""
-    html = client.get("/login").text
+    html = client.get("/sign-in").text
     assert not re.search(r"<script(?![^>]*\bsrc=)(?![^>]*application/json)[^>]*>", html)
     assert " style=" not in html

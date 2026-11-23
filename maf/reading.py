@@ -1,4 +1,4 @@
-"""Reading a thread: /item/<id>, its view count and the comment tree."""
+"""Reading a thread: /thread/<id>, its view count and the comment tree."""
 
 from starlette.requests import Request
 from starlette.responses import Response
@@ -63,4 +63,4 @@ def _flags(page, items: list[store.Item]) -> dict[str, bool]:
     return {i.id: store.has_flagged(page.conn, page.pass_id, i.id) for i in items}
 
 
-routes = [Route("/item/{id}", item)]
+routes = [Route("/thread/{id}", item)]

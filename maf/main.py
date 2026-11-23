@@ -188,7 +188,7 @@ class WithApp:
 
 
 # Pages a signed-out visitor may open. Everything else needs a pass; the API checks its own bearer tokens.
-PUBLIC_PATHS = {"/login", "/login/code", "/login/blind", "/login/blind-sign", "/redeem", "/about"}
+PUBLIC_PATHS = {"/sign-in", "/sign-in/code", "/sign-in/key", "/sign-in/blind-sign", "/sign-in/redeem", "/about"}
 PUBLIC_PREFIXES = ("/static/", "/api/")
 
 
@@ -205,7 +205,7 @@ class RequireSignIn:
         if APP.sessions.pass_id(Request(scope)) is not None:
             await self._app(scope, receive, send)
             return
-        await RedirectResponse("/login", status_code=303)(scope, receive, send)
+        await RedirectResponse("/sign-in", status_code=303)(scope, receive, send)
 
 
 def _is_public(path: str) -> bool:
@@ -226,8 +226,8 @@ def create_app(settings: Settings | None = None) -> Starlette:
         Route("/tags", tags_page),
         Route("/about", about),
         Route("/guide", guide),
-        Route("/guide/data", guide_data),
-        Route("/logout", logout, methods=["POST"]),
+        Route("/guide/use-this-data", guide_data),
+        Route("/sign-out", logout, methods=["POST"]),
         *reading.routes,
         *post.routes,
         *auth.routes,

@@ -151,7 +151,7 @@ install_service_and_proxy() {
 wait_for_app() {
   log "Waiting for the app to answer on 127.0.0.1:8000"
   for _ in $(seq 1 60); do
-    if curl -fsS -o /dev/null http://127.0.0.1:8000/login; then
+    if curl -fsS -o /dev/null http://127.0.0.1:8000/sign-in; then
       echo "The app is up."
       return
     fi

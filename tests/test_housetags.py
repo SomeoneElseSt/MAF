@@ -65,7 +65,7 @@ def test_submit_requires_sign_in(starlette_app):
 
     response = TestClient(starlette_app).get("/submit", follow_redirects=False)
     assert response.status_code == 303
-    assert response.headers["location"] == "/login"
+    assert response.headers["location"] == "/sign-in"
 
 
 def test_submit_creates_a_post(signed_in, app, pass_id):
@@ -112,7 +112,7 @@ def test_the_page_shows_the_placeholder_javascript(signed_in):
 def test_thread_shows_post_comments_and_labels(client, app, pass_id):
     post = store.create_post(app.conn, pass_id, "Thread title", "Thread body", None, [])
     store.create_comment(app.conn, pass_id, post, "a nested comment", None)
-    body = client.get(f"/item/{post.id}").text
+    body = client.get(f"/thread/{post.id}").text
     assert "Thread title" in body and "Thread body" in body
     assert "a nested comment" in body
     assert app.labeler.label(pass_id, post.id) in body
@@ -120,12 +120,12 @@ def test_thread_shows_post_comments_and_labels(client, app, pass_id):
 
 
 def test_thread_404_for_missing_item(client):
-    assert client.get("/item/doesnotexist").status_code == 404
+    assert client.get("/thread/doesnotexist").status_code == 404
 
 
 def test_hottakes_thread_shows_etiquette_and_class(client, app, pass_id):
     post = store.create_post(app.conn, pass_id, "Hot take", "text", None, ["hottakes"])
-    body = client.get(f"/item/{post.id}").text
+    body = client.get(f"/thread/{post.id}").text
     assert "hottakes-thread" in body
     assert "argue with the take, not the person" in body
 
@@ -134,8 +134,8 @@ def test_private_reply_is_hidden_from_other_viewers(client, app, pass_id):
     author = store.create_pass(app.conn)
     post = store.create_post(app.conn, author, "Post", "text", None, [])
     store.create_comment(app.conn, author, post, "only for author", pass_id)
-    assert "only for author" not in client.get(f"/item/{post.id}").text
+    assert "only for author" not in client.get(f"/thread/{post.id}").text
     from tests.conftest import sign_in_as
 
     viewer = sign_in_as(client, app, pass_id)
-    assert "only for author" in viewer.get(f"/item/{post.id}").text
+    assert "only for author" in viewer.get(f"/thread/{post.id}").text

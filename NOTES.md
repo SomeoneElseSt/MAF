@@ -9,7 +9,7 @@ Status of the v1 build against [SPEC.md](SPEC.md), on branch `build`.
   No PyPI library implements RSABSSA, so the Python side is built on `cryptography` and
   checked against all four RFC 9474 Appendix A test vectors. See `spike/blind/README.md`.
 - **Sign-in**: `@uni.minerva.edu` only; 6-digit code emailed through SES (console backend in
-  dev); 10-minute code and cooldown, in memory only; blind signature; `/redeem` verifies the
+  dev); 10-minute code and cooldown, in memory only; blind signature; `/sign-in/redeem` verifies the
   token, stores `sha256(token)` and issues a pass with a long-lived HttpOnly cookie.
 - **Threads**: posts (title + URL or text), nested comments, per-thread labels with OP tags,
   private replies, reactions (24 emoji, per-pass rate limit), flags that hide at 5,
@@ -24,7 +24,7 @@ Status of the v1 build against [SPEC.md](SPEC.md), on branch `build`.
 - **Moderation**: the `maf` CLI (`requests`, `hidden`, `show`, `unhide`, `nuke`, `dismiss`,
   `pin`, `unpin`) over SSH.
 - **Developer access**: read-only bearer-token API at `/api/v1` (60 requests per minute per
-  token), token creation and revocation on `/guide/data`, and `maf-mcp` with `list_posts`,
+  token), token creation and revocation on `/guide/use-this-data`, and `maf-mcp` with `list_posts`,
   `get_thread` and `search`.
 - **Templates**: plain Jinja pages in `maf/templates/` using the mockups' structure and class
   names, with `mockups/style.css` and the mockup JS in `maf/static/`.
@@ -89,7 +89,7 @@ real `maf-mcp` server in-process.
   `token`, and stores `sha256(token)`.
 - **The pass is the session.** There is no separate session record: the cookie holds the
   pass id, signed with `SESSION_SECRET`.
-- **Codes are consumed at blind-sign, not at redeem.** The `/redeem` step needs no code.
+- **Codes are consumed at blind-sign, not at redeem.** The `/sign-in/redeem` step needs no code.
 - **Search results show the matching item.** A comment hit shows the comment's text (linking
   to it in its thread) with the thread's title, not the post's title.
 - **Day boundaries are UTC.** Posts group by UTC day, matching how `created_at` is stored.
@@ -103,7 +103,7 @@ real `maf-mcp` server in-process.
 
 ## Open questions for the maintainer
 
-1. **Token redemption and a second code entry.** `/redeem` needs no code, but the browser
+1. **Token redemption and a second code entry.** `/sign-in/redeem` needs no code, but the browser
    blind-signs right after the code is checked, so a user who reloads loses it. Is re-entering
    the code (as now) acceptable, or should the code stay valid for redemption too?
 2. **Source Code link.** The footer points at `https://github.com/` as a placeholder; give me
@@ -113,4 +113,4 @@ real `maf-mcp` server in-process.
 4. **Personal pins on search and tag pages.** The SPEC only describes pins on the 4-day list;
    should `/search` and `/?tag=` rows get pin buttons too?
 5. **View counts on the API.** `GET /api/v1/posts` does not count as a view; only opening
-   `/item/<id>` on the site does. Keep that?
+   `/thread/<id>` on the site does. Keep that?

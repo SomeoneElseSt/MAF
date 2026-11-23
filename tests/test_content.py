@@ -119,7 +119,7 @@ def test_comment_count_excludes_private(app, pass_id):
 def test_view_counts_once_per_pass_per_day(client, signed_in, app, pass_id):
     post = make_post(app, pass_id)
     for _ in range(3):
-        client.get(f"/item/{post.id}")
+        client.get(f"/thread/{post.id}")
     assert store.get_item(app.conn, post.id).views == 1
 
 
@@ -136,7 +136,7 @@ def test_signed_out_visitors_cannot_open_threads_or_add_views(starlette_app, app
     from starlette.testclient import TestClient
 
     post = make_post(app, pass_id, title="Students only")
-    response = TestClient(starlette_app).get(f"/item/{post.id}", follow_redirects=False)
+    response = TestClient(starlette_app).get(f"/thread/{post.id}", follow_redirects=False)
     assert response.status_code == 303
     assert "Students only" not in response.text
     assert store.get_item(app.conn, post.id).views == 0
@@ -186,7 +186,7 @@ def test_pinned_posts_show_above_today_only_on_newest_latest(client, app, pass_i
     body = client.get("/").text
     main = body.split("<main")[1].split("</main>")[0]
     assert main.index(">Pinned<") < main.index(">Today<")
-    assert main.count('class="title" href="/item/') == main.count(">Welcome post<") + main.count(">A normal post<")
+    assert main.count('class="title" href="/thread/') == main.count(">Welcome post<") + main.count(">A normal post<")
     assert ">Pinned<" not in client.get("/?sort=old").text
     assert ">Pinned<" not in client.get("/?sort=views").text
 

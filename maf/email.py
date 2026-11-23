@@ -49,7 +49,7 @@ def code_email(to: str, code: str) -> Email:
 def moderation_email(to: str, kind: str, item_id: str, count: int, base_url: str) -> Email:
     label = "Unhide" if kind == "unhide" else "Deletion"
     subject = f"{label} requested for post #{item_id}"
-    link = f"{base_url}/item/{item_id}"
+    link = f"{base_url}/thread/{item_id}"
     return Email(
         to=to,
         subject=subject,

@@ -16,15 +16,15 @@ async def react(request: Request) -> Response:
     values = await form_values(request, "item_id", "emoji")
     item = store.get_item(page.conn, values["item_id"])
     if page.pass_id is None or item is None:
-        return redirect("/login")
+        return redirect("/sign-in")
     if values["emoji"] not in PICKER_EMOJI:
-        return redirect(f"/item/{item.id}")
+        return redirect(f"/thread/{item.id}")
     if item.private_to and page.pass_id not in (item.pass_id, item.private_to):
-        return redirect(f"/item/{item.id}")
+        return redirect(f"/thread/{item.id}")
     if not page.memory.allow(f"react:{page.pass_id}", REACTIONS_PER_MINUTE):
-        return redirect(f"/item/{item.id}?notice=Slow+down+a+little.+Try+again+in+a+minute.")
+        return redirect(f"/thread/{item.id}?notice=Slow+down+a+little.+Try+again+in+a+minute.")
     store.toggle_reaction(page.conn, page.pass_id, item.id, values["emoji"])
-    return redirect(f"/item/{item.thread_id}#{item.id}")
+    return redirect(f"/thread/{item.thread_id}#{item.id}")
 
 
 routes = [Route("/react", react, methods=["POST"])]

@@ -36,7 +36,7 @@ def test_hidden_posts_leave_the_home_page_but_stay_reachable(signed_in, app, pas
     post = make_post(app, pass_id, title="Hidden title")
     flag_by(app, post.id, 5)
     assert "Hidden title" not in client.get("/").text
-    page = client.get(f"/item/{post.id}")
+    page = client.get(f"/thread/{post.id}")
     assert page.status_code == 200
     assert "Five people flagged this post" in page.text
 
@@ -74,7 +74,7 @@ def test_request_email_names_no_one(client, signed_in, app, settings):
     from maf.email import moderation_email
 
     email = moderation_email(settings.maintainer_email, "nuke", "abc123", 3, "https://maforum.net")
-    assert email.body == "Deletion requested for post #abc123 (3 requests so far).\nhttps://maforum.net/item/abc123\n"
+    assert email.body == "Deletion requested for post #abc123 (3 requests so far).\nhttps://maforum.net/thread/abc123\n"
 
 
 # -- CLI -----------------------------------------------------------------
@@ -180,11 +180,11 @@ def test_clicking_flag_again_takes_it_back(signed_in, app, pass_id):
     post = make_post(app, store.create_pass(app.conn))
     signed_in.post("/flag", data={"item_id": post.id})
     assert store.get_item(app.conn, post.id).flags == 1
-    page = signed_in.get(f"/item/{post.id}").text
+    page = signed_in.get(f"/thread/{post.id}").text
     assert 'class="meta-action flagged"' in page and ">Flagged<" in page
     signed_in.post("/flag", data={"item_id": post.id})
     assert store.get_item(app.conn, post.id).flags == 0
-    assert ">Flag Post<" in signed_in.get(f"/item/{post.id}").text
+    assert ">Flag Post<" in signed_in.get(f"/thread/{post.id}").text
 
 
 def test_a_post_hidden_by_flags_returns_when_one_is_taken_back(app, pass_id):

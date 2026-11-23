@@ -12,7 +12,7 @@
 
 {% if error %}<div class="notice" id="code-error" role="alert"><p>{{ error }}</p></div>{% endif %}
 
-<form action="/login/code" method="post" novalidate>
+<form action="/sign-in/code" method="post" novalidate>
   <input type="hidden" name="email" value="{{ email|default('') }}">
   <div class="field">
     <label for="code">Code</label>
@@ -20,15 +20,15 @@
   </div>
   <div class="row">
     <button class="button" type="submit">Continue</button>
-    <a class="note" href="/login">Go Back</a>
+    <a class="note" href="/sign-in">Go Back</a>
     {% if email %}
     <span class="dot" aria-hidden="true">·</span>
-    {# Resend posts the same address back to /login; it unlocks when the cooldown runs out. #}
+    {# Resend posts the same address back to /sign-in; it unlocks when the cooldown runs out. #}
     <button class="note resend" type="submit" form="resend-form" data-seconds="{{ cooldown_seconds|default(0) }}">Send a new code</button>
     {% endif %}
   </div>
 </form>
-{% if email %}<form id="resend-form" action="/login" method="post" hidden><input type="hidden" name="email" value="{{ email }}"></form>{% endif %}
+{% if email %}<form id="resend-form" action="/sign-in" method="post" hidden><input type="hidden" name="email" value="{{ email }}"></form>{% endif %}
 {% endblock %}
 
 {% block scripts %}{% if email %}<script src="{{ static('countdown.js') }}"></script>{% endif %}{% endblock %}

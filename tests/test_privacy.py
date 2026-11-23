@@ -28,7 +28,7 @@ def _dump_database(path: Path) -> str:
 
 def test_no_email_in_the_database(client, app, settings):
     sign_in(client, app, EMAIL)
-    client.post("/redeem", data=sign_in(client, app, EMAIL), follow_redirects=False)
+    client.post("/sign-in/redeem", data=sign_in(client, app, EMAIL), follow_redirects=False)
     dump = _dump_database(settings.database_path)
     for form in _email_forms():
         assert form not in dump, f"{form!r} leaked into the database"
@@ -37,7 +37,7 @@ def test_no_email_in_the_database(client, app, settings):
 def test_no_email_in_logs(client, app, caplog):
     caplog.set_level(logging.DEBUG)
     sign_in(client, app, EMAIL)
-    client.post("/redeem", data=sign_in(client, app, EMAIL), follow_redirects=False)
+    client.post("/sign-in/redeem", data=sign_in(client, app, EMAIL), follow_redirects=False)
     logged = "\n".join(record.getMessage() for record in caplog.records) + caplog.text
     for form in _email_forms():
         assert form not in logged, f"{form!r} leaked into logs"
@@ -62,7 +62,7 @@ def test_no_ip_columns_anywhere(app):
 
 def test_volatile_state_is_in_memory_only(client, app, settings):
     """Codes, cooldowns and views never reach the database."""
-    client.post("/login", data={"email": EMAIL})
+    client.post("/sign-in", data={"email": EMAIL})
     code = latest_code(app)
     dump = _dump_database(settings.database_path)
     assert code not in dump

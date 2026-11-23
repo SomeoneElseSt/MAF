@@ -80,7 +80,7 @@ async def serve(reader, writer) -> None:
         if name == "list_posts":
             result = api_get("/api/v1/posts", {"before": arguments.get("before"), "sort": arguments.get("sort")})
         elif name == "get_thread":
-            result = api_get(f"/api/v1/items/{arguments['id']}")
+            result = api_get(f"/api/v1/threads/{arguments['id']}")
         elif name == "search":
             result = api_get("/api/v1/search", {"q": arguments["query"], "page": arguments.get("page")})
         else:

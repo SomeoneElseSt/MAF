@@ -74,10 +74,10 @@ def latest_code(app) -> str:
 
 def sign_in(client, app, email="student@uni.minerva.edu") -> dict:
     """Walks the whole flow and returns the redeem payload for reuse."""
-    client.post("/login", data={"email": email})
+    client.post("/sign-in", data={"email": email})
     code = latest_code(app)
     browser = Browser(app.public_key)
-    signed = client.post("/login/blind-sign", data={"email": email, "code": code, "blinded": browser.blind()})
+    signed = client.post("/sign-in/blind-sign", data={"email": email, "code": code, "blinded": browser.blind()})
     assert signed.status_code == 200, signed.text
     signature = browser.finalize(signed.json()["blind_sig"])
     return browser.redeem_data(signature)
@@ -87,23 +87,23 @@ def sign_in(client, app, email="student@uni.minerva.edu") -> dict:
 
 
 def test_other_domains_are_rejected(client, app):
-    response = client.post("/login", data={"email": "someone@gmail.com"})
+    response = client.post("/sign-in", data={"email": "someone@gmail.com"})
     assert response.status_code == 400
     assert app.memory.codes == {}
 
 
 def test_minerva_email_is_accepted(client, app):
-    response = client.post("/login", data={"email": "Student@UNI.Minerva.edu"}, follow_redirects=False)
+    response = client.post("/sign-in", data={"email": "Student@UNI.Minerva.edu"}, follow_redirects=False)
     assert response.status_code == 200
     assert "student@uni.minerva.edu" in app.memory.codes
 
 
 def test_code_form_carries_the_email_like_a_browser_would(client, app):
     """The browser only sends what the code form holds, so the form itself must carry the address."""
-    page = client.post("/login", data={"email": "student@uni.minerva.edu"}).text
+    page = client.post("/sign-in", data={"email": "student@uni.minerva.edu"}).text
     assert 'name="email" value="student@uni.minerva.edu"' in page
     assert "student@uni.minerva.edu" not in str(client.cookies)
-    response = client.post("/login/code", data={"email": "student@uni.minerva.edu", "code": latest_code(app)})
+    response = client.post("/sign-in/code", data={"email": "student@uni.minerva.edu", "code": latest_code(app)})
     assert response.status_code == 200
 
 
@@ -111,8 +111,8 @@ def test_code_form_carries_the_email_like_a_browser_would(client, app):
 
 
 def test_cooldown_allows_one_code_per_thirty_seconds(client, app):
-    client.post("/login", data={"email": "student@uni.minerva.edu"})
-    second = client.post("/login", data={"email": "student@uni.minerva.edu"})
+    client.post("/sign-in", data={"email": "student@uni.minerva.edu"})
+    second = client.post("/sign-in", data={"email": "student@uni.minerva.edu"})
     assert second.status_code == 429
     import re
 
@@ -123,7 +123,7 @@ def test_cooldown_allows_one_code_per_thirty_seconds(client, app):
 
 
 def test_code_expires_after_ten_minutes(client, app, monkeypatch):
-    client.post("/login", data={"email": "student@uni.minerva.edu"})
+    client.post("/sign-in", data={"email": "student@uni.minerva.edu"})
     code = latest_code(app)
     later = __import__("maf.memory", fromlist=["now"]).now() + 11 * 60
     monkeypatch.setattr("maf.memory.now", lambda: later)
@@ -131,7 +131,7 @@ def test_code_expires_after_ten_minutes(client, app, monkeypatch):
 
 
 def test_wrong_code_is_rejected_and_correct_one_is_consumed(client, app):
-    client.post("/login", data={"email": "student@uni.minerva.edu"})
+    client.post("/sign-in", data={"email": "student@uni.minerva.edu"})
     code = latest_code(app)
     email = "student@uni.minerva.edu"
     assert not app.memory.check_code(email, "000000" if code != "000000" else "111111")
@@ -140,7 +140,7 @@ def test_wrong_code_is_rejected_and_correct_one_is_consumed(client, app):
 
 
 def test_codes_are_six_digits(client, app):
-    client.post("/login", data={"email": "student@uni.minerva.edu"})
+    client.post("/sign-in", data={"email": "student@uni.minerva.edu"})
     code = latest_code(app)
     assert len(code) == 6 and code.isdigit()
 
@@ -150,13 +150,13 @@ def test_codes_are_six_digits(client, app):
 
 def test_blind_sign_requires_a_valid_code(client, app):
     browser = Browser(app.public_key)
-    client.post("/login", data={"email": "student@uni.minerva.edu"})
-    response = client.post("/login/blind-sign", data={"email": "student@uni.minerva.edu", "code": "000000", "blinded": browser.blind()})
+    client.post("/sign-in", data={"email": "student@uni.minerva.edu"})
+    response = client.post("/sign-in/blind-sign", data={"email": "student@uni.minerva.edu", "code": "000000", "blinded": browser.blind()})
     assert response.status_code == 400
 
 
 def test_public_key_endpoint(client, app):
-    key = client.get("/login/blind").json()
+    key = client.get("/sign-in/key").json()
     assert key["hash"] == "SHA-384"
     assert key["saltLength"] == 48
     assert int(key["n"], 16) == app.public_key.n
@@ -167,7 +167,7 @@ def test_public_key_endpoint(client, app):
 
 def test_redeem_issues_a_pass(client, app):
     payload = sign_in(client, app)
-    response = client.post("/redeem", data=payload, follow_redirects=False)
+    response = client.post("/sign-in/redeem", data=payload, follow_redirects=False)
     assert response.status_code == 303
     assert "maf_pass" in client.cookies
     row = app.conn.execute("SELECT COUNT(*) AS n FROM pass").fetchone()
@@ -176,31 +176,31 @@ def test_redeem_issues_a_pass(client, app):
 
 def test_a_token_cannot_be_redeemed_twice(client, app):
     payload = sign_in(client, app)
-    assert client.post("/redeem", data=payload, follow_redirects=False).status_code == 303
+    assert client.post("/sign-in/redeem", data=payload, follow_redirects=False).status_code == 303
     client.cookies.clear()
-    again = client.post("/redeem", data=payload)
+    again = client.post("/sign-in/redeem", data=payload)
     assert again.status_code == 400
 
 
 def test_redeem_rejects_a_forged_signature(client, app):
     payload = sign_in(client, app)
     payload["signature"] = b64(secrets.token_bytes(app.public_key.modulus_len))
-    assert client.post("/redeem", data=payload).status_code == 400
+    assert client.post("/sign-in/redeem", data=payload).status_code == 400
 
 
 def test_redeem_rejects_a_signature_for_another_message(client, app):
     payload = sign_in(client, app)
     other = Browser(app.public_key)
-    client.post("/login", data={"email": "other@uni.minerva.edu"})
-    signed = client.post("/login/blind-sign", data={"email": "other@uni.minerva.edu", "code": latest_code(app), "blinded": other.blind()})
+    client.post("/sign-in", data={"email": "other@uni.minerva.edu"})
+    signed = client.post("/sign-in/blind-sign", data={"email": "other@uni.minerva.edu", "code": latest_code(app), "blinded": other.blind()})
     payload["signature"] = b64(other.finalize(signed.json()["blind_sig"]))
-    assert client.post("/redeem", data=payload).status_code == 400
+    assert client.post("/sign-in/redeem", data=payload).status_code == 400
 
 
 def test_redeem_rejects_a_token_not_matching_the_prepared_message(client, app):
     payload = sign_in(client, app)
     payload["token"] = b64(secrets.token_bytes(32))
-    assert client.post("/redeem", data=payload).status_code == 400
+    assert client.post("/sign-in/redeem", data=payload).status_code == 400
 
 
 def test_passes_have_no_created_at(app):
@@ -210,46 +210,46 @@ def test_passes_have_no_created_at(app):
 
 def test_code_page_then_blind_sign_works_like_a_browser(client, app):
     """The code page checks the code without using it up, so the blind-sign step right after still accepts it."""
-    client.post("/login", data={"email": "student@uni.minerva.edu"})
+    client.post("/sign-in", data={"email": "student@uni.minerva.edu"})
     code = latest_code(app)
-    assert client.post("/login/code", data={"email": "student@uni.minerva.edu", "code": code}).status_code == 200
+    assert client.post("/sign-in/code", data={"email": "student@uni.minerva.edu", "code": code}).status_code == 200
     browser = Browser(app.public_key)
-    signed = client.post("/login/blind-sign", data={"email": "student@uni.minerva.edu", "code": code, "blinded": browser.blind()})
+    signed = client.post("/sign-in/blind-sign", data={"email": "student@uni.minerva.edu", "code": code, "blinded": browser.blind()})
     assert signed.status_code == 200
     assert signed.json().get("blind_sig")
 
 
 def test_five_wrong_guesses_throw_the_code_away(client, app):
-    client.post("/login", data={"email": "student@uni.minerva.edu"})
+    client.post("/sign-in", data={"email": "student@uni.minerva.edu"})
     code = latest_code(app)
     wrong = "000000" if code != "000000" else "111111"
     for _ in range(5):
-        client.post("/login/code", data={"email": "student@uni.minerva.edu", "code": wrong})
-    response = client.post("/login/code", data={"email": "student@uni.minerva.edu", "code": code})
+        client.post("/sign-in/code", data={"email": "student@uni.minerva.edu", "code": wrong})
+    response = client.post("/sign-in/code", data={"email": "student@uni.minerva.edu", "code": code})
     assert response.status_code == 400
 
 
 def test_code_page_offers_a_new_code_once_the_cooldown_runs_out(client, app):
     import re
 
-    page = client.post("/login", data={"email": "student@uni.minerva.edu"}).text
+    page = client.post("/sign-in", data={"email": "student@uni.minerva.edu"}).text
     seconds = int(re.search(r'class="note resend"[^>]*data-seconds="(\d+)"', page).group(1))
     assert 20 <= seconds <= 30
     assert ">Send a new code</button>" in page and "disabled" not in page
-    assert 'id="resend-form" action="/login"' in page
+    assert 'id="resend-form" action="/sign-in"' in page
 
 
 def test_empty_fields_get_the_sites_own_message_not_the_browsers(client, app):
-    for page in (client.get("/login").text, client.post("/login", data={"email": "student@uni.minerva.edu"}).text):
+    for page in (client.get("/sign-in").text, client.post("/sign-in", data={"email": "student@uni.minerva.edu"}).text):
         assert "novalidate" in page and " required" not in page
-    empty_email = client.post("/login", data={"email": ""})
+    empty_email = client.post("/sign-in", data={"email": ""})
     assert empty_email.status_code == 400 and "Please enter a valid email." in empty_email.text
-    empty_code = client.post("/login/code", data={"email": "student@uni.minerva.edu", "code": ""})
+    empty_code = client.post("/sign-in/code", data={"email": "student@uni.minerva.edu", "code": ""})
     assert empty_code.status_code == 400 and "Enter the 6-digit code from the email." in empty_code.text
 
 
 def test_sign_in_pages_say_already_signed_in(signed_in):
-    pages = [("GET", "/login"), ("POST", "/login"), ("GET", "/login/code"), ("POST", "/login/code"), ("GET", "/redeem")]
+    pages = [("GET", "/sign-in"), ("POST", "/sign-in"), ("GET", "/sign-in/code"), ("POST", "/sign-in/code"), ("GET", "/sign-in/redeem")]
     for method, path in pages:
         response = signed_in.request(method, path, data={"email": "student@uni.minerva.edu", "code": "123456"})
         assert response.status_code == 200, path

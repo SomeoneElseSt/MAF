@@ -159,6 +159,6 @@ async def search(request: Request) -> Response:
 routes = [
     Route("/api/v1/posts", posts),
     Route("/api/v1/tags", tags),
-    Route("/api/v1/items/{id}", item),
+    Route("/api/v1/threads/{id}", item),
     Route("/api/v1/search", search),
 ]

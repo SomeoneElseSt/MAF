@@ -56,11 +56,11 @@ def test_every_route_shows_a_stranger_nothing(starlette_app, stranger, seeded):
         if path in PUBLIC_PATHS:
             continue
         assert response.status_code == 303, (method, path)
-        assert response.headers["location"] == "/login", (method, path)
+        assert response.headers["location"] == "/sign-in", (method, path)
 
 
 def test_public_pages_leak_nothing_and_have_no_search(stranger, seeded):
-    for path in ("/login", "/about"):
+    for path in ("/sign-in", "/about"):
         page = stranger.get(path)
         assert page.status_code == 200
         assert_no_secrets(page.text)
@@ -70,7 +70,7 @@ def test_public_pages_leak_nothing_and_have_no_search(stranger, seeded):
 
 def test_query_strings_and_unknown_paths_are_gated_too(stranger, seeded):
     for path in (f"/?q={SECRET_TITLE}", f"/?tag={SECRET_TAG}", "/search?q=Secret", "/no-such-page",
-                 f"/item/{seeded['comment'].id}", "/static/../item/x"):
+                 f"/thread/{seeded['comment'].id}", "/static/../thread/x"):
         response = stranger.get(path, follow_redirects=False)
         assert_no_secrets(response.text)
         assert response.status_code in (303, 404), path
@@ -99,7 +99,7 @@ def test_signed_in_students_still_see_everything(signed_in, seeded):
     home = signed_in.get("/").text
     assert SECRET_TITLE in home
     assert SECRET_TAG in home
-    thread = signed_in.get(f"/item/{seeded['post'].id}").text
+    thread = signed_in.get(f"/thread/{seeded['post'].id}").text
     assert SECRET_COMMENT in thread
 
 
@@ -108,7 +108,7 @@ def test_sign_out_shows_only_when_signed_in_and_signs_you_out(starlette_app, sig
 
     assert "Sign Out" in signed_in.get("/").text
     assert "Sign Out" not in TestClient(starlette_app).get("/about").text
-    response = signed_in.post("/logout", follow_redirects=False)
+    response = signed_in.post("/sign-out", follow_redirects=False)
     assert response.status_code == 303
     cleared = response.headers["set-cookie"]
     assert cleared.startswith(f"{COOKIE_NAME}=") and ("Max-Age=0" in cleared or "expires=Thu, 01 Jan 1970" in cleared)

@@ -1,4 +1,4 @@
-"""Sign in: email -> code -> blinded token -> /redeem -> pass.
+"""Sign in: email -> code -> blinded token -> /sign-in/redeem -> pass.
 
 The email is used to send a code and is then forgotten. The server never sees
 the token: the browser blinds it, the server signs the blinded value, and the
@@ -180,12 +180,12 @@ def _encode_base64url(value: bytes) -> str:
 
 
 routes = [
-    Route("/login", login_page),
-    Route("/login", login_submit, methods=["POST"]),
-    Route("/login/code", code_page),
-    Route("/login/code", code_submit, methods=["POST"]),
-    Route("/login/blind", key),
-    Route("/login/blind-sign", blind_sign, methods=["POST"]),
-    Route("/redeem", redeem_page),
-    Route("/redeem", redeem_submit, methods=["POST"]),
+    Route("/sign-in", login_page),
+    Route("/sign-in", login_submit, methods=["POST"]),
+    Route("/sign-in/code", code_page),
+    Route("/sign-in/code", code_submit, methods=["POST"]),
+    Route("/sign-in/key", key),
+    Route("/sign-in/blind-sign", blind_sign, methods=["POST"]),
+    Route("/sign-in/redeem", redeem_page),
+    Route("/sign-in/redeem", redeem_submit, methods=["POST"]),
 ]

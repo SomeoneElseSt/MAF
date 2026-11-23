@@ -33,7 +33,7 @@
       {% if viewer %}
       <a href="/submit"{% if path == "/submit" %} aria-current="page"{% endif %}>Submit</a>
       {% else %}
-      <a href="/login"{% if path == "/login" %} aria-current="page"{% endif %}>Sign in</a>
+      <a href="/sign-in"{% if path == "/sign-in" %} aria-current="page"{% endif %}>Sign in</a>
       {% endif %}
     </nav>
     {% if viewer %}
@@ -51,7 +51,7 @@
   </main>
 
   <footer class="foot">
-    <a href="/about">About</a>{% if viewer %}<a href="/guide">User Guide</a>{% endif %}<a href="https://github.com/SomeoneElseSt/MAF" target="_blank" rel="noopener">Source Code<span class="sr-only"> (opens in a new tab)</span></a>{% if viewer %}<form action="/logout" method="post" class="inline-form"><button type="submit">Sign Out</button></form>{% endif %}
+    <a href="/about">About</a>{% if viewer %}<a href="/guide">User Guide</a>{% endif %}<a href="https://github.com/SomeoneElseSt/MAF" target="_blank" rel="noopener">Source Code<span class="sr-only"> (opens in a new tab)</span></a>{% if viewer %}<form action="/sign-out" method="post" class="inline-form"><button type="submit">Sign Out</button></form>{% endif %}
   </footer>
 </div>
 <script src="{{ static('theme.js') }}"></script>
