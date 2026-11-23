@@ -6,3 +6,5 @@ uv.lock
 .DS_Store
 .env
 node_modules/
+*.key
+*.key
