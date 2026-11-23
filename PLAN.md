@@ -144,14 +144,14 @@ The community hides posts by flagging them. Anyone can then ask the maintainer t
 
 ## Infrastructure
 
-Everything runs on AWS using existing credits: one small server, a domain, and Amazon's email service. The only real out-of-pocket cost is about $14 a year for the domain.
+Everything runs on AWS using existing credits: one small server, a domain, and Amazon's email service. The only real out-of-pocket cost is about $15 a year for the domain.
 
 | Piece | Choice | Cost |
 | --- | --- | --- |
 | Server | One EC2 `t4g.small` | A few dollars a month, covered by credits |
 | App | Python with server-rendered HTML, SQLite database, managed with uv | Free |
-| Domain | Route 53, no "Minerva" in the name | About $14/yr; credits usually don't cover registration |
-| DNS | Route 53 hosted zone | $0.50/month |
+| Domain | `maforum.net`, registered at Namecheap with domain privacy on | $12.48 first year, about $15/yr after |
+| DNS | Namecheap's free DNS (server address, SES DKIM and DMARC records) | Free |
 | Email | AWS SES for login codes and moderation requests: verify the domain, then request production access (about a day) | About $0.10 per 1,000 emails |
 | HTTPS | Caddy | Free |
 

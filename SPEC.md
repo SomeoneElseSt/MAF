@@ -22,7 +22,7 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 - SQLite as a single file
 - Name filter: **Presidio** with a spaCy model, running in-process on the same server. Start with `en_core_web_md`, benchmark it, and drop to `sm` if it's too slow.
 - Blind signatures (RFC 9474): `blindrsa-ts` in the browser, vendored as a single file rather than loaded from a CDN, plus a Python RFC 9474 library on the server. Confirm the two interoperate before building on them.
-- AWS: one EC2 `t4g.small`, Route 53 for the domain and DNS, SES for email
+- Domain: `maforum.net` (Namecheap, free DNS). AWS: one EC2 `t4g.small`, SES for email, sending via the instance's IAM role
 - Caddy for HTTPS, with **access logs off**
 
 ## Login flow (sign-up and login are the same thing)
@@ -108,7 +108,7 @@ Votes, uploads/images, DMs, notifications, karma, profiles, editing, mobile app.
 
 ## Deploy
 
-1. Register a domain on Route 53 (no "Minerva" in the name).
-2. SES: verify the domain (DKIM records), then request production access.
+1. Domain `maforum.net` is registered (Namecheap). Add an A record pointing to the EC2 instance.
+2. SES: domain verified with Easy DKIM (3 CNAMEs in Namecheap), DMARC TXT `_dmarc` = `v=DMARC1; p=none;`, production access requested.
 3. EC2 `t4g.small` with Caddy + a systemd service running the app.
 4. Secrets in env: `LABEL_SECRET`, the RSA signing key, SES credentials, `MAINTAINER_EMAIL`.
