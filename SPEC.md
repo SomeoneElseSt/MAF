@@ -101,7 +101,7 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 
 No admin roles, codes or buttons. Moderation is community flags plus the maintainer using the `maf` CLI over SSH.
 
-- **Flag:** any pass, once per item. At 5 flags from distinct passes the item is `hidden`: excluded from `/`, from search and from comment trees, unless `restored = 1`.
+- **Flag:** any pass, once per item. Clicking again unflags (the button shows a blood-red "Flagged" with the note "5 flags hide a post. Urgent? Email hello@maforum.net."). Unflagging below 5 unhides the item. At 5 flags from distinct passes the item is `hidden`: excluded from `/`, from search and from comment trees, unless `restored = 1`.
 - **Hidden items stay reachable** at `/thread/<id>`, faded, with a banner, "Five people flagged this post, so it's been unlisted. You can still read it here and ask for it to come back or be removed permanently.", and two buttons: **Request unhide** and **Request deletion**.
 - **Requests:** once per pass per item per kind. Stored as `moderation_request(pass_id, item_id, kind)` for deduplication only. On each new request, immediately send an SES email to `MAINTAINER_EMAIL`, for example `Unhide requested for post #123 (4 requests so far) <link>`. No pass or identity goes in the email.
 - **`maf` CLI** (maintainer, run on the server over SSH: `ssh maf-server maf <command>`). It's a console script in the same uv project (`[project.scripts] maf = "maf.cli:main"`), built with stdlib `argparse` and `sqlite3` on the same database file, with no extra dependencies. It reuses the app's own data functions so the logic isn't written twice.
@@ -122,7 +122,7 @@ No admin roles, codes or buttons. Moderation is community flags plus the maintai
 
 ## Developer access (read-only API + MCP)
 
-- **Tokens:** on `/guide/use-this-data`, a signed-in pass can create a read token: 32 random bytes, base64url, shown once. Store `api_token(token_hash PK, pass_id)` with `sha256(token)`. The page lists the pass's tokens by their last 4 characters, each with a Revoke button. No creation time is stored.
+- **Tokens:** on `/guide/use-this-data`, a signed-in pass can create a read token: 32 random bytes, base64url, shown once. A pass can hold at most 5; at 5 the create button is greyed out. Store `api_token(token_hash PK, pass_id)` with `sha256(token)`. The page lists the pass's tokens by their last 4 characters, each with a Revoke button. No creation time is stored.
 - **Auth:** `Authorization: Bearer <token>`. Tokens are read-only and can't post, comment, flag or request.
 - **Rate limit:** 60 requests per minute per token, kept in memory. Over the limit returns `429` with `Retry-After`.
 - **Endpoints** (JSON; hidden items excluded, same as the site):
@@ -134,8 +134,8 @@ No admin roles, codes or buttons. Moderation is community flags plus the maintai
   | `GET /api/v1/threads/<id>` | A post with its comment tree; each item carries its per-thread `author_id` and an `op` flag |
   | `GET /api/v1/search?q=...&page=N` | Matching posts and comments, 30 per page |
 
-- **MCP server:** a small stdio server in the same repo (`maf/mcp.py`, console script `maf-mcp`) with three tools, `list_posts(before?, sort?)`, `get_thread(id)` and `search(query, page?)`, which wrap the API. It's configured with `MAF_TOKEN` and `MAF_URL`. Use the official MCP Python SDK; it's the only extra dependency and runs on the user's machine, not the server.
-- **`/guide/use-this-data` page:** how to create a token, an MCP config snippet for Claude Code / Cursor, `curl` examples for each endpoint, and a note that anything read this way leaves the students-only site.
+- **MCP server:** a small stdio server in the same repo (`maf/mcp.py`, console script `maf-mcp`) with three tools, `list_posts(before?, sort?)`, `get_thread(id)` and `search(query, page?)`, which wrap the API. It's configured with `MAF_TOKEN` and `MAF_URL`. Use the official MCP Python SDK; it's the only extra dependency and runs on the user's machine, not the server. The file declares its dependency inline (PEP 723), so `uv run <raw GitHub URL of maf/mcp.py>` runs it without cloning.
+- **`/guide/use-this-data` page:** how to create a token, then `curl` examples for each endpoint, a script example, and an MCP config snippet, in that order. Code blocks wrap and have a Copy button.
 
 ## Data model (sketch)
 

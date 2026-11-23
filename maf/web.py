@@ -6,14 +6,13 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlencode
 
-from starlette.background import BackgroundTask
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, RedirectResponse, Response
 from starlette.templating import Jinja2Templates
 
 from . import display, housetags, store
-from .emoji import PICKER_EMOJI
 from .app import App
+from .emoji import PICKER_EMOJI
 from .util import escape
 
 SORT_KEYS = {"new": "Newest", "old": "Oldest", "views": "Most viewed"}

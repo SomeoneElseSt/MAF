@@ -8,12 +8,10 @@ from maf.housetags import (
     EXAMPLE_POST,
     HOUSE_TAGS,
     etiquette,
-    house_tag,
     is_hot,
     reply_placeholder,
     submit_placeholder,
 )
-
 
 # -- house tags ----------------------------------------------------------
 

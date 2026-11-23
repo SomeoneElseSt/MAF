@@ -138,7 +138,7 @@ Inside a thread you can reply so only one other person sees it, for example to a
 | Submit | New post form |
 | About | What MAF is and why it exists |
 | User Guide | Anonymity, per-thread IDs, the rule, flags; links to Use this data |
-| Use this data | How to read the forum from an AI agent (MCP), the command line or curl |
+| Use this data | How to read the forum from a terminal, curl, or MCP |
 | Sign in | Email and code |
 
 ## Reactions
@@ -157,7 +157,7 @@ Posts that seem to name a person get a warning before they're saved, and the pos
 - **Rule:** no naming students or staff. It's shown on the submit page and in the User Guide.
 - **Tool:** Microsoft Presidio, which detects people's names in text. It runs on the same server and only when someone submits, so reading is unaffected. Expect tens of milliseconds per submission, to be measured during the build.
 - **On a match** the poster sees: "This looks like it names someone. MAF doesn't allow naming students or staff." with two buttons, **Edit post** and **Post anyway**.
-- **No allowlist:** public figures like Ben Nelson, Kant or Elon Musk go through with one extra click. Nothing about Minerva people is stored.
+- **No allowlist:** nothing about Minerva people is stored.
 - **Backstop:** if someone clicks Post anyway on a classmate's name, 5 flags hide it.
 - **Limits:** it misses some lowercase names and can be fooled on purpose. It discourages naming people; it can't fully stop it.
 
@@ -196,9 +196,9 @@ MAF should pass everything on the [A11Y Project checklist](https://www.a11yproje
 
 ## Use this data (developer access)
 
-Students can read MAF from their own tools: an AI agent through MCP, a terminal, or plain curl. The User Guide links to a "Use this data" page that explains how.
+Students can read MAF from their own tools: a terminal, curl, or MCP. The User Guide links to a "Use this data" page that explains how.
 
-- **Read-only.** Agents and scripts can list, read and search posts. Posting stays in the browser, where the name warning and the rule are shown.
+- **Read-only.** Agents and scripts can list, read and search posts. Posting stays in the browser.
 - **Students only, like the site.** Signed in on the Use this data page, you click **Create token** and get a read token, shown once. It belongs to your anonymous pass, so it reveals nothing about who you are. You can revoke it on the same page.
 - **What it returns** is the same as the site: posts, comments and per-thread IDs. Hidden posts are left out, and nuked posts are gone.
 - **Three ways to use it**, all documented on the page with copy-paste examples:

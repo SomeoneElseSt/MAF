@@ -4,7 +4,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.routing import Route
 
-from . import reactions, store
+from . import store
 from .housetags import etiquette, is_hot, reply_placeholder
 from .web import error_page, page_of, render
 

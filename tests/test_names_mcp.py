@@ -3,7 +3,6 @@
 The name-filter tests need the spaCy model; they are skipped without it.
 """
 
-import json
 
 import pytest
 
@@ -92,7 +91,6 @@ def test_comment_with_a_name_is_refused(filtering_app):
 @pytest.fixture
 def api_site(tmp_path, monkeypatch):
     """A live MAF app plus a token, for the MCP server to call over HTTP."""
-    import uvicorn
     from starlette.testclient import TestClient
 
     from maf import store
@@ -119,14 +117,11 @@ def run_mcp(monkeypatch, app, token, calls):
     HTTP calls go to the in-process app through a patched urlopen.
     """
     import asyncio
-    import os
 
-    import anyio
     from mcp import ClientSession
     from mcp.shared.memory import create_client_server_memory_streams
 
     import maf.mcp as mcp_module
-    from starlette.testclient import TestClient
 
     client = app.http
 

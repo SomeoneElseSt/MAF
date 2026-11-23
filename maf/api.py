@@ -5,16 +5,14 @@ Hidden items are excluded exactly as on the site, and private replies never
 appear.
 """
 
-import json
 from datetime import timedelta
-from urllib.parse import parse_qs
 
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 from starlette.routing import Route
 
 from . import store
-from .display import four_day_window, host
+from .display import four_day_window
 from .util import parse_date, sha256_hex, today
 
 REQUESTS_PER_MINUTE = 60

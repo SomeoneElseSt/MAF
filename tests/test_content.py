@@ -8,7 +8,6 @@ from maf import store
 from maf.util import iso, utc_now
 
 
-
 @pytest.fixture
 def client(starlette_app, app):
     """These pages are students-only, so the client here is signed in as a reader."""

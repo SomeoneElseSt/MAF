@@ -124,7 +124,8 @@ async def blind_sign(request: Request) -> Response:
     blinded = _decode_base64url(values["blinded"])
     if blinded is None:
         return Response('{"error":"bad blinded token"}', status_code=400, media_type="application/json")
-    from .blind import BlindError, blind_sign as sign
+    from .blind import BlindError
+    from .blind import blind_sign as sign
 
     try:
         signature = sign(page.app.signing_key, blinded)

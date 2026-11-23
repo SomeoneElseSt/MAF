@@ -9,9 +9,7 @@ import base64
 import hashlib
 import secrets
 
-from maf import store
-from maf.blind import PrivateKey, PublicKey, verify
-from maf.util import sha256_hex
+from maf.blind import PublicKey, verify
 
 MODULUS_BITS = 2048
 
@@ -268,6 +266,7 @@ def test_dev_login_code_only_works_locally():
 
 def test_dev_login_code_can_never_be_on_in_production():
     import pytest
+
     from maf.settings import ConfigError, load_settings
 
     with pytest.raises(ConfigError):
@@ -276,6 +275,7 @@ def test_dev_login_code_can_never_be_on_in_production():
 
 def test_production_refuses_the_public_dev_secrets():
     import pytest
+
     from maf.settings import ConfigError, load_settings
 
     with pytest.raises(ConfigError):
