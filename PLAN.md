@@ -97,6 +97,7 @@ It looks like Hacker News but has no votes: text or link posts, nested comments,
 - **No IDs in the list.** IDs only appear inside threads, since a random name adds nothing on the front page.
 - **View counts, kept anonymous:** each post shows how many times it's been opened. A pass counts once per post per 24 hours. Which pass opened which post is kept in memory only and wiped daily, so only the total is ever saved and no one's reading history exists.
 - **Pinned posts.** The maintainer can pin a post (for example a welcome post) with `maf pin`. Pinned posts sit in a "Pinned" group above Today, only under Newest and only on the latest page. Under Oldest and Most viewed they appear in their normal day.
+- **Your own pins.** Hovering a post in the list shows a small pin at the right of the row (always visible on phones). Clicking it moves the post into Pinned, under the maintainer's pins, and the pin stays filled so you can click it again to unpin. Pins are saved in your browser only: MAF's server never learns what you pinned, and they don't follow you to another device. They show in the same place as the maintainer's pins, under Newest on the latest page.
 
 ## Hashtags
 
@@ -107,14 +108,20 @@ Posts can carry up to 3 hashtags, which make it easy to browse one topic.
 - **Browsing:** a # button inside the search bar opens a list of every tag with its post count, most used first. Picking one, or clicking a tag on a post, shows only posts with that tag, and the search bar shows "#tag".
 - **Templates:** once a post has any tag, the Text box suggests a short dash-line outline (what it's about, your claim or question, what kind of conversation you'd like). With no tags it shows an example post instead.
 
-### #hottakes
+### Tags with templates
 
-`#hottakes` is the one tag with house rules, for posts that argue an unpopular opinion.
+Five tags come with their own guidance. Each one sets the outline in the submit Text box and the "Write a reply" placeholder in its threads; the top "Write a comment" box stays plain. Other tags are free-form topics with the default outline. More templated tags can be added later if they turn out to be needed.
 
-- **In lists** the row sits on a faint warm (ember) tint, and the tag itself is ember.
-- **In the thread** an etiquette banner sits at the top in the same tint: "#hottakes etiquette: argue with the take, not the person. Push back as hard as you like, assume the poster means it in good faith, and say what would change your mind."
-- **Submitting:** the Text box suggests the hot-take outline: your take in one sentence, why you think it, the strongest argument against it, and what could change your mind.
-- **Replying:** "Write a reply" boxes in the thread suggest: which part of the take you're responding to, your reason or an experience that backs it up, and what would change your mind. The top "Write a comment" box stays plain.
+| Tag | For | Submit outline | Reply prompt | Thread banner |
+| --- | --- | --- | --- | --- |
+| `#hottakes` | Arguing an unpopular opinion | Your take in one sentence; why you think it; the strongest argument against it; what could change your mind | Which part of the take you're responding to; your reason or experience; what would change your mind | "#hottakes etiquette: argue with the take, not the person. Push back as hard as you like, assume the poster means it in good faith, and say what would change your mind." |
+| `#help` | Practical help | What you need help with; what you've already tried; your situation (city, deadline, anything that narrows it down); what kind of answer would help most | What worked for you, or who to ask; how sure you are and how recent your experience is | None |
+| `#wondering` | Open, low-stakes questions | Your question; why you're curious; your best guess so far | Your answer or a guess; what it's based on | None |
+| `#confession` | Something you did or feel | What happened or what you're feeling; how you feel about it now; what you'd like back (to be heard, advice, or company). The outline ends: "Leave out details that could identify you or anyone else." | Respond to the person, not the verdict; share something similar if you have it | "#confession etiquette: respond to the person, not the verdict. Be kind, and don't guess who wrote it or who it's about." |
+| `#minerva` | The institution: policies, housing, work-study, financial aid | What I experienced or noticed myself; what's public or widely known, with a link; what I don't know and the limits of my view; why it matters and who it affects; what I want us to discuss or change | Whether you saw this yourself or heard it secondhand; a link if it's public; what you'd do about it | "#minerva etiquette: say what you saw yourself and what you heard secondhand, link what's public, and don't name staff." |
+
+- **Only `#hottakes` is highlighted** in lists: the row sits on a faint warm (ember) tint and the tag is ember. Banners use the same tint.
+- **If a post has two templated tags,** the first one typed sets the templates and banner.
 
 ## Private replies
 
@@ -227,9 +234,9 @@ Everything runs on AWS using existing credits: one small server, a domain, and A
 | Hiding | 5 flags hide from the main page; Request unhide / nuke emails the maintainer | Students can act at 3am; no admin system to build or trust |
 | Uploads | Text and links only | Avoids hosting illegal images |
 | Developer access | Read-only API + MCP server with per-pass read tokens | Dev-friendly without opening posting to scripts or breaking the students-only gate |
-| Pinning | Maintainer only, via `maf pin`; shown under Newest only | Room for a welcome post without adding admins |
+| Pinning | Maintainer pins via `maf pin`; anyone pins for themselves in their browser; shown under Newest only | A welcome post without admins, and saved threads without the server knowing what anyone saved |
 | Hashtags | Up to 3 free-form tags per post, browsed from a # button in the search bar | Topic browsing without the maintainer curating categories |
-| #hottakes | A tinted row, etiquette banner and guided templates | Encourages unpopular opinions while steering replies at the take, not the person |
+| Templated tags | #hottakes, #help, #wondering, #confession, #minerva, each with submit and reply outlines; only #hottakes is highlighted | Shapes the kinds of post that most need it; start small and add more once real posts show the need |
 | Private replies | Checkbox per reply, visible to the two people only, tied to the pass | Lets people follow up one-to-one without leaving the thread or adding DMs |
 
 ## Sign-off

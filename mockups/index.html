@@ -24,8 +24,8 @@
   </div>
 
   <h2 class="day">Pinned</h2>
-  <ol class="list">
-    <li data-tags="meta">
+  <ol class="list pinned-list">
+    <li class="fixed" data-tags="meta">
       <a class="title" href="item.html">Welcome to MAF. Not sure where to start?</a>
       <div class="meta">Yesterday, <a href="item.html">12 comments</a>, 340 views <span class="dot">·</span> <a class="tag" href="?tag=meta">#meta</a></div>
     </li>
@@ -101,6 +101,8 @@
   </footer>
 </div>
 <script src="theme.js"></script>
+<p id="pin-status" class="sr-only" aria-live="polite"></p>
 <script src="tags.js"></script>
+<script src="pins.js"></script>
 </body>
 </html>

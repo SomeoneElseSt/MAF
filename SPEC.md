@@ -54,6 +54,7 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 - **Four-day pages:** `/` shows posts from the 4 days ending today, grouped under day headings (Today, Yesterday, then e.g. Thursday 19 November). `?before=YYYY-MM-DD` shows the 4 days ending the day before that date, with ‹ / › arrows beside the date range at the top (no bottom pager). `sort` applies within those 4 days. Switching sort resets the page: `new` and `views` open the latest 4 days, `old` opens the earliest 4 days that have posts (`?after=YYYY-MM-DD` for later pages in that mode), so the range label always matches the posts shown. Search results span all time, 30 per page.
 - **List rows show no IDs:** title, link host, then plain-language metadata ("2 hours ago, 14 comments, 61 views"), then ` · #tag1, #tag2` if the post has tags.
 - **Pinned:** posts with `pinned = 1` render in a "Pinned" group above Today, only when `sort=new` and on the latest page (no `before`). They aren't repeated in their day group there. Under `old` and `views` they appear in their normal day. Set with `maf pin` / `maf unpin`.
+- **Personal pins (client-side only):** each list row gets a pin button at its right, shown on hover or focus and always on touch screens (`@media (hover: none)`), `aria-pressed` with label "Pin to top" / "Unpin". Clicking saves the post to `localStorage["maf.pins"]` as `{id, title, host, tags}` (newest first) and moves the row into Pinned after the maintainer's pins; unpinning moves it back to its day. Pinned posts not on the current page render from the stored snapshot, linking to `/item/<id>`. Changes are announced in an `aria-live` region. Nothing about pins is sent to the server. Wrap storage access in try/catch; with storage unavailable the button does nothing and the page still works. See `mockups/pins.js`.
 - **Header:** brand, Submit, the search box (with the # button) and the Dark/Light text toggle to its right. **Footer on every page:** About, User Guide, Source Code, pinned to the bottom of short pages.
 - **Empty state:** when there are no posts at all, `/` keeps the sort row and shows "No posts yet." near the top.
 - **Pages:** `/` (four days of posts with search bar and sorter), `/item/<id>`, `/submit`, `/about`, `/guide` (User Guide), `/guide/data` (Use this data), `/login`
@@ -66,10 +67,12 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 - **Filter:** `/?tag=<tag>` lists posts with that tag across all time, 30 per page, with `sort` applied (like search). The search box shows `#<tag>`. Typing `#tag` into search does the same.
 - **# menu:** a button inside the search box opens a scrollable list of every tag on visible posts with its post count, most used first, then alphabetical. Up/down chevrons with fades show when there's more to scroll. Without JS the button links to `/tags`, a plain list of the same.
 - **Submit placeholder** for Text: no tags → an example post ("Every rotation I spend the first few weeks feeling lost…"). Any tags → the default dash outline. `#hottakes` among them → the hot-take outline. Wording is in `mockups/submit.html`.
-- **House tags:** tags with their own rules live in one config dict, e.g. `HOUSE_TAGS = {"hottakes": {"etiquette": ..., "submit_template": [...], "reply_placeholder": ...}}`, so new ones need no code changes. `#hottakes` is the only one for now:
-  - List rows get class `hot`: a faint ember wash (`--hot-wash`) and the tag in `--hot`.
-  - The thread page shows the etiquette banner (`.notice.etiquette`) above the post.
-  - Inline "Write a reply" boxes use the guided placeholder ("Write a reply. Ideally: - Which part of the take you're responding to - Your reason, or an experience that backs it up - What would change your mind"), with a taller box. The top "Write a comment" box stays plain.
+- **House tags:** tags with their own rules live in one config dict, so new ones need no code changes:
+  `HOUSE_TAGS = {"<tag>": {"submit_template": [...], "reply_placeholder": "...", "etiquette": "..." | None, "highlight": bool}}`.
+  v1 has five, worded exactly as in PLAN.md's "Tags with templates" table: `hottakes` (highlight, etiquette), `help`, `wondering`, `confession` (etiquette, and the submit template ends with "Leave out details that could identify you or anyone else."), `minerva` (etiquette).
+  - The submit Text placeholder uses the first house tag in the Hashtags field, else the default outline if any tag is present, else the example post.
+  - On the thread page, the post's first house tag picks the etiquette banner (`.notice.etiquette`) and the inline "Write a reply" placeholder (`Write a reply. Ideally:` then dash lines), with a taller box. The top "Write a comment" box stays plain.
+  - `highlight: true` (only `hottakes`) gives list rows class `hot`: a faint ember wash (`--hot-wash`) and the tag in `--hot`.
 
 ## Private replies
 

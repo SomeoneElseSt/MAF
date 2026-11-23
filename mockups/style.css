@@ -336,3 +336,22 @@ main { display: block; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
 }
+
+/* Screen-reader-only text, e.g. the "Pinned to the top" announcement. */
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Personal pins: a pin at the right of each row, shown on hover or keyboard focus, always shown once pinned. */
+.list li { position: relative; padding-right: 36px; }
+.list li.hot { padding-right: 48px; }
+.pin {
+  --pin-fill: none;
+  position: absolute; right: 0; top: 12px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+  padding: 0; border: none; border-radius: 4px; background: none; color: var(--meta); cursor: pointer;
+  opacity: 0; transition: opacity 0.12s ease;
+}
+.list li.hot .pin { right: 12px; }
+.list li:hover .pin, .pin:focus-visible, .list li.is-pinned .pin { opacity: 1; }
+.pin:hover { color: var(--ink); }
+.list li.is-pinned .pin { --pin-fill: currentColor; color: var(--soft); }
+/* Touch screens have no hover, so the pin is always there. */
+@media (hover: none) { .pin { opacity: 1; } }
