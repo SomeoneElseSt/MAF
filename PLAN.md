@@ -1,6 +1,6 @@
 # MAF — Design Plan
 
-*As of 2026-11-22 · status: awaiting sign-off*
+*As of 2026-11-22 · status: signed off*
 
 ## Summary
 
@@ -252,4 +252,4 @@ Everything runs on AWS using existing credits: one small server, a domain, and A
 
 Signing off means this plan is ready to hand to pi for implementation.
 
-- [ ] Maintainer approves the plan
+- [x] Maintainer approves the plan
