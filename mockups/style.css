@@ -17,7 +17,7 @@
 
 /* Dark mode mirrors light mode exactly: each color is 255 minus its light value per channel,
    so every tone keeps the same distance from the background in both themes.
-   Exceptions: --hot (the #hottake ember) is hand-tuned per theme, and --tint is lifted to #1c1c1c, because a 4% shade that reads as a box on white disappears on black. */
+   Exceptions: --hot (the #hottakes ember) is hand-tuned per theme, and --tint is lifted to #1c1c1c, because a 4% shade that reads as a box on white disappears on black. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --paper: #000000;
@@ -278,7 +278,7 @@ span.arrow { color: var(--line); }
 }
 .find input::-webkit-search-cancel-button:hover { background-color: var(--ink); }
 
-/* #hottake: the row sits on a faint ember wash and the tag takes the ember colour, the site's only accent. */
+/* #hottakes: the row sits on a faint ember wash and the tag takes the ember colour, the site's only accent. */
 .list li.hot { background: var(--hot-wash); border-radius: 4px; margin: 0 -12px; padding: 8px 12px; }
 .meta .hot-tag { color: var(--hot); }
 
@@ -306,3 +306,8 @@ span.arrow { color: var(--line); }
 .info-card p + p { margin-top: 8px; }
 .info-card .info-title { font: 600 15px var(--sans); color: var(--ink); }
 .info-card .info-fine { color: var(--meta); font-size: 13px; }
+
+/* Etiquette banner on posts with a tag that has house rules (e.g. #hottakes). Same shape as the notice box, in that tag's colour. */
+.notice.etiquette { background: var(--hot-wash); }
+.notice.etiquette .etiquette-tag { color: var(--hot); font-weight: 600; }
+.notice.etiquette p:last-child { margin-bottom: 0; }
