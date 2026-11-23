@@ -60,7 +60,7 @@ def test_every_route_shows_a_stranger_nothing(starlette_app, stranger, seeded):
 
 
 def test_public_pages_leak_nothing_and_have_no_search(stranger, seeded):
-    for path in ("/login", "/about", "/guide"):
+    for path in ("/login", "/about"):
         page = stranger.get(path)
         assert page.status_code == 200
         assert_no_secrets(page.text)
@@ -112,3 +112,10 @@ def test_sign_out_shows_only_when_signed_in_and_signs_you_out(starlette_app, sig
     assert response.status_code == 303
     cleared = response.headers["set-cookie"]
     assert cleared.startswith(f"{COOKIE_NAME}=") and ("Max-Age=0" in cleared or "expires=Thu, 01 Jan 1970" in cleared)
+
+
+def test_user_guide_is_students_only(starlette_app, signed_in):
+    stranger = TestClient(starlette_app)
+    assert stranger.get("/guide", follow_redirects=False).status_code == 303
+    assert 'href="/guide"' not in stranger.get("/about").text
+    assert 'href="/guide"' in signed_in.get("/").text
