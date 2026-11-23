@@ -93,9 +93,9 @@ def cmd_nuke(conn: sqlite3.Connection, args) -> int:
     if item is None:
         return _missing(args.id)
     replies = store.reply_count(conn, item.id)
-    label = f"post #{item.id}" if item.is_post else f"comment #{item.id}"
+    label = f"post {item.id}" if item.is_post else f"comment {item.id}"
     print(f"{label}: {item.title or (item.text or '')[:200]}")
-    answer = input(f"Delete post #{args.id} and its {replies} comments? [y/N] ")
+    answer = input(f"Delete post {args.id} and its {replies} comments? [y/N] ")
     if answer.strip().lower() != "y":
         print("Cancelled.")
         return 0
@@ -107,7 +107,7 @@ def cmd_nuke(conn: sqlite3.Connection, args) -> int:
 def cmd_pin(conn: sqlite3.Connection, args, pinned: bool) -> int:
     item = store.get_item(conn, args.id)
     if item is None or not item.is_post:
-        print(f"No post #{args.id}")
+        print(f"No post {args.id}")
         return 1
     store.set_pinned(conn, args.id, pinned)
     print(("Pinned" if pinned else "Unpinned") + f" #{args.id}.")

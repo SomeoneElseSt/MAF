@@ -66,7 +66,7 @@ def test_request_emails_the_maintainer(client, signed_in, app, settings, capsys)
     signed_in.post("/moderation-request", data={"item_id": post.id, "kind": "unhide"}, follow_redirects=False)
     out = capsys.readouterr().out
     assert settings.maintainer_email in out
-    assert f"post #{post.id}" in out
+    assert f"post {post.id}" in out
     assert "1 request" in out
 
 
@@ -74,7 +74,7 @@ def test_request_email_names_no_one(client, signed_in, app, settings):
     from maf.email import moderation_email
 
     email = moderation_email(settings.maintainer_email, "nuke", "abc123", 3, "https://maforum.net")
-    assert email.body == "Deletion requested for post #abc123 (3 requests so far).\nhttps://maforum.net/thread/abc123\n"
+    assert email.body == "Deletion requested for post abc123 (3 requests so far).\nhttps://maforum.net/thread/abc123\n"
 
 
 # -- CLI -----------------------------------------------------------------

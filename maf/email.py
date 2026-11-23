@@ -48,13 +48,13 @@ def code_email(to: str, code: str) -> Email:
 
 def moderation_email(to: str, kind: str, item_id: str, count: int, base_url: str) -> Email:
     label = "Unhide" if kind == "unhide" else "Deletion"
-    subject = f"{label} requested for post #{item_id}"
+    subject = f"{label} requested for post {item_id}"
     link = f"{base_url}/thread/{item_id}"
     return Email(
         to=to,
         subject=subject,
         body=(
-            f"{label} requested for post #{item_id} ({count} request{'s' if count != 1 else ''} so far).\n"
+            f"{label} requested for post {item_id} ({count} request{'s' if count != 1 else ''} so far).\n"
             f"{link}\n"
         ),
         html=_render("moderation.html", subject=subject, label=label, item_id=item_id, count=count, link=link),
