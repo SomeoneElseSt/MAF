@@ -80,11 +80,9 @@ CREATE VIRTUAL TABLE IF NOT EXISTS item_fts USING fts5(
     tokenize='unicode61 remove_diacritics 2'
 );
 
--- Rows are inserted by the app (not a trigger) because FTS5 with content=''
--- cannot read the source columns back; the app passes the same values it saves.
-CREATE TRIGGER IF NOT EXISTS item_fts_delete AFTER DELETE ON item BEGIN
-    DELETE FROM item_fts WHERE rowid = OLD.rowid;
-END;
+-- item_fts rows are inserted and deleted by the app (maf/store.py), not by
+-- triggers: a contentless FTS5 table can't read its source columns back, and
+-- deletes must be made with the special 'delete' command.
 """
 
 

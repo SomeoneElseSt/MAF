@@ -66,6 +66,8 @@ def test_comment_count_excludes_private(app, pass_id):
     post = make_post(app, pass_id)
     make_comment(app, pass_id, post)
     make_comment(app, pass_id, post, private_to="someone")
+    app.conn.execute("UPDATE item SET private_to = ? WHERE private_to = 'someone'", (pass_id,))
+    app.conn.commit()
     assert store.comment_count(app.conn, post.id) == 1
 
 
@@ -193,7 +195,7 @@ def test_search_ignores_hidden_posts(client, app, pass_id):
 
 def test_search_ignores_private_replies(client, app, pass_id):
     post = make_post(app, pass_id)
-    make_comment(app, pass_id, post, text="secretconfession", private_to="someone")
+    make_comment(app, pass_id, post, text="secretconfession", private_to=store.create_pass(app.conn))
     results = client.get("/search?q=secretconfession").text
     assert 'class="title"' not in results.split("<main")[1].split("</main>")[0]
 

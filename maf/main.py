@@ -10,7 +10,7 @@ from starlette.responses import Response
 from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 
-from . import auth, post, reading, store
+from . import auth, post, reactions, reading, store
 from .app import App, build_app
 from .display import day_label, four_day_window, range_label
 from .settings import Settings, load_settings
@@ -208,11 +208,13 @@ def create_app(settings: Settings | None = None) -> Starlette:
         Route("/guide", guide),
         Route("/guide/data", guide_data),
         Route("/logout", logout, methods=["POST"]),
-        Mount("/static", StaticFiles(directory=str(settings.static_dir)), name="static"),
         *reading.routes,
         *post.routes,
         *auth.routes,
         *api.routes,
+        *reactions.routes,
+        # Mounts last: a Mount matches any path under its prefix.
+        Mount("/static", StaticFiles(directory=str(settings.static_dir)), name="static"),
     ]
     starlette = Starlette(routes=routes, exception_handlers={404: not_found},
                           middleware=[Middleware(GZipMiddleware, minimum_size=500), Middleware(WithApp)])

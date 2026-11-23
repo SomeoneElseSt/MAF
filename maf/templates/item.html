@@ -9,7 +9,7 @@
     my_label        the viewer's label in this thread, or None when signed out
     tags_list       the post's tags
     hot             True for #hottakes threads
-    etiquette       (tag, text) banner tuple or None
+    etiquette_banner  (tag, text) banner tuple or None
     reply_placeholder  guided placeholder for inline reply boxes
     reactions       {item_id: {counts: {emoji: n}, mine: {emoji}}}
     flags           {item_id: already flagged by the viewer}
@@ -91,9 +91,9 @@
 </div>
 {% endif %}
 
-{% if etiquette %}
+{% if etiquette_banner %}
 <div class="notice etiquette">
-  <p><span class="etiquette-tag">#{{ etiquette[0] }}</span> etiquette: {{ etiquette[1] }}</p>
+  <p><span class="etiquette-tag">#{{ etiquette_banner[0] }}</span> etiquette: {{ etiquette_banner[1] }}</p>
 </div>
 {% endif %}
 

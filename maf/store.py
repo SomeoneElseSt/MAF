@@ -257,7 +257,7 @@ def thread_items(conn: sqlite3.Connection, thread_id: str, viewer_pass: str | No
     rows = conn.execute(
         "SELECT * FROM item WHERE thread_id = ? ORDER BY created_at, rowid", (thread_id,)
     ).fetchall()
-    items = [_row_to_item(r) for r in rows]
+    items = [_row_to_item(r, item_tags(conn, r["id"])) for r in rows]
     visible_ids = _visible_ids(items, viewer_pass)
     return [i for i in items if i.id in visible_ids]
 
@@ -536,11 +536,17 @@ def delete_item(conn: sqlite3.Connection, item_id: str) -> None:
     item = get_item(conn, item_id)
     if item is None:
         return
+    scope = "thread_id = ?" if item.is_post else "id = ?"
+    scope_value = item.thread_id if item.is_post else item_id
+    indexed = conn.execute(
+        f"SELECT rowid, title, text FROM item WHERE {scope} AND rowid IN (SELECT rowid FROM item_fts)",
+        (scope_value,),
+    ).fetchall()
     with conn:
-        if item.is_post:
-            conn.execute("DELETE FROM item WHERE thread_id = ?", (item.thread_id,))
-        else:
-            conn.execute("DELETE FROM item WHERE id = ?", (item_id,))
+        for row in indexed:
+            conn.execute("INSERT INTO item_fts (item_fts, rowid, title, text) VALUES ('delete', ?, ?, ?)",
+                         (row["rowid"], row["title"] or "", row["text"] or ""))
+        conn.execute(f"DELETE FROM item WHERE {scope}", (scope_value,))
         conn.execute("DELETE FROM item_tag WHERE item_id = ?", (item_id,))
 
 

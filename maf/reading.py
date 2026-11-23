@@ -38,7 +38,7 @@ def item(request: Request) -> Response:
         "my_label": label_of.get(page.pass_id or ""),
         "tags_list": tags,
         "hot": is_hot(tags),
-        "etiquette": etiquette(tags),
+        "etiquette_banner": etiquette(tags),
         "reply_placeholder": reply_placeholder(tags) if tags else "",
         "reactions": _reactions(page, items),
         "flags": _flags(page, items),

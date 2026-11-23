@@ -1,7 +1,5 @@
 """Shared fixtures: a throwaway app on a temp database, with a test client."""
 
-import base64
-import secrets
 from pathlib import Path
 
 import pytest
@@ -40,35 +38,30 @@ def client(starlette_app) -> TestClient:
 
 @pytest.fixture
 def pass_id(app) -> str:
-    """A pass already in the database."""
+    """A pass already in the database (the signed-in viewer)."""
     from maf import store
 
     return store.create_pass(app.conn)
 
 
 @pytest.fixture
-def signed_in(client: TestClient, app, pass_id: str) -> TestClient:
-    """A client whose cookie holds `pass_id`."""
-    response = app.sessions.set  # noqa: F841  (documents the mechanism)
-    from starlette.responses import Response
+def viewer(client: TestClient, app) -> dict:
+    """A fresh pass, signed in, returned as {"pass_id": ..., "client": ...}."""
+    from maf import store
 
+    pass_id = store.create_pass(app.conn)
+    return {"pass_id": pass_id, "client": sign_in_as(client, app, pass_id)}
+
+
+def sign_in_as(client: TestClient, app, pass_id: str) -> TestClient:
+    """Sets the session cookie to an existing pass."""
     from maf.sessions import COOKIE_NAME
 
-    raw = app.sessions._serializer.dumps(pass_id)
-    client.cookies.set(COOKIE_NAME, raw)
+    client.cookies.set(COOKIE_NAME, app.sessions._serializer.dumps(pass_id))
     return client
 
 
 @pytest.fixture
-def browser_blind(app):
-    """Runs the browser half of the blind-signature flow in Node.
-
-    Returns a helper that blinds a fresh token and, given the server's blind
-    signature, finalizes it, exactly as maf/static/login.js does.
-    """
-
-    def start() -> dict:
-        token = secrets.token_bytes(32)
-        return {"token": token}
-
-    return start
+def signed_in(client: TestClient, app, pass_id: str) -> TestClient:
+    """A client whose cookie holds `pass_id`."""
+    return sign_in_as(client, app, pass_id)
