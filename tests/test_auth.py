@@ -118,7 +118,7 @@ def test_cooldown_allows_one_code_per_thirty_seconds(client, app):
 
     seconds = int(re.search(r'data-seconds="(\d+)"', second.text).group(1))
     assert 20 <= seconds <= 30
-    assert second.text.count("A code was already sent to that address.") == 1
+    assert second.text.count("A code was already sent to this address.") == 1
 
 
 def test_code_expires_after_ten_minutes(client, app, monkeypatch):

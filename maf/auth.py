@@ -62,7 +62,7 @@ async def login_submit(request: Request) -> Response:
     code = page.memory.issue_code(email)
     if code is None:
         return render(page, "login.html", status_code=429,
-                      error="A code was already sent to that address.",
+                      error="A code was already sent to this address.",
                       cooldown_seconds=max(1, page.memory.cooldown_left(email)),
                       email=values["email"])
     page.app.emailer.send(code_email(email, code))

@@ -45,7 +45,7 @@
         return;
       }
       clearInterval(timer);
-      counter.closest("p").textContent = "A code was already sent to that address. You can send a new one now.";
+      counter.closest("p").textContent = "A code was already sent to this address. You can send a new one now.";
     }, TICK_MS);
   }
 
