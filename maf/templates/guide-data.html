@@ -32,25 +32,6 @@
   <p><a href="/sign-in">Sign in</a> to create a token.</p>
   {% endif %}
 
-  <h2>MCP server</h2>
-  <p>For Claude Code, Cursor or any MCP client. You need <a href="https://docs.astral.sh/uv/">uv</a> installed; add this to your client's MCP settings with your token:</p>
-  <pre><code>{
-  "mcpServers": {
-    "maf": {
-      "command": "uv",
-      "args": [
-        "run",
-        "https://raw.githubusercontent.com/SomeoneElseSt/MAF/main/maf/mcp.py"
-      ],
-      "env": {
-        "MAF_TOKEN": "&lt;your token&gt;",
-        "MAF_URL": "{{ base_url }}"
-      }
-    }
-  }
-}</code></pre>
-  <p>It offers three tools: <code>list_posts</code>, <code>get_thread</code> and <code>search</code>.</p>
-
   <h2>curl</h2>
   <p>Save your token once, then call any endpoint:</p>
   <pre><code>export MAF_TOKEN="&lt;your token&gt;"
@@ -84,6 +65,24 @@ request = urllib.request.Request(
 )
 print(urllib.request.urlopen(request).read().decode())</code></pre>
 
+  <h2>MCP server</h2>
+  <p>For Claude Code, Cursor or any MCP client. You need <a href="https://docs.astral.sh/uv/">uv</a> installed; add this to your client's MCP settings with your token:</p>
+  <pre><code>{
+  "mcpServers": {
+    "maf": {
+      "command": "uv",
+      "args": [
+        "run",
+        "https://raw.githubusercontent.com/SomeoneElseSt/MAF/main/maf/mcp.py"
+      ],
+      "env": {
+        "MAF_TOKEN": "&lt;your token&gt;",
+        "MAF_URL": "{{ base_url }}"
+      }
+    }
+  }
+}</code></pre>
+  <p>It offers three tools: <code>list_posts</code>, <code>get_thread</code> and <code>search</code>.</p>
 </div>
 {% endblock %}
 
