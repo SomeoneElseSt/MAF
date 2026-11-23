@@ -12,7 +12,7 @@ function buildReplyForm(recipient, insidePrivate) {
     <div class="row">
       <button class="button" type="submit">Reply</button>
       <button class="button plain cancel" type="button">Cancel</button>
-      <label class="private-toggle"><input type="checkbox"${insidePrivate ? " checked disabled" : ""}> Only visible to ${recipient}</label>
+      <span class="private-toggle"><label><input type="checkbox"${insidePrivate ? " checked disabled" : ""}> Only visible to ${recipient}</label><button class="info" type="button" aria-label="About private replies" aria-expanded="false">i</button></span>
     </div>`;
   form.querySelector(".cancel").addEventListener("click", () => form.remove());
   form.querySelector(".id").addEventListener("click", () => document.getElementById("id-dialog")?.showModal());

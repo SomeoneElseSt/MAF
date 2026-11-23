@@ -30,7 +30,7 @@
     <p class="help">Commenting as: <button class="id" type="button">calm-badger</button></p>
     <div class="row">
       <button class="button" type="submit">Comment</button>
-      <label class="private-toggle"><input type="checkbox"> Only visible to amber-fox (OP)</label>
+      <span class="private-toggle"><label><input type="checkbox"> Only visible to amber-fox (OP)</label><button class="info" type="button" aria-label="About private replies" aria-expanded="false">i</button></span>
     </div>
   </form>
 
@@ -51,12 +51,12 @@
               <div class="actions"><button class="reply-toggle" type="button">Reply</button><button type="button">Flag</button></div>
               <ol class="comments">
                 <li class="comment private">
-                  <div class="meta"><button class="id" type="button">calm-badger</button> (you), 30 minutes ago <span class="dot">·</span> <span class="private-note">Only visible to you and quiet-otter</span></div>
+                  <div class="meta"><button class="id" type="button">calm-badger</button> (you), 30 minutes ago <span class="dot">·</span> <span class="private-note">Private, only you and quiet-otter</span> <button class="info" type="button" aria-label="About private replies" aria-expanded="false">i</button></div>
                   <p>Which building was that? I think I'm being placed there next term and would love to know what it's actually like.</p>
                   <div class="actions"><button class="reply-toggle" type="button">Reply</button></div>
                   <ol class="comments">
                     <li class="comment private">
-                      <div class="meta"><button class="id" type="button">quiet-otter</button>, 22 minutes ago <span class="dot">·</span> <span class="private-note">Only visible to you and quiet-otter</span></div>
+                      <div class="meta"><button class="id" type="button">quiet-otter</button>, 22 minutes ago <span class="dot">·</span> <span class="private-note">Private, only you and quiet-otter</span> <button class="info" type="button" aria-label="About private replies" aria-expanded="false">i</button></div>
                       <p>The one by the canal. Rooms are fine, the kitchen is the problem. Happy to tell you more here.</p>
                       <div class="actions"><button class="reply-toggle" type="button">Reply</button></div>
                     </li>
@@ -85,12 +85,19 @@
   </footer>
 </div>
 
+<div id="private-info" class="info-card" role="dialog" aria-label="About private replies" hidden>
+  <p class="info-title">Private replies</p>
+  <p>Only you and the person you're replying to can see them, inside this thread. Everyone else sees the thread as if they weren't there.</p>
+  <p>They belong to the device you posted from, so you'll only see them on that device.</p>
+  <p class="info-fine">Other students can't see or flag them, but they're stored on the server like any other comment.</p>
+</div>
 <dialog id="id-dialog">
   <p>IDs are random and change in every thread, so nobody can follow you from one thread to the next. There are no profiles.</p>
   <button class="button" type="button">OK</button>
 </dialog>
 <script src="ids.js"></script>
 <script src="replies.js"></script>
+<script src="info.js"></script>
 <script src="theme.js"></script>
 </body>
 </html>

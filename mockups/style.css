@@ -282,9 +282,26 @@ span.arrow { color: var(--line); }
 .list li.hot { background: var(--hot-wash); border-radius: 4px; margin: 0 -12px; padding: 8px 12px; }
 .meta .hot-tag { color: var(--hot); }
 
-/* Private replies: visible only to the two IDs in the exchange. A neutral wash marks them, with a plain note in the details. */
-.comment.private { background: var(--tint); border-radius: 4px; margin: 10px 0 0 -12px; padding: 10px 12px 6px; }
-.comment.private .comment.private { margin-left: 14px; }
+/* Private replies: laid out like any comment; the details line says who can see it, with an (i) explaining more. */
 .private-note { color: var(--meta); }
-.private-toggle { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; font: 15px var(--sans); color: var(--soft); cursor: pointer; }
+.private-toggle { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; font: 15px var(--sans); color: var(--soft); }
+.private-toggle label { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
 .private-toggle input { accent-color: var(--ink); width: 15px; height: 15px; margin: 0; }
+
+.info {
+  display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; margin-left: 4px;
+  padding: 0; border: 1px solid var(--meta); border-radius: 50%; background: none; color: var(--meta);
+  font: italic 600 10px/1 var(--serif); vertical-align: 1px; cursor: pointer;
+}
+.info:hover, .info[aria-expanded="true"] { color: var(--ink); border-color: var(--ink); }
+
+.info-card {
+  position: absolute; z-index: 20; width: 300px; padding: 14px 16px;
+  background: var(--paper); border: 1px solid var(--line); border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  font: 14px/1.5 var(--sans); color: var(--soft);
+}
+.info-card p { margin: 0; }
+.info-card p + p { margin-top: 8px; }
+.info-card .info-title { font: 600 15px var(--sans); color: var(--ink); }
+.info-card .info-fine { color: var(--meta); font-size: 13px; }
