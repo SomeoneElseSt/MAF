@@ -12,7 +12,7 @@ import urllib.request
 
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
-from mcp.types import TextContent, Tool
+from mcp.types import CallToolResult, ListToolsResult, TextContent, Tool
 
 TOKEN_ENV = "MAF_TOKEN"
 URL_ENV = "MAF_URL"
@@ -38,12 +38,9 @@ def api_get(path: str, params: dict | None = None) -> dict:
         return {"error": f"could not reach MAF: {error.reason}"}
 
 
-async def run() -> None:
-    server = Server("maf")
-
-    @server.list_tools()
-    async def list_tools():
-        return [
+async def serve(reader, writer) -> None:
+    async def list_tools(context, params) -> ListToolsResult:
+        return ListToolsResult(tools=[
             Tool(
                 name="list_posts",
                 description="List MAF posts for a four-day window, newest first by default.",
@@ -76,10 +73,10 @@ async def run() -> None:
                     "required": ["query"],
                 },
             ),
-        ]
+        ])
 
-    @server.call_tool()
-    async def call_tool(name: str, arguments: dict):
+    async def call_tool(context, params) -> CallToolResult:
+        name, arguments = params.name, params.arguments or {}
         if name == "list_posts":
             result = api_get("/api/v1/posts", {"before": arguments.get("before"), "sort": arguments.get("sort")})
         elif name == "get_thread":
@@ -88,10 +85,15 @@ async def run() -> None:
             result = api_get("/api/v1/search", {"q": arguments["query"], "page": arguments.get("page")})
         else:
             result = {"error": f"unknown tool {name}"}
-        return [TextContent(type="text", text=json.dumps(result, indent=2, ensure_ascii=False))]
+        return CallToolResult(content=[TextContent(type="text", text=json.dumps(result, indent=2, ensure_ascii=False))])
 
+    server = Server("maf", on_list_tools=list_tools, on_call_tool=call_tool)
+    await server.run(reader, writer, server.create_initialization_options())
+
+
+async def run() -> None:
     async with stdio_server() as (read, write):
-        await server.run(read, write, server.create_initialization_options())
+        await serve(read, write)
 
 
 def main() -> None:
