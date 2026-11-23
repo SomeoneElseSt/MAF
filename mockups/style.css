@@ -98,6 +98,7 @@ a:hover { text-decoration: underline; text-decoration-thickness: 1px; text-under
 .meta { font: 15px/1.5 var(--sans); color: var(--meta); margin-top: 2px; }
 .meta a { color: var(--meta); }
 .meta .sep { margin: 0 4px; color: var(--meta); }
+.meta .dot { margin: 0 1px; color: var(--meta); }
 .meta-action { font: inherit; color: var(--meta); background: none; border: none; padding: 0; cursor: pointer; }
 .meta-action:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 
@@ -241,23 +242,33 @@ span.arrow { color: var(--line); }
   background: var(--paper); border: 1px solid var(--line); border-radius: 6px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
-/* Scrolls inside the panel with no scrollbar. Edges fade and a small arrow appears wherever there's more to scroll. */
+/* Scrolls inside the panel with no scrollbar. A strip with the date-range arrow glyph appears at whichever edge has more. */
 .tag-scroll { max-height: 260px; overflow-y: auto; padding: 4px 0; scrollbar-width: none; }
 .tag-scroll::-webkit-scrollbar { display: none; }
-.tag-menu.more-below .tag-scroll { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 40px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 40px), transparent); }
-.tag-menu.more-above .tag-scroll { -webkit-mask-image: linear-gradient(to top, #000 calc(100% - 40px), transparent); mask-image: linear-gradient(to top, #000 calc(100% - 40px), transparent); }
-.tag-menu.more-above.more-below .tag-scroll { -webkit-mask-image: linear-gradient(to bottom, transparent, #000 40px, #000 calc(100% - 40px), transparent); mask-image: linear-gradient(to bottom, transparent, #000 40px, #000 calc(100% - 40px), transparent); }
 .tag-menu .tag-more {
-  position: absolute; left: 50%; transform: translateX(-50%); z-index: 1; display: none;
-  width: 28px; height: 18px; padding: 0; border: none; background: none; color: var(--meta); cursor: pointer;
+  position: absolute; left: 0; right: 0; z-index: 2; display: none; height: 26px; padding: 0;
+  border: none; cursor: pointer; justify-content: center; align-items: center;
 }
-.tag-menu .tag-more:hover { color: var(--ink); background: none; }
-.tag-menu .tag-more.up { top: 2px; }
-.tag-menu .tag-more.down { bottom: 2px; }
-.tag-menu.more-above .tag-more.up, .tag-menu.more-below .tag-more.down { display: flex; align-items: center; justify-content: center; }
+.tag-menu .tag-more.up { top: 0; background: linear-gradient(to bottom, var(--paper) 55%, transparent); }
+.tag-menu .tag-more.down { bottom: 0; background: linear-gradient(to top, var(--paper) 55%, transparent); }
+.tag-menu .tag-more span { display: block; font: 20px/20px var(--sans); color: var(--soft); }
+.tag-menu .tag-more.up span { rotate: 90deg; }
+.tag-menu .tag-more.down span { rotate: -90deg; }
+.tag-menu .tag-more:hover { background-color: transparent; }
+.tag-menu .tag-more:hover span { color: var(--ink); }
+.tag-menu.more-above .tag-more.up, .tag-menu.more-below .tag-more.down { display: flex; }
 .tag-menu button {
   display: flex; justify-content: space-between; align-items: baseline; width: 100%; padding: 6px 12px;
   font: 15px var(--sans); color: var(--soft); background: none; border: none; text-align: left; cursor: pointer;
 }
 .tag-menu button:hover { color: var(--ink); background: var(--tint); }
 .tag-count { font-size: 12px; color: var(--meta); }
+
+/* Search box clear button: same grey as the # button instead of the browser's blue. */
+.find input::-webkit-search-cancel-button {
+  -webkit-appearance: none; appearance: none; width: 12px; height: 12px; margin-right: 6px; cursor: pointer;
+  background-color: var(--meta);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 2l8 8M10 2l-8 8' stroke='%23000' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 2l8 8M10 2l-8 8' stroke='%23000' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.find input::-webkit-search-cancel-button:hover { background-color: var(--ink); }
