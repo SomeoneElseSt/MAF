@@ -10,7 +10,7 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 |---|---|---|
 | Minerva (owns the mail domain) | That a student received a code email, which means they're a member | Anything else |
 | AWS SES | Recipient address when the code is sent | Anything on the forum |
-| MAF server / admins | Posts, passes, per-thread labels | Any email, or which email is behind which pass |
+| MAF server / maintainer | Posts, passes, per-thread labels | Any email, or which email is behind which pass |
 | Other users | Posts and per-thread labels | Anything that links posts across threads |
 
 **Nothing derived from an email is ever written to disk**: no list, no hash, no salted or keyed hash.
@@ -48,10 +48,10 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 - **Post:** title + (URL **or** text). Text and links only; no uploads or images.
 - **Comments:** nested.
 - **No votes.** Comments within a thread are ordered by `created_at`.
-- **Search bar** at the top of every page. Uses SQLite's built-in FTS5 full-text index over post titles, post text and comments, so there's no extra dependency. Hidden items are excluded for non-admins. Search queries are never logged.
+- **Search bar** at the top of every page. Uses SQLite's built-in FTS5 full-text index over post titles, post text and comments, so there's no extra dependency. Hidden items are excluded. Search queries are never logged.
 - **Sorter** next to the search bar, applied to the post list and to search results: `newest` (default), `oldest`, `most viewed`. Passed as a query param (`?sort=new|old|views`).
 - **View counts:** each post has a `views` counter shown next to it. Opening a post adds 1, once per pass per 24 hours. The dedupe set `(pass_id, item_id)` lives **in memory only** and is cleared every 24 hours and on restart. Only the counter is written to disk, so no reading history is stored for any pass.
-- **Pages:** `/` (post list with search bar and sorter, plus the no-naming rule), `/item/<id>`, `/submit`, `/how-it-works`, `/login`, `/admin-code`
+- **Pages:** `/` (post list with search bar and sorter, plus the no-naming rule), `/item/<id>`, `/submit`, `/how-it-works`, `/login`
 
 ## Name filter
 
@@ -62,21 +62,13 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 
 ## Moderation
 
-| Action | Who | Effect |
-|---|---|---|
-| Flag | Any pass, once per item | 5 flags from distinct passes → hidden from everyone |
-| Restore | Any 1 admin | Visible again; further flags can't re-hide it |
-| Hide | 2 of 3 admins | Hidden from non-admins, kept in the database |
+No admin roles, codes or buttons. Moderation is community flags plus the maintainer acting in SQLite over SSH.
 
-- **Setting:** `FLAGS_AUTO_HIDE` (default `true`). When set to `false`, flags only surface items to admins and never hide on their own. Switching is a setting change, not a migration.
-- **Starter codes:** 3 random codes of at least 128 bits, stored in env (`ADMIN_STARTER_CODES`) as `slot:sha256(starter)` pairs. The maintainer hands them out in person or over an encrypted chat.
-- **Redeeming a starter code** at `/admin-code` (which nothing links to): the browser sends the starter code plus `sha256(personal)`, where `personal` is a fresh 128-bit code generated in the browser with Web Crypto and never sent. If `sha256(starter)` matches a slot and hasn't been used yet, the server stores `admin_slot(slot, starter_hash_used, personal_hash)` and the page shows the personal code once, with "Save this in your password manager. The code you were given no longer works."
-- **Signing in with a personal code:** the browser sends the personal code, and the server matches `sha256(personal)` against `admin_slot.personal_hash`. On a match it sets a **separate** HttpOnly cookie, `admin_session`, holding a signed `(slot, personal_hash)`. It is **never** written onto the `pass` row, so an admin's posts can't be linked to their slot.
-- **Each admin request:** verify the `admin_session` signature and check that `personal_hash` is still the slot's current one.
-- **Lost or leaked code:** the maintainer puts a new starter hash for that slot in env and restarts. Because it differs from `starter_hash_used`, it can be redeemed, and redeeming replaces `personal_hash`, which revokes every device that used the old personal code.
-- **Rate limit:** 5 wrong `/admin-code` attempts per pass per hour, in memory.
-- **Counting admin votes:** `admin_hide_vote` is keyed by *slot*, so one admin on two devices counts once. It is the only place a slot is ever stored.
-- **Interface:** no dashboard. Admins see Restore/Hide buttons inline, and hidden items appear greyed out for them.
+- **Flag:** any pass, once per item. At 5 flags from distinct passes the item is `hidden`: excluded from `/`, from search and from comment trees, unless `restored = 1`.
+- **Hidden items stay reachable** at `/item/<id>`, with a banner, "Hidden after community flags.", and two buttons: **Request unhide** and **Request nuke ☢️**.
+- **Requests:** once per pass per item per kind. Stored as `moderation_request(pass_id, item_id, kind)` for deduplication only. On each new request, immediately send an SES email to `MAINTAINER_EMAIL`, for example `Unhide requested for post #123 (4 requests so far) <link>`. No pass or identity goes in the email.
+- **Unhide (maintainer, SSH):** `UPDATE item SET hidden = 0, restored = 1 WHERE id = ?;`. Once `restored = 1`, flags never hide the item again.
+- **Nuke (maintainer, SSH):** `DELETE FROM item WHERE id = ? OR thread_id = ?;` for a post, or `WHERE id = ?` for a comment. `/item/<id>` then returns 404. Remove the matching FTS rows too (handled by triggers).
 - **No bans.**
 
 ## Data model (sketch)
@@ -84,11 +76,10 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 ```
 pass(id)
 redeemed_token(token_hash PK)
-item(id, parent_id NULL, thread_id, pass_id, title NULL, url NULL, text NULL, created_at, views, flags, hidden_by_flags, restored, hidden_by_admin)
+item(id, parent_id NULL, thread_id, pass_id, title NULL, url NULL, text NULL, created_at, views, flags, hidden, restored)
 item_fts  -- FTS5 virtual table over item(title, text), kept in sync with triggers
 flag(pass_id, item_id, PK both)
-admin_slot(slot PK, starter_hash_used, personal_hash)
-admin_hide_vote(slot, item_id, PK both)
+moderation_request(pass_id, item_id, kind, PK all)  -- kind: unhide | nuke
 ```
 
 In memory only, never persisted: `pending_code(email → code, expires_at)`, `cooldown(email → expires_at)`, `viewed(pass_id, item_id)` (cleared every 24 h).
@@ -110,4 +101,4 @@ Votes, uploads/images, DMs, notifications, karma, profiles, editing, mobile app.
 1. Register a domain on Route 53 (no "Minerva" in the name).
 2. SES: verify the domain (DKIM records), then request production access.
 3. EC2 `t4g.small` with Caddy + a systemd service running the app.
-4. Secrets in env: `LABEL_SECRET`, `ADMIN_CODES`, the RSA signing key, SES credentials.
+4. Secrets in env: `LABEL_SECRET`, the RSA signing key, SES credentials, `MAINTAINER_EMAIL`.

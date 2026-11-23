@@ -37,7 +37,7 @@ Minerva can see who is a member, because it owns the mail server that receives t
 | --- | --- | --- |
 | Minerva | That a student received a code email from MAF's domain | Posts, or which pass belongs to whom |
 | AWS SES (sends the code) | The recipient address while sending | Anything on the forum |
-| MAF server and admins | Posts, passes, per-thread IDs | Any email, or which email is behind which pass |
+| MAF server and maintainer | Posts, passes, per-thread IDs | Any email, or which email is behind which pass |
 | Other students | Posts and per-thread IDs | Anything linking one person's posts across threads |
 
 **Nothing derived from an email is ever written to disk:** no list, no hash, no salted or keyed hash.
@@ -60,7 +60,7 @@ Sign-up and login are the same steps: enter your email, enter the 6-digit code, 
 
 **Switching devices** means doing the same steps again, which gives that device its own pass. There are no cross-device accounts, no passwords and no recovery keys.
 
-**Limiting abuse without remembering anyone.** Each email can request a code only once every 10 minutes. That limit lives in memory alongside the code and is never saved. It stops anyone from flooding a classmate's inbox, and makes collecting extra passes slow. Since there are no votes, extra passes could only add flags, which an admin can undo.
+**Limiting abuse without remembering anyone.** Each email can request a code only once every 10 minutes. That limit lives in memory alongside the code and is never saved. It stops anyone from flooding a classmate's inbox, and makes collecting extra passes slow. Since there are no votes, extra passes could only add flags, which the maintainer can undo.
 
 **Rules:** passes have no creation time stored, and emails and IPs are never logged.
 
@@ -98,11 +98,10 @@ It looks like Hacker News but has no votes: text or link posts, nested comments,
 | Page | What it shows |
 | --- | --- |
 | Home | Search bar and sorter at the top, the post list (newest first by default), plus the no-naming rule |
-| Thread | A post and its comments |
+| Thread | A post and its comments; hidden posts show a banner with Request unhide and Request nuke ☢️ |
 | Submit | New post form |
 | How it works | Anonymity, per-thread IDs, rules |
 | Sign in | Email and code |
-| Admin code | Where an admin enters their code |
 
 ## Name filter
 
@@ -117,34 +116,23 @@ Posts that seem to name a person get a warning before they're saved, and the pos
 
 ## Moderation
 
-The community hides posts by flagging them, and three admins can restore or hide posts. There are no bans and no dashboard.
+The community hides posts by flagging them. Anyone can then ask the maintainer to unhide or remove a hidden post, and the maintainer acts directly in the database. There are no admins, no bans and no dashboard.
 
 | Action | Who | Effect |
 | --- | --- | --- |
-| Flag | Anyone, once per post | Hidden from everyone after 5 flags from different passes |
-| Restore | Any 1 admin | Visible again, and further flags can't re-hide it |
-| Hide | 2 of 3 admins | Hidden from everyone except admins; kept in the database |
+| Flag | Anyone, once per post | Hidden from the main page and search after 5 flags from different passes |
+| Request unhide | Anyone, once per hidden post | Emails the maintainer right away |
+| Request nuke ☢️ | Anyone, once per hidden post | Emails the maintainer right away |
+| Unhide | Maintainer, by SQL | Visible again, and flags can never hide it again |
+| Nuke | Maintainer, by SQL | Deleted from the database; the link stops working |
 
-- **Admins** are the maintainer and two friends, one admin code each.
-- **Votes to hide** count per admin code, not per device, so one admin on two devices counts once.
-
-**Admin sign-up flow**
-
-1. **Setup (once, at deploy):** the maintainer generates 3 starter codes, puts them in the server's settings, and hands one to each admin in person or over an encrypted chat, never by email. The launch post names who the admins are.
-2. **Sign in like everyone else:** email code, then an anonymous pass, exactly as for any student.
-3. **Enter the starter code** on the Admin code page, which isn't linked from anywhere. MAF then shows a new **personal code** that only that admin's browser sees: "Save this in your password manager. The code you were given no longer works." The device becomes an admin device, and the Restore and Hide buttons appear.
-4. **New device:** sign in, then paste the personal code.
-5. **Lost or leaked code:** the maintainer issues a fresh starter code and the admin repeats step 3. The old personal code stops working on every device.
-
-**The maintainer never knows anyone's personal code**, so 2-of-3 Hide really means two different people.
-
-**Admin status is kept separate from the admin's pass.** The admin cookie is never written onto the pass. Otherwise anyone who knows which friend holds which code could link that admin's own posts to them. Admins post as anonymously as everyone else. The only thing recorded per admin is the Hide vote, which has to be counted per admin.
-
-Wrong admin-code attempts are rate-limited, and the codes are long enough that guessing them isn't realistic.
-- **2 of 3, not 3 of 3**, so one inactive or graduated admin doesn't block hiding something illegal.
-- **No dashboard:** admins see Restore and Hide buttons on the posts themselves, and hidden posts appear greyed out for them.
-- **Not a one-way door:** switching to admin-only review, where flags only notify admins, is a single setting.
-- **Legal position:** in the US, Section 230 generally protects the operator from liability for what users post. Text and links only removes the serious risks of hosted images. The one real duty is acting on illegal content once told about it, which is what Hide is for.
+- **Hidden posts stay reachable by their direct link.** The post shows a banner, "Hidden after community flags.", with two buttons: **Request unhide** and **Request nuke ☢️**.
+- **Requests are anonymous.** Only the post ID and a count are saved, with no record of who asked.
+- **Notification:** every request sends the maintainer an email through SES right away, for example "Unhide requested for post #123 (4 requests so far)." It names no one. This can be batched later if traffic gets heavy.
+- **Unhiding** is one SQL update over SSH, which also marks the post as restored so flags can't hide it again.
+- **Nuking** deletes the post's row (and its comments) over SSH.
+- **No admins:** there are no admin codes, roles or buttons, so nothing about moderation can be linked to anyone.
+- **Legal position:** in the US, Section 230 generally protects the operator from liability for what users post. Text and links only removes the serious risks of hosted images. The one real duty is acting on illegal content once told about it, which is what Nuke is for.
 
 ## Infrastructure
 
@@ -156,7 +144,7 @@ Everything runs on AWS using existing credits: one small server, a domain, and A
 | App | Python with server-rendered HTML, SQLite database, managed with uv | Free |
 | Domain | Route 53, no "Minerva" in the name | About $14/yr; credits usually don't cover registration |
 | DNS | Route 53 hosted zone | $0.50/month |
-| Email | AWS SES: verify the domain, then request production access (about a day) | About $0.10 per 1,000 emails |
+| Email | AWS SES for login codes and moderation requests: verify the domain, then request production access (about a day) | About $0.10 per 1,000 emails |
 | HTTPS | Caddy | Free |
 
 **Privacy checklist**
@@ -177,7 +165,7 @@ Everything runs on AWS using existing credits: one small server, a domain, and A
 | Ordering | Newest (default), oldest, or most viewed | Recency first; views are an opt-in sort |
 | View counts | Total only; per-pass dedupe in memory for 24 h | Counts stay honest without storing reading history |
 | Search | Built-in SQLite full-text search, queries not logged | No extra dependency, nothing about readers saved |
-| Hiding | 5 flags auto-hide, admin Restore | Students can act at 3am; abuse is slow and undone with one click |
+| Hiding | 5 flags hide from the main page; Request unhide / nuke emails the maintainer | Students can act at 3am; no admin system to build or trust |
 | Uploads | Text and links only | Avoids hosting illegal images |
 
 ## Sign-off
@@ -185,4 +173,3 @@ Everything runs on AWS using existing credits: one small server, a domain, and A
 Signing off means this plan is ready to hand to pi for implementation.
 
 - [ ] Maintainer approves the plan
-- [ ] Two other admins confirmed
