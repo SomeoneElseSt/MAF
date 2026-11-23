@@ -119,7 +119,7 @@ def test_cli_show(monkeypatch, settings, app, pass_id, capsys):
 def test_cli_unknown_id_exits_non_zero(monkeypatch, settings, app, capsys):
     code, out = run_cli(monkeypatch, settings, capsys, "show", "nope")
     assert code != 0
-    assert "No item #nope" in out
+    assert "No item nope" in out
 
 
 def test_cli_nuke_deletes_the_thread_after_confirmation(monkeypatch, settings, app, pass_id, capsys):
