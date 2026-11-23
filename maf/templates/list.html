@@ -90,9 +90,10 @@
   {% if empty %}
   <p class="empty">No posts yet.</p>
   {% else %}
-  {% if pinned %}
-  <h2 class="day">Pinned</h2>
-  <ol class="list pinned-list">
+  {# Pinned shows under Newest on the latest page: the maintainer's pins, then this browser's own (added by pins.js). #}
+  {% if sort == "new" and not next_url %}
+  <h2 class="day"{% if not pinned %} hidden{% endif %}>Pinned</h2>
+  <ol class="list pinned-list"{% if not pinned %} hidden{% endif %} data-hot-tags="{% for tag, rules in house_tags.items() if rules.highlight %}{{ tag }} {% endfor %}">
     {% for post in pinned %}{{ row(post, fixed=true) }}{% endfor %}
   </ol>
   {% endif %}
