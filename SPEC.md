@@ -82,6 +82,14 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 - **Excluded from:** search/FTS, `comment_count`, the API and MCP, the tag menu counts. Private items have no Flag button. The name filter still runs before saving.
 - **Can't reply privately to yourself:** the checkbox is hidden when the recipient is your own pass (e.g. the OP replying to the post).
 
+## Reactions
+
+- **Set:** a fixed list of 24 emoji (see `PICKER_EMOJI` in `mockups/reactions.js`): 👍 👎 ❤️ 😂 😮 😢 😡 🔥 🎉 🤔 👀 🙏 💯 🙌 😅 🫠 💀 🤝 👏 🫶 😬 🙃 ✅ ☕. The server rejects anything else.
+- **Storage:** `reaction(pass_id, item_id, emoji, PK all)`, used to dedupe and to show which ones are yours. Counts are computed with `GROUP BY`. No timestamps.
+- **UI (thread page only):** post reactions in a row under the post body; comment reactions in the `.actions` line after Reply and Flag. Each is a `button.react` with `aria-pressed` for yours; `.react-add` opens the picker (`role="dialog"`, Escape and outside click close it and return focus). Without JS, each reaction is a small form that POSTs `/react` with `item_id` and `emoji`, and the picker is a `<details>` list.
+- **Rules:** any pass, once per emoji per item, toggled. Private items: only the two parties can react or see reactions. Hidden posts keep their reactions. Not shown in lists, not used for sorting, included in the API item response as `{emoji: count}`.
+- **Rate limit:** 60 reaction toggles per minute per pass, in memory.
+
 ## Name filter
 
 - Run Presidio `PERSON` detection on titles, bodies and comments **before** saving.
@@ -138,6 +146,7 @@ item(id, parent_id NULL, thread_id, pass_id, title NULL, url NULL, text NULL, cr
 item_tag(item_id, tag, PK both)  -- index on tag
 item_fts  -- FTS5 virtual table over item(title, text) for public items only, kept in sync with triggers
 flag(pass_id, item_id, PK both)
+reaction(pass_id, item_id, emoji, PK all)
 moderation_request(pass_id, item_id, kind, PK all)  -- kind: unhide | nuke
 api_token(token_hash PK, pass_id)
 ```

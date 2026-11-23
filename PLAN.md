@@ -24,7 +24,7 @@ v1 is a working forum with real anonymity and as little friction as possible. Gr
 
 **Non-goals for v1**
 
-- Votes or rankings.
+- Votes or rankings (emoji reactions exist, but nothing is sorted by them).
 - Image or file uploads, DMs outside a thread, notifications, karma, profiles, editing posts, a mobile app.
 - Bans or an admin dashboard.
 - Recovery keys or passwords.
@@ -141,6 +141,15 @@ Inside a thread you can reply so only one other person sees it, for example to a
 | Use this data | How to read the forum from an AI agent (MCP), the command line or curl |
 | Sign in | Email and code |
 
+## Reactions
+
+Posts and comments can get emoji reactions, picked from a small fixed set.
+
+- **Where:** under a post's text, and in each comment's action line after Reply and Flag. Each reaction shows the emoji and a count; your own sit on a soft grey tint. Clicking one adds or removes yours, and a small smiley opens a picker of 24 emoji, including 👍, 👎 and 😡.
+- **Not on the front page.** Nothing is sorted or ranked by reactions.
+- **Private replies** can have reactions too; only the two people see them.
+- **Known trade-off:** extra passes can inflate counts, so reactions can act a bit like votes. That's accepted.
+
 ## Name filter
 
 Posts that seem to name a person get a warning before they're saved, and the poster decides. There are no lists of names to maintain.
@@ -235,6 +244,7 @@ Everything runs on AWS using existing credits: one small server, a domain, and A
 | Developer access | Read-only API + MCP server with per-pass read tokens | Dev-friendly without opening posting to scripts or breaking the students-only gate |
 | Pinning | Maintainer pins via `maf pin`; anyone pins for themselves in their browser; shown under Newest only | A welcome post without admins, and saved threads without the server knowing what anyone saved |
 | Hashtags | Up to 3 free-form tags per post, browsed from a # button in the search bar | Topic browsing without the maintainer curating categories |
+| Reactions | 24 fixed emoji on posts and comments, counts shown only in threads | Light feedback without a ranking; inflated counts are accepted |
 | Templated tags | The four kinds of post (#hottakes, #help, #wondering, #confession) get submit and reply outlines; topics like #minerva are plain tags; only #hottakes is highlighted | Shapes the kinds of post that most need it; start small and add more once real posts show the need |
 | Private replies | Checkbox per reply, visible to the two people only, tied to the pass | Lets people follow up one-to-one without leaving the thread or adding DMs |
 

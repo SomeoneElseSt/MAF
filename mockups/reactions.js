@@ -1,6 +1,6 @@
 // Mockup-only: emoji reactions on posts and comments. Each .reactions element carries its counts in
 // data-reactions and your own picks in data-mine. Clicking a reaction toggles yours; the smiley opens a picker.
-const PICKER_EMOJI = ["👍", "❤️", "😂", "😮", "😢", "🔥", "🎉", "🤔", "👀", "🙏", "💯", "🙌", "😅", "🫠", "💀", "🤝", "👏", "🫶", "😬", "🙃", "✅", "📌", "☕", "🌱"];
+const PICKER_EMOJI = ["👍", "👎", "❤️", "😂", "😮", "😢", "😡", "🔥", "🎉", "🤔", "👀", "🙏", "💯", "🙌", "😅", "🫠", "💀", "🤝", "👏", "🫶", "😬", "🙃", "✅", "☕"];
 const ADD_ICON = `<svg viewBox="0 0 18 16" width="18" height="16" aria-hidden="true"><circle cx="7.5" cy="8.5" r="6" fill="none" stroke="currentColor" stroke-width="1.2"/><circle cx="5.5" cy="7.3" r=".8" fill="currentColor"/><circle cx="9.5" cy="7.3" r=".8" fill="currentColor"/><path d="M5 10.3c1.4 1.5 3.6 1.5 5 0" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M15 1v4M13 3h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>`;
 
 const picker = document.createElement("div");
