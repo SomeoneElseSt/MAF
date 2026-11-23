@@ -233,3 +233,7 @@ def main() -> None:
         access_log=False,  # no IP addresses in logs
     )
 
+
+
+if __name__ == "__main__":
+    main()

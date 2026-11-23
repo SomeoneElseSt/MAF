@@ -67,9 +67,12 @@ CREATE TABLE IF NOT EXISTS moderation_request (
     PRIMARY KEY (pass_id, item_id, kind)
 );
 
+-- last4 is the token's own final characters, so the owner can tell tokens
+-- apart; it is shown nowhere else and reveals nothing about the rest.
 CREATE TABLE IF NOT EXISTS api_token (
     token_hash TEXT PRIMARY KEY,
-    pass_id TEXT NOT NULL
+    pass_id TEXT NOT NULL,
+    last4 TEXT NOT NULL
 );
 
 -- Full text over public items only. Private replies are never indexed.

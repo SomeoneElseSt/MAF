@@ -147,7 +147,7 @@ async def create_token(request: Request) -> Response:
     if page.pass_id is None:
         return _login(page)
     token = secrets.token_urlsafe(TOKEN_BYTES)
-    store.create_api_token(page.conn, sha256_hex(token), page.pass_id)
+    store.create_api_token(page.conn, sha256_hex(token), page.pass_id, token[-4:])
     return redirect(f"/guide/data?token={token}")
 
 

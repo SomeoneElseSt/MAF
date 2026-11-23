@@ -51,7 +51,8 @@ class Emailer:
 
     def send(self, email: Email) -> None:
         if self._settings.console_email:
-            print(f"[email to {email.to}] {email.subject}\n{email.body}")
+            # flushed so the code shows up when stdout is a pipe or a log file
+            print(f"[email to {email.to}] {email.subject}\n{email.body}", flush=True)
             return
         self._ses().send_email(
             Source=self._settings.email_from,

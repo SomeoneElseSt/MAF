@@ -63,7 +63,7 @@ def test_rate_limit_is_60_per_minute(app, pass_id):
 
 def make_token(app, pass_id) -> str:
     token = "test-token-" + pass_id
-    store.create_api_token(app.conn, sha256_hex(token), pass_id)
+    store.create_api_token(app.conn, sha256_hex(token), pass_id, token[-4:])
     return token
 
 
@@ -134,7 +134,7 @@ def test_api_tokens_are_listed_by_last_four_and_revocable(viewer, app):
     pass_id = viewer["pass_id"]
     token = make_token(app, pass_id)
     listed = store.list_api_tokens(app.conn, pass_id)
-    assert listed[0]["last4"] == sha256_hex(token)[-4:]
+    assert listed[0]["last4"] == token[-4:]
     assert not listed[0]["hash"] == token  # only the hash is stored
     assert store.revoke_api_token(app.conn, listed[0]["hash"], pass_id)
     assert store.list_api_tokens(app.conn, pass_id) == []

@@ -55,8 +55,8 @@ def redeem_token(conn: sqlite3.Connection, token_hash: str, pass_id: str) -> boo
     return True
 
 
-def create_api_token(conn: sqlite3.Connection, token_hash: str, pass_id: str) -> None:
-    conn.execute("INSERT INTO api_token (token_hash, pass_id) VALUES (?, ?)", (token_hash, pass_id))
+def create_api_token(conn: sqlite3.Connection, token_hash: str, pass_id: str, last4: str) -> None:
+    conn.execute("INSERT INTO api_token (token_hash, pass_id, last4) VALUES (?, ?, ?)", (token_hash, pass_id, last4))
     conn.commit()
 
 
@@ -67,9 +67,9 @@ def api_token_pass(conn: sqlite3.Connection, token_hash: str) -> str | None:
 
 def list_api_tokens(conn: sqlite3.Connection, pass_id: str) -> list[dict]:
     rows = conn.execute(
-        "SELECT token_hash FROM api_token WHERE pass_id = ? ORDER BY token_hash", (pass_id,)
+        "SELECT token_hash, last4 FROM api_token WHERE pass_id = ? ORDER BY token_hash", (pass_id,)
     ).fetchall()
-    return [{"hash": r["token_hash"], "last4": r["token_hash"][-4:]} for r in rows]
+    return [{"hash": r["token_hash"], "last4": r["last4"]} for r in rows]
 
 
 def revoke_api_token(conn: sqlite3.Connection, token_hash: str, pass_id: str) -> bool:

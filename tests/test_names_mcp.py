@@ -108,7 +108,7 @@ def api_site(tmp_path, monkeypatch):
     pass_id = store.create_pass(app.conn)
     store.create_post(app.conn, pass_id, "MCP visible post", "body about otters", None, ["berlin"])
     token = "mcp-test-token"
-    store.create_api_token(app.conn, sha256_hex(token), pass_id)
+    store.create_api_token(app.conn, sha256_hex(token), pass_id, token[-4:])
     return app, token
 
 
