@@ -274,7 +274,6 @@ span.arrow { color: var(--line); }
 }
 .find input::-webkit-search-cancel-button:hover { background-color: var(--ink); }
 
-/* #hottake: a thin ember bar hanging in the left margin, and the tag in the same colour. The site's only accent. */
-.list li.hot { position: relative; }
-.list li.hot::before { content: ""; position: absolute; left: -14px; top: 12px; bottom: 12px; width: 2px; border-radius: 1px; background: var(--hot); }
+/* #hottake: the title is set in italic and the tag takes the ember colour, the site's only accent. */
+.list li.hot .title { font-style: italic; }
 .meta .hot-tag { color: var(--hot); }
