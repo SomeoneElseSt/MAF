@@ -1,6 +1,6 @@
 {#
   email/base.html: the shared email layout, in the site's look (serif text, small grey sans notes).
-  Styles are inline because many mail apps drop <style>; the <style> block only adds dark mode where supported.
+  Always light, with the MAF wordmark top left as on the site. Styles are inline because many mail apps drop <style>.
   Blocks: content
 #}
 <!doctype html>
@@ -8,24 +8,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="color-scheme" content="light dark">
-<meta name="supported-color-schemes" content="light dark">
+<meta name="color-scheme" content="light only">
+<meta name="supported-color-schemes" content="light">
 <title>{{ subject }}</title>
-<style>
-  @media (prefers-color-scheme: dark) {
-    body, .sheet { background: #000000 !important; }
-    .text { color: #ffffff !important; }
-    .note { color: #949494 !important; }
-    .rule { border-color: #1b1b1b !important; }
-    a { color: #ffffff !important; }
-  }
-</style>
 </head>
 <body style="margin:0; padding:0; background:#ffffff; color:#000000;">
-<table role="presentation" class="sheet" width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;">
   <tr>
     <td style="padding:36px 24px;">
-      <div class="text" style="max-width:480px; font:17px/1.6 'Iowan Old Style', Charter, 'Bitstream Charter', Cambria, Georgia, serif; color:#000000;">
+      <div style="max-width:480px; font:17px/1.6 'Iowan Old Style', Charter, 'Bitstream Charter', Cambria, Georgia, serif; color:#000000;">
+<p style="margin:0 0 28px; font:700 24px/1.2 'Iowan Old Style', Charter, 'Bitstream Charter', Cambria, Georgia, serif; color:#000000;">MAF</p>
 {% block content %}{% endblock %}
       </div>
     </td>

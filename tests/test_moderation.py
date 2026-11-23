@@ -166,7 +166,8 @@ def test_emails_have_html_in_the_site_style_and_a_plain_text_fallback():
 
     code = code_email("student@uni.minerva.edu", "482913")
     assert "482913" in code.html and "482913" in code.body
-    assert "MAF" not in code.html and "maforum" not in code.html
+    assert ">MAF</p>" in code.html and "light only" in code.html
+    assert "prefers-color-scheme" not in code.html
     assert "Iowan Old Style" in code.html
     assert set(_body(code)) == {"Text", "Html"}
 

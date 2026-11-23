@@ -1,10 +1,10 @@
 {#
-  email/code.html: the sign-in code. Deliberately plain: no MAF name or link in the body.
+  email/code.html: the sign-in code. The MAF wordmark comes from the layout; no links in the body.
   Context: subject, code
 #}
 {% extends "email/base.html" %}
 {% block content %}
 <p style="margin:0 0 6px;">Your sign-in code is</p>
 <p style="margin:0 0 22px; font-size:36px; line-height:1.2; font-weight:600; letter-spacing:4px;">{{ code }}</p>
-<p class="note rule" style="margin:0; padding-top:14px; border-top:1px solid #e4e4e4; font:14px/1.5 'Gill Sans', 'Gill Sans MT', Seravek, 'Trebuchet MS', Calibri, sans-serif; color:#6b6b6b;">It works for 10 minutes. If you didn't ask for it, ignore this email.</p>
+<p style="margin:0; padding-top:14px; border-top:1px solid #e4e4e4; font:14px/1.5 'Gill Sans', 'Gill Sans MT', Seravek, 'Trebuchet MS', Calibri, sans-serif; color:#6b6b6b;">It works for 10 minutes. If you didn't ask for it, ignore this email.</p>
 {% endblock %}

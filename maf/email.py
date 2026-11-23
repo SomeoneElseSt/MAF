@@ -40,7 +40,7 @@ class Email:
 
 
 def code_email(to: str, code: str) -> Email:
-    """The deliberately plain login email: no MAF branding."""
+    """The login email: the code, with the MAF wordmark in the HTML version."""
     subject = CODE_SUBJECT.format(code=code)
     return Email(to=to, subject=subject, body=CODE_BODY.format(code=code),
                  html=_render("code.html", subject=subject, code=code))

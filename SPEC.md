@@ -29,7 +29,7 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 
 1. The user enters an `@uni.minerva.edu` email. The server rejects any other domain.
 2. **Cooldown:** each email can request one code per 10 minutes. The cooldown lives in memory only, next to the code, and expires with it. Its job is to keep anyone from flooding a classmate's inbox and to make collecting extra passes slow.
-3. The server sends a 6-digit code through SES. The email is neutral: subject `Your code: 482913`, no MAF branding in the body. Codes expire after 10 minutes and are held in memory only.
+3. The server sends a 6-digit code through SES. The email is short: subject `Your code: 482913`, an HTML version in the site's style (MAF wordmark top left, always light) plus a plain-text fallback. Templates: `maf/templates/email/`. Codes expire after 10 minutes and are held in memory only.
 4. The user enters the code. If it matches, the browser generates a random token, blinds it, and sends only the blinded value. The server signs it and forgets the email.
 5. The browser unblinds the token and redeems it at `/redeem`. The server verifies the signature, stores `sha256(token)` to block reuse, creates a `pass`, and sets a long-lived HttpOnly session cookie.
 6. Switching devices means doing this again. There are no cross-device accounts, no recovery key and no cap on passes.
