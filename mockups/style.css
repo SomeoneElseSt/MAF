@@ -284,9 +284,10 @@ span.arrow { color: var(--line); }
 
 /* Private replies: laid out like any comment; the details line says who can see it, with an (i) explaining more. */
 .private-note { color: var(--meta); }
-.private-toggle { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; font: 15px var(--sans); color: var(--soft); }
-.private-toggle label { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
-.private-toggle input { accent-color: var(--ink); width: 15px; height: 15px; margin: 0; }
+.private-toggle { display: inline-flex; align-items: center; gap: 4px; font: inherit; color: inherit; vertical-align: -2px; }
+.help .dot { margin: 0 4px; }
+.private-toggle label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.private-toggle input { accent-color: var(--ink); width: 13px; height: 13px; margin: 0; }
 
 .info {
   display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; margin-left: 4px;
