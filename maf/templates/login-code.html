@@ -31,4 +31,4 @@
 {% if email %}<form id="resend-form" action="/login" method="post" hidden><input type="hidden" name="email" value="{{ email }}"></form>{% endif %}
 {% endblock %}
 
-{% block scripts %}{% if cooldown_seconds %}<script src="/static/countdown.js"></script>{% endif %}{% endblock %}
+{% block scripts %}{% if cooldown_seconds %}<script src="{{ static('countdown.js') }}"></script>{% endif %}{% endblock %}

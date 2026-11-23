@@ -1,6 +1,8 @@
 """Shared plumbing for the web routes: rendering, the signed-in pass, forms."""
 
+import hashlib
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 from urllib.parse import urlencode
 
@@ -16,6 +18,33 @@ from .util import escape
 
 SORT_KEYS = {"new": "Newest", "old": "Oldest", "views": "Most viewed"}
 DEFAULT_SORT = "new"
+
+
+STATIC_HASH_LENGTH = 10
+
+
+def static_versions(static_dir: Path) -> dict[str, str]:
+    """Short content hash of every static file, computed once at startup."""
+    versions = {}
+    for path in sorted(static_dir.rglob("*")):
+        if not path.is_file():
+            continue
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        versions[path.relative_to(static_dir).as_posix()] = digest[:STATIC_HASH_LENGTH]
+    return versions
+
+
+def make_static_url(static_dir: Path):
+    """Returns static("style.css") -> "/static/style.css?v=<hash>", so browsers refetch changed files."""
+    versions = static_versions(static_dir)
+
+    def static(name: str) -> str:
+        version = versions.get(name)
+        if version is None:
+            return f"/static/{name}"
+        return f"/static/{name}?v={version}"
+
+    return static
 
 
 def make_templates(app: App) -> Jinja2Templates:
@@ -36,6 +65,7 @@ def make_templates(app: App) -> Jinja2Templates:
         submit_templates={**{t: h["submit_template"] for t, h in housetags.HOUSE_TAGS.items()}, "default": housetags.DEFAULT_SUBMIT_TEMPLATE},
         example_post=housetags.EXAMPLE_POST,
         base_url=app.settings.base_url,
+        static=make_static_url(app.settings.static_dir),
     )
     return templates
 
