@@ -139,12 +139,16 @@ textarea::placeholder, input::placeholder { color: var(--meta); opacity: 1; }
 .reply { margin: 30px 0 10px; }
 .reply textarea { min-height: 100px; resize: vertical; }
 
+/* Soft fill: the search box's pale grey, no border until hover. The secondary (plain) button is just text. */
 .button {
-  display: inline-block; font: 16px var(--sans); color: var(--paper); background: var(--ink);
-  border: 1px solid var(--ink); border-radius: 4px; padding: 7px 16px; cursor: pointer;
+  display: inline-block; font: 16px var(--sans); color: var(--ink); background: var(--tint);
+  border: 1px solid transparent; border-radius: 4px; padding: 7px 16px; cursor: pointer;
 }
-.button:hover { text-decoration: none; opacity: 0.85; }
-.button.plain { color: var(--ink); background: transparent; border-color: var(--border); }
+.button:hover { text-decoration: none; border-color: var(--border); }
+.button.plain { color: var(--soft); background: transparent; border-color: transparent; padding-left: 0; padding-right: 0; }
+.button.plain:hover { color: var(--ink); border-color: transparent; text-decoration: underline; text-underline-offset: 3px; }
+/* Inside a grey notice the fill would vanish, so buttons there sit on the page colour. */
+.notice .button:not(.plain) { background: var(--paper); }
 .row { display: flex; align-items: center; gap: 16px; margin-top: 10px; }
 .note { font: 15px var(--sans); color: var(--meta); }
 
