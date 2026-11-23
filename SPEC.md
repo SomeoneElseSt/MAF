@@ -2,7 +2,7 @@
 
 An anonymous forum for Minerva students, laid out like Hacker News but with **no votes**: every list is ordered newest first. Only people with an `@uni.minerva.edu` email can read or post. Verifying gives the device an anonymous **pass**. Nobody can link a pass back to an email, and that includes the people running the server.
 
-Design doc (source of truth for decisions): https://claude.ai/artifact/AZRmrT9vW8bsEpwgFFojZg
+Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 
 ## Who can see what
 
