@@ -13,26 +13,28 @@
   --sans: "Gill Sans", "Gill Sans MT", Seravek, "Trebuchet MS", Calibri, sans-serif;
 }
 
+/* Dark mode mirrors light mode exactly: each color is 255 minus its light value per channel,
+   so every tone keeps the same distance from the background in both themes. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --paper: #1b1b1b;
-    --ink: #f2f2f2;
-    --soft: #cfcfcf;
-    --meta: #a9a9a9;
-    --line: #333333;
-    --tint: #252525;
-    --visited: #a0a0a0;
+    --paper: #000000;
+    --ink: #ffffff;
+    --soft: #aaaaaa;
+    --meta: #858585;
+    --line: #1b1b1b;
+    --tint: #0a0a0c;
+    --visited: #909090;
   }
 }
 
 :root[data-theme="dark"] {
-  --paper: #1b1b1b;
-  --ink: #f2f2f2;
-  --soft: #cfcfcf;
-  --meta: #a9a9a9;
-  --line: #333333;
-  --tint: #252525;
-  --visited: #a0a0a0;
+  --paper: #000000;
+  --ink: #ffffff;
+  --soft: #aaaaaa;
+  --meta: #858585;
+  --line: #1b1b1b;
+  --tint: #0a0a0c;
+  --visited: #909090;
 }
 
 * { box-sizing: border-box; }
