@@ -51,7 +51,7 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 - **Search bar** at the top of every page. Uses SQLite's built-in FTS5 full-text index over post titles, post text and comments, so there's no extra dependency. Hidden items are excluded. Search queries are never logged.
 - **Sorter** next to the search bar, applied to the post list and to search results: `newest` (default), `oldest`, `most viewed`. Passed as a query param (`?sort=new|old|views`).
 - **View counts:** each post has a `views` counter shown next to it. Opening a post adds 1, once per pass per 24 hours. The dedupe set `(pass_id, item_id)` lives **in memory only** and is cleared every 24 hours and on restart. Only the counter is written to disk, so no reading history is stored for any pass.
-- **Week pages:** `/` shows posts from the 7 days ending today, grouped under day headings (Today, Yesterday, then e.g. Thursday 19 November). `?week=YYYY-MM-DD` shows the 7 days ending on that date, with Previous week / Next week links. `sort` applies within the week. Search results span all time, 30 per page.
+- **Four-day pages:** `/` shows posts from the 4 days ending today, grouped under day headings (Today, Yesterday, then e.g. Thursday 19 November). `?before=YYYY-MM-DD` shows the 4 days ending the day before that date, with Earlier posts / Later posts links. `sort` applies within those 4 days. Search results span all time, 30 per page.
 - **List rows show no IDs:** title, link host, then plain-language metadata ("2 hours ago, 14 comments, 61 views").
 - **Header:** brand, Submit, a Dark/Light text toggle, and the search box on the right. **Footer:** About, User Guide, Source Code.
 - **Pages:** `/` (week of posts with search bar and sorter), `/item/<id>`, `/submit`, `/about`, `/guide` (User Guide), `/guide/data` (Use this data), `/login`
@@ -93,11 +93,11 @@ No admin roles, codes or buttons. Moderation is community flags plus the maintai
 
   | Endpoint | Returns |
   |---|---|
-  | `GET /api/v1/posts?week=YYYY-MM-DD&sort=new\|old\|views` | The week's posts: `id, title, url, text_preview, created_at, comment_count, views` |
+  | `GET /api/v1/posts?before=YYYY-MM-DD&sort=new\|old\|views` | Four days of posts: `id, title, url, text_preview, created_at, comment_count, views` |
   | `GET /api/v1/items/<id>` | A post with its comment tree; each item carries its per-thread `author_id` and an `op` flag |
   | `GET /api/v1/search?q=...&page=N` | Matching posts and comments, 30 per page |
 
-- **MCP server:** a small stdio server in the same repo (`maf/mcp.py`, console script `maf-mcp`) with three tools, `list_posts(week?, sort?)`, `get_thread(id)` and `search(query, page?)`, which wrap the API. It's configured with `MAF_TOKEN` and `MAF_URL`. Use the official MCP Python SDK; it's the only extra dependency and runs on the user's machine, not the server.
+- **MCP server:** a small stdio server in the same repo (`maf/mcp.py`, console script `maf-mcp`) with three tools, `list_posts(before?, sort?)`, `get_thread(id)` and `search(query, page?)`, which wrap the API. It's configured with `MAF_TOKEN` and `MAF_URL`. Use the official MCP Python SDK; it's the only extra dependency and runs on the user's machine, not the server.
 - **`/guide/data` page:** how to create a token, an MCP config snippet for Claude Code / Cursor, `curl` examples for each endpoint, and a note that anything read this way leaves the students-only site.
 
 ## Data model (sketch)
