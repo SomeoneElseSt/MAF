@@ -8,7 +8,7 @@ function buildReplyForm(recipient, insidePrivate) {
   form.action = "item.html";
   form.innerHTML = `
     <textarea aria-label="Write a reply" placeholder="Write a reply"></textarea>
-    <p class="help">Replying as: <button class="id" type="button">${MY_THREAD_ID}</button> <span class="dot">·</span> <span class="private-toggle"><label><input type="checkbox"${insidePrivate ? " checked disabled" : ""}> Make only visible to ${recipient}</label><button class="info" type="button" aria-label="About private replies" aria-expanded="false">i</button></span></p>
+    <p class="help">Replying as: <button class="id" type="button">${MY_THREAD_ID}</button> <span class="dot">·</span> <span class="private-toggle"><label>Make only visible to ${recipient} <input type="checkbox"${insidePrivate ? " checked disabled" : ""}></label><button class="info" type="button" aria-label="About private replies" aria-expanded="false">i</button></span></p>
     <div class="row">
       <button class="button" type="submit">Reply</button>
       <button class="button plain cancel" type="button">Cancel</button>
