@@ -236,3 +236,12 @@ def test_code_page_offers_a_new_code_once_the_cooldown_runs_out(client, app):
     assert 590 <= seconds <= 600
     assert "Send a new code in" in page and "disabled" in page
     assert 'id="resend-form" action="/login"' in page
+
+
+def test_empty_fields_get_the_sites_own_message_not_the_browsers(client, app):
+    for page in (client.get("/login").text, client.post("/login", data={"email": "student@uni.minerva.edu"}).text):
+        assert "novalidate" in page and " required" not in page
+    empty_email = client.post("/login", data={"email": ""})
+    assert empty_email.status_code == 400 and "Please enter a valid email." in empty_email.text
+    empty_code = client.post("/login/code", data={"email": "student@uni.minerva.edu", "code": ""})
+    assert empty_code.status_code == 400 and "Enter the 6-digit code from the email." in empty_code.text

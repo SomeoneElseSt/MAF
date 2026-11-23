@@ -17,10 +17,10 @@
 <div class="notice" id="login-error"><p>{{ error }} Try again in <span class="countdown" data-seconds="{{ cooldown_seconds }}">{{ cooldown_seconds }}</span> seconds.</p></div>
 {% elif error %}<div class="notice" id="login-error" role="alert"><p>{{ error }}</p></div>{% endif %}
 
-<form action="/login" method="post">
+<form action="/login" method="post" novalidate>
   <div class="field">
     <label for="email">University email</label>
-    <input id="email" name="email" type="email" placeholder="you@uni.minerva.edu" autocomplete="email" value="{{ email|default('') }}" required{% if error %} aria-describedby="login-error"{% endif %}>
+    <input id="email" name="email" type="email" placeholder="you@uni.minerva.edu" autocomplete="email" value="{{ email|default('') }}"{% if error %} aria-describedby="login-error"{% endif %}>
   </div>
   <button class="button" type="submit">Send code</button>
 </form>

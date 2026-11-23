@@ -46,7 +46,7 @@ async def login_submit(request: Request) -> Response:
     email = normalise_email(values["email"])
     if email is None:
         return render(page, "login.html", status_code=400,
-                      error="Enter your Minerva University email, ending in @uni.minerva.edu.",
+                      error="Please enter a valid email.",
                       email=values["email"])
     code = page.memory.issue_code(email)
     if code is None:
@@ -68,6 +68,9 @@ async def code_submit(request: Request) -> Response:
     page = page_of(request)
     values = await form_values(request, "email", "code")
     email = normalise_email(values["email"])
+    if not values["code"].strip():
+        return render(page, "login-code.html", status_code=400, error="Enter the 6-digit code from the email.",
+                      email=values["email"], cooldown_seconds=page.memory.cooldown_left(email) if email else 0)
     if email is None or not page.memory.check_code(email, values["code"], consume=False):
         return render(page, "login-code.html", status_code=400,
                       error="That code didn't match. Check the 6 digits, or ask for a new code.",

@@ -12,11 +12,11 @@
 
 {% if error %}<div class="notice" id="code-error" role="alert"><p>{{ error }}</p></div>{% endif %}
 
-<form action="/login/code" method="post">
+<form action="/login/code" method="post" novalidate>
   <input type="hidden" name="email" value="{{ email|default('') }}">
   <div class="field">
     <label for="code">Code</label>
-    <input id="code" class="code" name="code" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" required{% if error %} aria-describedby="code-error"{% endif %}>
+    <input id="code" class="code" name="code" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code"{% if error %} aria-describedby="code-error"{% endif %}>
   </div>
   <div class="row">
     <button class="button" type="submit">Continue</button>
