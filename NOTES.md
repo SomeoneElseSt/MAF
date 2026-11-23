@@ -37,7 +37,7 @@ Status of the v1 build against [SPEC.md](SPEC.md), on branch `build`.
 - **Accessibility audit**: the structure follows the SPEC's rules (landmarks, skip link,
   labels, `aria-*` state, one `h1`, `<caption>`-ready tables), but no pass has been done
   against the full A11Y Project checklist in a browser yet.
-- **Deployment**: no systemd unit or Caddy config is checked in yet (see Deploy below).
+- **Deployment**: `deploy/` has the setup and update scripts, the systemd unit, the Caddyfile and the AWS steps (`deploy/aws.md`). Not yet tried on a real server.
 - **Email deliverability**: SES domain verification, DKIM and DMARC records are setup steps,
   not code.
 
