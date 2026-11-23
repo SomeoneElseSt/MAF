@@ -192,3 +192,10 @@ dialog p { margin: 0 0 16px; }
   .post-head h1, h1.heading { font-size: 26px; }
   .comments .comments { margin-left: 16px; }
 }
+
+/* Date range with arrows to step between 4-day pages */
+.range { display: inline-flex; align-items: baseline; gap: 10px; }
+.arrow { color: var(--soft); font-size: 20px; line-height: 1; padding: 0 2px; }
+.arrow:hover { color: var(--ink); text-decoration: none; }
+span.arrow { color: var(--line); }
+.list-flat { margin-top: 18px; }
