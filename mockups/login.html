@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign in · MAF</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap">
+    <a class="logo" href="index.html"><span class="logo-mark">maf<span>.</span></span><span class="logo-sub">anonymous, students only</span></a>
+    <nav class="nav"><a href="how.html">How it works</a></nav>
+  </div>
+</header>
+
+<main class="wrap narrow">
+  <h1 class="page-title">Students only</h1>
+  <p class="page-lead">Enter your university email to get a one-time code. We use it once to check you're a student, then forget it.</p>
+
+  <form class="card" action="login-code.html">
+    <div class="field">
+      <label for="email">University email</label>
+      <input id="email" type="email" placeholder="you@uni.minerva.edu" autocomplete="email">
+    </div>
+    <button class="btn btn-primary btn-block" type="submit">Send code</button>
+  </form>
+
+  <p class="rules"><strong>One rule:</strong> don't name students or staff. Public figures are fine.</p>
+  <p class="fine">Your email is never stored or linked to what you post. <a href="how.html">How this works</a></p>
+</main>
+</body>
+</html>
