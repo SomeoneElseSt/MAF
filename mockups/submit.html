@@ -3,53 +3,41 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>New post · MAF</title>
+<title>Submit · MAF</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header class="site-header">
-  <div class="wrap">
-    <a class="logo" href="index.html"><span class="logo-mark">maf<span>.</span></span><span class="logo-sub">anonymous, students only</span></a>
-    <nav class="nav">
-      <a href="how.html">How it works</a>
-      <a class="btn btn-primary" href="submit.html">New post</a>
-    </nav>
-  </div>
-</header>
+<div class="page">
+  <header class="top">
+    <a class="brand" href="index.html">MAF</a>
+    <nav><a href="submit.html" aria-current="page">submit</a><a href="how.html">how it works</a></nav>
+    <form class="find" action="index.html"><input type="search" name="q" placeholder="search" aria-label="Search posts and comments"></form>
+  </header>
 
-<main class="wrap">
-  <h1 class="page-title">New post</h1>
-  <p class="page-lead">Share a thought or a link. You'll appear under a random ID that only exists in this thread.</p>
+  <h1 class="heading">Submit</h1>
+  <p class="lede">A link, some text, or both.</p>
 
-  <form class="card" action="submit-warning.html">
+  <form action="submit-warning.html">
     <div class="field">
-      <label for="title">Title</label>
+      <label for="title">title</label>
       <input id="title" type="text" value="Unpopular opinion: the capstone should be optional">
     </div>
     <div class="field">
-      <label for="url">Link</label>
+      <label for="url">link</label>
       <input id="url" type="url" placeholder="https://">
     </div>
-    <p class="or">or</p>
     <div class="field">
-      <label for="text">Text</label>
-      <textarea id="text" class="body">I know this will be controversial, but after talking to people in my cohort, the capstone feels like a requirement that helps some students and drains others…</textarea>
-      <p class="help">Plain text. Links are fine; images aren't supported.</p>
+      <label for="text">text</label>
+      <textarea id="text">I know this will be controversial, but after talking to people in my cohort, the capstone feels like a requirement that helps some students and drains others.</textarea>
+      <p class="help">plain text · no images</p>
     </div>
-    <div class="form-actions">
-      <a class="btn" href="index.html">Cancel</a>
-      <button class="btn btn-primary" type="submit">Post</button>
+    <div class="row">
+      <button class="button" type="submit">submit</button>
+      <a class="note" href="index.html">cancel</a>
     </div>
   </form>
 
-  <p class="rules"><strong>One rule:</strong> don't name students or staff. Public figures are fine.</p>
-</main>
-
-<footer class="site-footer">
-  <div class="wrap">
-    <span>No names, no profiles, no tracking.</span>
-    <span><a href="how.html">How it works</a> · <a href="https://github.com/">Source code</a></span>
-  </div>
-</footer>
+  <p class="rule-line">rule: don't name students or staff. public figures are fine.</p>
+</div>
 </body>
 </html>

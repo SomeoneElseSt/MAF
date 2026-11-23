@@ -7,27 +7,24 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header class="site-header">
-  <div class="wrap">
-    <a class="logo" href="index.html"><span class="logo-mark">maf<span>.</span></span><span class="logo-sub">anonymous, students only</span></a>
-    <nav class="nav"><a href="how.html">How it works</a></nav>
-  </div>
-</header>
+<div class="page">
+  <header class="top">
+    <a class="brand" href="index.html">MAF</a>
+    <nav><a href="how.html">how it works</a></nav>
+  </header>
 
-<main class="wrap narrow">
-  <h1 class="page-title">Students only</h1>
-  <p class="page-lead">Enter your university email to get a one-time code. We use it once to check you're a student, then forget it.</p>
+  <h1 class="heading">Sign in</h1>
+  <p class="lede">MAF is for Minerva students. Enter your university email and we'll send a code. The email is used once and never stored.</p>
 
-  <form class="card" action="login-code.html">
+  <form action="login-code.html">
     <div class="field">
-      <label for="email">University email</label>
+      <label for="email">university email</label>
       <input id="email" type="email" placeholder="you@uni.minerva.edu" autocomplete="email">
     </div>
-    <button class="btn btn-primary btn-block" type="submit">Send code</button>
+    <button class="button" type="submit">send code</button>
   </form>
 
-  <p class="rules"><strong>One rule:</strong> don't name students or staff. Public figures are fine.</p>
-  <p class="fine">Your email is never stored or linked to what you post. <a href="how.html">How this works</a></p>
-</main>
+  <p class="rule-line">rule: don't name students or staff. public figures are fine. · <a href="how.html">how anonymity works</a></p>
+</div>
 </body>
 </html>

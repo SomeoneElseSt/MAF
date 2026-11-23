@@ -7,79 +7,71 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header class="site-header">
-  <div class="wrap">
-    <a class="logo" href="index.html"><span class="logo-mark">maf<span>.</span></span><span class="logo-sub">anonymous, students only</span></a>
-    <nav class="nav">
-      <a href="how.html">How it works</a>
-      <a class="btn btn-primary" href="submit.html">New post</a>
-    </nav>
-  </div>
-</header>
+<div class="page">
+  <header class="top">
+    <a class="brand" href="index.html">MAF</a>
+    <nav><a href="submit.html">submit</a><a href="how.html">how it works</a></nav>
+    <form class="find" action="index.html"><input type="search" name="q" placeholder="search" aria-label="Search posts and comments"></form>
+  </header>
 
-<main class="wrap">
-  <article class="thread-head">
+  <article class="post-head">
     <h1>Should we move the Berlin rotation to fall?</h1>
-    <div class="meta"><button class="anon-id" type="button">amber-fox</button><span class="op-tag">OP</span><span class="dot">·</span><span>2h ago</span><span class="dot">·</span><span>61 views</span></div>
-    <div class="thread-body">
+    <div class="meta"><button class="id" type="button">amber-fox</button> <span class="op">(op)</span> · 2h · 61 views</div>
+    <div class="post-body">
       <p>Fall in Berlin means better weather for the first half, cheaper flights in, and the semester lines up with most German universities, so events and guest lectures actually happen while we're there.</p>
       <p>Spring has its fans, but I think fall is the stronger case. What am I missing?</p>
     </div>
-    <div class="thread-actions"><button class="btn-ghost btn" type="button">⚑ Flag</button></div>
+    <div class="actions"><button type="button">flag</button></div>
   </article>
 
-  <form class="reply-box" action="item.html">
-    <textarea placeholder="Add a comment" aria-label="Comment"></textarea>
+  <form class="reply" action="item.html">
+    <textarea aria-label="Comment"></textarea>
     <div class="row">
-      <span class="hint">You'll post under your random ID for this thread.</span>
-      <button class="btn btn-primary" type="submit">Comment</button>
+      <button class="button" type="submit">comment</button>
+      <span class="note">you'll post under your ID for this thread</span>
     </div>
   </form>
 
   <ol class="comments">
     <li class="comment">
-      <div class="meta"><button class="anon-id" type="button">quiet-otter</button><span class="dot">·</span><span>1h ago</span></div>
-      <p class="comment-text">Disagree. The housing situation in fall is brutal because every exchange student arrives at the same time. Spring is far easier to find a place.</p>
-      <div class="comment-actions"><button class="btn btn-ghost" type="button">Reply</button><button class="btn btn-ghost" type="button">⚑ Flag</button></div>
+      <div class="meta"><button class="id" type="button">quiet-otter</button> · 1h</div>
+      <p>Disagree. The housing situation in fall is brutal because every exchange student arrives at the same time. Spring is far easier to find a place.</p>
+      <div class="actions"><a href="item.html">reply</a><button type="button">flag</button></div>
       <ol class="comments">
         <li class="comment">
-          <div class="meta"><button class="anon-id" type="button">amber-fox</button><span class="op-tag">OP</span><span class="dot">·</span><span>54m ago</span></div>
-          <p class="comment-text">Fair, but the school arranges housing for us anyway, so does the rush actually affect us?</p>
-          <div class="comment-actions"><button class="btn btn-ghost" type="button">Reply</button><button class="btn btn-ghost" type="button">⚑ Flag</button></div>
+          <div class="meta"><button class="id" type="button">amber-fox</button> <span class="op">(op)</span> · 54m</div>
+          <p>Fair, but the school arranges housing for us anyway, so does the rush actually affect us?</p>
+          <div class="actions"><a href="item.html">reply</a><button type="button">flag</button></div>
           <ol class="comments">
             <li class="comment">
-              <div class="meta"><button class="anon-id" type="button">quiet-otter</button><span class="dot">·</span><span>40m ago</span></div>
-              <p class="comment-text">It did for our cohort. Half of us ended up in the overflow building.</p>
-              <div class="comment-actions"><button class="btn btn-ghost" type="button">Reply</button><button class="btn btn-ghost" type="button">⚑ Flag</button></div>
+              <div class="meta"><button class="id" type="button">quiet-otter</button> · 40m</div>
+              <p>It did for our cohort. Half of us ended up in the overflow building.</p>
+              <div class="actions"><a href="item.html">reply</a><button type="button">flag</button></div>
             </li>
           </ol>
         </li>
       </ol>
     </li>
     <li class="comment">
-      <div class="meta"><button class="anon-id" type="button">slow-heron</button><span class="dot">·</span><span>48m ago</span></div>
-      <p class="comment-text">+1 to fall. The winter darkness in spring rotation is real and nobody warns you about it.</p>
-      <div class="comment-actions"><button class="btn btn-ghost" type="button">Reply</button><button class="btn btn-ghost" type="button">⚑ Flag</button></div>
+      <div class="meta"><button class="id" type="button">slow-heron</button> · 48m</div>
+      <p>+1 to fall. The winter darkness in spring rotation is real and nobody warns you about it.</p>
+      <div class="actions"><a href="item.html">reply</a><button type="button">flag</button></div>
     </li>
     <li class="comment">
-      <div class="meta"><button class="anon-id" type="button">brave-lynx</button><span class="dot">·</span><span>20m ago</span></div>
-      <p class="comment-text">Does anyone know who actually makes this call, and whether student input counts at all?</p>
-      <div class="comment-actions"><button class="btn btn-ghost" type="button">Reply</button><button class="btn btn-ghost" type="button">⚑ Flag</button></div>
+      <div class="meta"><button class="id" type="button">brave-lynx</button> · 20m</div>
+      <p>Does anyone know who actually makes this call, and whether student input counts at all?</p>
+      <div class="actions"><a href="item.html">reply</a><button type="button">flag</button></div>
     </li>
   </ol>
-</main>
 
-<footer class="site-footer">
-  <div class="wrap">
-    <span>No names, no profiles, no tracking.</span>
-    <span><a href="how.html">How it works</a> · <a href="https://github.com/">Source code</a></span>
-  </div>
-</footer>
+  <footer class="foot">
+    <a href="how.html">how it works</a><a href="https://github.com/">source</a>don't name students or staff
+  </footer>
+</div>
 
 <dialog id="id-dialog">
-  <h3>IDs change per thread</h3>
-  <p>Everyone gets a new random ID in each thread, so no one can follow you around. There are no profiles, on purpose.</p>
-  <button class="btn btn-primary btn-block" type="button">Got it</button>
+  <p>IDs are random and change in every thread, so nobody can follow you from one thread to the next. There are no profiles.</p>
+  <button class="button" type="button">ok</button>
 </dialog>
 <script src="ids.js"></script>
 </body>

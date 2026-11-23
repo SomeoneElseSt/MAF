@@ -3,49 +3,37 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>New post · MAF</title>
+<title>Submit · MAF</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header class="site-header">
-  <div class="wrap">
-    <a class="logo" href="index.html"><span class="logo-mark">maf<span>.</span></span><span class="logo-sub">anonymous, students only</span></a>
-    <nav class="nav">
-      <a href="how.html">How it works</a>
-      <a class="btn btn-primary" href="submit.html">New post</a>
-    </nav>
-  </div>
-</header>
+<div class="page">
+  <header class="top">
+    <a class="brand" href="index.html">MAF</a>
+    <nav><a href="submit.html" aria-current="page">submit</a><a href="how.html">how it works</a></nav>
+    <form class="find" action="index.html"><input type="search" name="q" placeholder="search" aria-label="Search posts and comments"></form>
+  </header>
 
-<main class="wrap">
-  <h1 class="page-title">New post</h1>
+  <h1 class="heading">Submit</h1>
 
-  <div class="banner">
-    <strong>This looks like it names someone</strong>
-    <p>MAF doesn't allow naming students or staff. If it's a public figure, you can post anyway.</p>
-    <div class="actions">
-      <a class="btn" href="submit.html">Edit post</a>
-      <a class="btn btn-primary" href="item.html">Post anyway</a>
+  <div class="hidden-note">
+    <p>This looks like it names someone. MAF doesn't allow naming students or staff. If it's a public figure, you can post anyway.</p>
+    <div class="row">
+      <a class="button quiet" href="submit.html">edit post</a>
+      <a class="button" href="item.html">post anyway</a>
     </div>
   </div>
 
-  <form class="card" action="item.html" style="margin-top: 16px">
+  <form action="item.html" style="margin-top: 22px">
     <div class="field">
-      <label for="title">Title</label>
+      <label for="title">title</label>
       <input id="title" type="text" value="What Ben Nelson got right about seminars">
     </div>
     <div class="field">
-      <label for="text">Text</label>
-      <textarea id="text" class="body">Reading the founding essays again, the argument for active learning holds up better than I expected…</textarea>
+      <label for="text">text</label>
+      <textarea id="text">Reading the founding essays again, the argument for active learning holds up better than I expected.</textarea>
     </div>
   </form>
-</main>
-
-<footer class="site-footer">
-  <div class="wrap">
-    <span>No names, no profiles, no tracking.</span>
-    <span><a href="how.html">How it works</a> · <a href="https://github.com/">Source code</a></span>
-  </div>
-</footer>
+</div>
 </body>
 </html>
