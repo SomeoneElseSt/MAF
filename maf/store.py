@@ -99,6 +99,7 @@ class Item:
     private_to: str | None = None
     tags: list[str] = field(default_factory=list)
     comment_count: int = 0
+    thread_title: str | None = None
 
     @property
     def is_post(self) -> bool:
@@ -284,19 +285,19 @@ def _visible_ids(items: list[Item], viewer_pass: str | None) -> set[str]:
 
 
 def build_tree(items: list[Item], root_id: str) -> list[dict]:
-    """Turns a flat, ordered list into nested {item, children} nodes."""
-    nodes = {i.id: {"item": i, "children": []} for i in items}
-    roots: list[dict] = []
+    """Nests a flat, ordered list into {item, children} nodes.
+
+    Returns the top-level nodes below the root: the root itself is left out,
+    since a thread page renders it as the post, not as a comment.
+    """
+    nodes: dict[str, dict] = {}
     for item in items:
-        node = nodes[item.id]
-        if item.id == root_id:
-            continue
+        nodes[item.id] = {"item": item, "children": []}
+    for item in items:
         parent = nodes.get(item.parent_id or "")
-        if parent is None:
-            roots.append(node)
-            continue
-        parent["children"].append(node)
-    return roots
+        if parent is not None:
+            parent["children"].append(nodes[item.id])
+    return nodes[root_id]["children"] if root_id in nodes else []
 
 
 # -- listing -------------------------------------------------------------
@@ -415,7 +416,17 @@ def search(
         rows = conn.execute(sql, (match, limit, offset)).fetchall()
     except sqlite3.OperationalError:
         return []
-    return [_row_to_item(r, item_tags(conn, r["id"])) for r in rows]
+    items = [_row_to_item(r, item_tags(conn, r["id"])) for r in rows]
+    titles = {
+        r["id"]: r["title"]
+        for r in conn.execute(
+            f"SELECT id, title FROM item WHERE id IN ({','.join('?' * len({i.thread_id for i in items}))})",
+            list({i.thread_id for i in items}),
+        ).fetchall()
+    } if items else {}
+    for item in items:
+        item.thread_title = titles.get(item.thread_id)
+    return items
 
 
 def _fts_query(query: str) -> str:

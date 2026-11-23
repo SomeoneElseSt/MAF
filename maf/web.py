@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from typing import Any
+from urllib.parse import urlencode
 
 from starlette.background import BackgroundTask
 from starlette.requests import Request
@@ -72,7 +73,19 @@ def page_of(request: Request) -> Page:
 def render(page: Page, template: str, status_code: int = 200, **context: Any) -> HTMLResponse:
     """Renders a template with the shared layout context."""
     tags = store.tag_counts(page.conn)
+    params = dict(page.request.query_params)
+
+    def sort_url(key: str) -> str:
+        """This page with a different sort, dropping the page number."""
+        updated = {**params, "sort": key}
+        updated.pop("page", None)
+        if key == "new":
+            updated.pop("sort", None)
+        query = urlencode(updated)
+        return f"{page.request.url.path}?{query}" if query else page.request.url.path
+
     base = {
+        "sort_url": sort_url,
         "viewer": page.pass_id,
         "tags": tags,
         "search_query": page.request.query_params.get("q", ""),

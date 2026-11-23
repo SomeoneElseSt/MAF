@@ -7,13 +7,13 @@
     groups        [(day_label, [row, ...]), ...] for the 4-day views
     results       [row, ...] for search and tag pages
     pinned        [row, ...] maintainer-pinned posts (home, newest, latest page only)
-    range_label   "19 to 22 November" when the 4-day window is shown
+    date_range    "19 to 22 November" when the 4-day window is shown
     prev_url      link for the ‹ arrow, or None when disabled
     next_url      link for the › arrow, or None when disabled
     pager         {"prev": url|None, "next": url|None} for 30-per-page views
     empty         True when there are no posts at all
     sort          "new" | "old" | "views"
-    sort_links    {sort: url} for the sort row
+    sort_links    {sort: url} for the 4-day home view; other pages use sort_url(key)
     chip          "#tag" shown in the search box for tag pages (handled via active_tag)
     page_number   the search page number (search only)
   Each row is a store.Item with .tags.
@@ -22,8 +22,13 @@
 
 {% macro row(post, fixed=false) %}
 <li{% if fixed %} class="fixed"{% elif is_hot(post.tags) %} class="hot"{% endif %} data-tags="{{ post.tags|join(' ') }}" data-id="{{ post.id }}" data-title="{{ post.title|e }}" data-host="{{ post.url|host }}">
+  {% if post.title %}
   <a class="title" href="/item/{{ post.id }}">{{ post.title }}</a>{% if post.url %}<span class="host">{{ post.url|host }}</span>{% endif %}
   <div class="meta">{{ metadata(post, post.comment_count) }}{% if post.tags %} <span class="dot">·</span> {% for tag in post.tags %}<a class="tag{% if is_hot([tag]) %} hot-tag{% endif %}" href="/?tag={{ tag }}">#{{ tag }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}</div>
+  {% else %}
+  <a class="title" href="/item/{{ post.thread_id }}#{{ post.id }}">{{ post.text|truncate(80) }}</a>
+  <div class="meta">Comment on <a href="/item/{{ post.thread_id }}">{{ post.thread_title }}</a>, {{ post.created_at|rel }}</div>
+  {% endif %}
 </li>
 {% endmacro %}
 
@@ -31,13 +36,13 @@
 <div class="listbar">
   <div class="sort"><span>Sort by:</span>
     {% for key, label in sort_keys.items() %}
-      {% if key == sort %}<strong data-text="{{ label }}" aria-current="true">{{ label }}</strong>{% else %}<a href="{{ sort_links[key] }}" data-text="{{ label }}">{{ label }}</a>{% endif %}
+      {% if key == sort %}<strong data-text="{{ label }}" aria-current="true">{{ label }}</strong>{% else %}<a href="{{ sort_links[key] if sort_links else sort_url(key) }}" data-text="{{ label }}">{{ label }}</a>{% endif %}
     {% endfor %}
   </div>
-  {% if range_label %}
+  {% if date_range %}
   <span class="range">
     {% if prev_url %}<a class="arrow" href="{{ prev_url }}" aria-label="Earlier 4 days">‹</a>{% else %}<span class="arrow" aria-disabled="true">‹</span>{% endif %}
-    <span>{{ range_label }}</span>
+    <span>{{ date_range }}</span>
     {% if next_url %}<a class="arrow" href="{{ next_url }}" aria-label="Later 4 days">›</a>{% else %}<span class="arrow" aria-disabled="true">›</span>{% endif %}
   </span>
   {% endif %}

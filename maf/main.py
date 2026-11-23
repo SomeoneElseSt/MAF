@@ -23,16 +23,42 @@ APP: App = None  # set by create_app
 def home(request: Request) -> Response:
     page = page_of(request)
     sort = sort_param(request)
+    tag = request.query_params.get("tag", "").strip().lower()
+    if tag:
+        return render_tag(page, tag, sort, max(1, int(request.query_params.get("page", "1") or 1)))
     before = parse_date(request.query_params.get("before"))
     after = parse_date(request.query_params.get("after"))
     return render_home(page, sort, before, after)
+
+
+def render_tag(page, tag: str, sort: str, page_number: int):
+    """Posts with one tag, across all time, 30 per page (SPEC Hashtags)."""
+    conn = page.conn
+    offset = (page_number - 1) * store.PAGE_SIZE
+    rows = store.tagged_posts(conn, tag, sort, store.PAGE_SIZE + 1, offset)
+    has_next = len(rows) > store.PAGE_SIZE
+    results = store.with_comment_counts(conn, rows[: store.PAGE_SIZE])
+    pager = {
+        "prev": _tag_url(tag, sort, page_number - 1) if page_number > 1 else None,
+        "next": _tag_url(tag, sort, page_number + 1) if has_next else None,
+    }
+    return render(page, "list.html", kind="tag", title=f"#{tag}", results=results, pager=pager)
+
+
+def _tag_url(tag: str, sort: str, page_number: int) -> str:
+    from urllib.parse import urlencode
+
+    params = {"tag": tag, "page": page_number}
+    if sort != "new":
+        params["sort"] = sort
+    return "/?" + urlencode(params)
 
 
 def render_home(page, sort, before, after):
     conn = page.conn
     if not store.has_any_posts(conn):
         return render(page, "list.html", kind="home", title="", empty=True,
-                      groups=[], pinned=[], range_label=range_label(*four_day_window(today())),
+                      groups=[], pinned=[], date_range=range_label(*four_day_window(today())),
                       sort_links=_home_sort_links(None), prev_url=None, next_url=None)
 
     window_end = _window_end(conn, sort, before, after)
@@ -47,7 +73,7 @@ def render_home(page, sort, before, after):
     prev_url = _page_url(sort, (start - timedelta(days=1)).isoformat())
     next_url = _next_url(sort, end)
     return render(page, "list.html", kind="home", title="", empty=False,
-                  groups=groups, pinned=pinned, range_label=range_label(start, end),
+                  groups=groups, pinned=pinned, date_range=range_label(start, end),
                   prev_url=prev_url, next_url=next_url, sort_links=_home_sort_links(start),
                   day_param=end.isoformat())
 
