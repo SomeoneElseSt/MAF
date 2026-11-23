@@ -18,6 +18,16 @@ from maf.housetags import (
 # -- house tags ----------------------------------------------------------
 
 
+
+@pytest.fixture
+def client(starlette_app, app):
+    """These pages are students-only, so the client here is signed in as a reader."""
+    from starlette.testclient import TestClient
+
+    from tests.conftest import sign_in_as
+
+    return sign_in_as(TestClient(starlette_app), app, store.create_pass(app.conn))
+
 def test_the_four_house_tags():
     assert set(HOUSE_TAGS) == {"hottakes", "help", "wondering", "confession"}
 
@@ -50,8 +60,10 @@ def test_reply_placeholder():
 # -- submit --------------------------------------------------------------
 
 
-def test_submit_requires_sign_in(client):
-    response = client.get("/submit", follow_redirects=False)
+def test_submit_requires_sign_in(starlette_app):
+    from starlette.testclient import TestClient
+
+    response = TestClient(starlette_app).get("/submit", follow_redirects=False)
     assert response.status_code == 303
     assert response.headers["location"] == "/login"
 

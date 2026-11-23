@@ -31,7 +31,8 @@ def test_one_flag_per_pass(app, pass_id):
     assert store.get_item(app.conn, post.id).flags == 1
 
 
-def test_hidden_posts_leave_the_home_page_but_stay_reachable(client, app, pass_id):
+def test_hidden_posts_leave_the_home_page_but_stay_reachable(signed_in, app, pass_id):
+    client = signed_in
     post = make_post(app, pass_id, title="Hidden title")
     flag_by(app, post.id, 5)
     assert "Hidden title" not in client.get("/").text

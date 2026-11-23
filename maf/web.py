@@ -72,7 +72,8 @@ def page_of(request: Request) -> Page:
 
 def render(page: Page, template: str, status_code: int = 200, **context: Any) -> HTMLResponse:
     """Renders a template with the shared layout context."""
-    tags = store.tag_counts(page.conn)
+    # Signed-out visitors get nothing from the forum, not even tag names in the # menu.
+    tags = store.tag_counts(page.conn) if page.pass_id else []
     params = dict(page.request.query_params)
 
     def sort_url(key: str) -> str:

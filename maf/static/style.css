@@ -380,3 +380,5 @@ main { display: block; }
 /* Request unhide / Request deletion are form buttons here; they look like the mockup's links. */
 .notice .actions button { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 .faded .post-reactions { margin-top: 6px; }
+/* Signed out there's no search box, so the theme toggle keeps its place on the right. */
+.top nav + .theme-toggle { margin-left: auto; }

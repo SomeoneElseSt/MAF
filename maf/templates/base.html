@@ -36,12 +36,14 @@
       <a href="/login"{% if path == "/login" %} aria-current="page"{% endif %}>Sign in</a>
       {% endif %}
     </nav>
+    {% if viewer %}
     <form class="find" action="/" method="get" role="search">
       {% if sort != "new" %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
       <input type="search" name="q" placeholder="Search" aria-label="Search posts and comments" value="{{ search_query }}">
       <button class="tag-toggle" type="button" aria-label="Browse hashtags" aria-expanded="false">#</button>
       <div class="tag-menu" hidden></div>
     </form>
+    {% endif %}
     <button class="theme-toggle" type="button">Dark</button>
   </header>
   <main id="main">

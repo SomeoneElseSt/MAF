@@ -2,9 +2,21 @@
 
 from datetime import timedelta
 
+import pytest
+
 from maf import store
 from maf.util import iso, utc_now
 
+
+
+@pytest.fixture
+def client(starlette_app, app):
+    """These pages are students-only, so the client here is signed in as a reader."""
+    from starlette.testclient import TestClient
+
+    from tests.conftest import sign_in_as
+
+    return sign_in_as(TestClient(starlette_app), app, store.create_pass(app.conn))
 
 def make_post(app, pass_id, title="A post", text="Some text", url=None, tags=(), days_ago=0):
     created = iso(utc_now() - timedelta(days=days_ago))
@@ -90,9 +102,13 @@ def test_view_dedupe_clears_after_24_hours(app, pass_id):
     assert Memory().count_view(pass_id, "item-1")
 
 
-def test_views_are_not_counted_for_signed_out_readers(client, app, pass_id):
-    post = make_post(app, pass_id)
-    client.get(f"/item/{post.id}")
+def test_signed_out_visitors_cannot_open_threads_or_add_views(starlette_app, app, pass_id):
+    from starlette.testclient import TestClient
+
+    post = make_post(app, pass_id, title="Students only")
+    response = TestClient(starlette_app).get(f"/item/{post.id}", follow_redirects=False)
+    assert response.status_code == 303
+    assert "Students only" not in response.text
     assert store.get_item(app.conn, post.id).views == 0
 
 

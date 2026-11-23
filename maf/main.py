@@ -6,7 +6,7 @@ from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.requests import Request
-from starlette.responses import Response
+from starlette.responses import RedirectResponse, Response
 from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 
@@ -186,6 +186,31 @@ class WithApp:
         await self._app(scope, receive, send)
 
 
+# Pages a signed-out visitor may open. Everything else needs a pass; the API checks its own bearer tokens.
+PUBLIC_PATHS = {"/login", "/login/code", "/login/blind", "/login/blind-sign", "/redeem", "/about", "/guide"}
+PUBLIC_PREFIXES = ("/static/", "/api/")
+
+
+class RequireSignIn:
+    """Only students can read MAF: without a valid pass, every non-public request goes to Sign in."""
+
+    def __init__(self, asgi_app) -> None:
+        self._app = asgi_app
+
+    async def __call__(self, scope, receive, send) -> None:
+        if scope["type"] != "http" or _is_public(scope["path"]):
+            await self._app(scope, receive, send)
+            return
+        if APP.sessions.pass_id(Request(scope)) is not None:
+            await self._app(scope, receive, send)
+            return
+        await RedirectResponse("/login", status_code=303)(scope, receive, send)
+
+
+def _is_public(path: str) -> bool:
+    return path in PUBLIC_PATHS or path.startswith(PUBLIC_PREFIXES)
+
+
 def create_app(settings: Settings | None = None) -> Starlette:
     global APP
     settings = settings or load_settings()
@@ -211,7 +236,7 @@ def create_app(settings: Settings | None = None) -> Starlette:
         Mount("/static", StaticFiles(directory=str(settings.static_dir)), name="static"),
     ]
     starlette = Starlette(routes=routes, exception_handlers={404: not_found},
-                          middleware=[Middleware(GZipMiddleware, minimum_size=500), Middleware(WithApp)])
+                          middleware=[Middleware(GZipMiddleware, minimum_size=500), Middleware(WithApp), Middleware(RequireSignIn)])
     starlette.state.maf = app
     return starlette
 
