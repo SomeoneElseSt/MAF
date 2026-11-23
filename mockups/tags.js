@@ -36,7 +36,10 @@ function renderTagMenu() {
     option.addEventListener("click", () => filterByTag(tag));
     return option;
   });
-  tagMenu.replaceChildren(...options);
+  const scroller = Object.assign(document.createElement("div"), { className: "tag-scroll" });
+  scroller.append(...options);
+  scroller.addEventListener("scroll", updateTagFade);
+  tagMenu.replaceChildren(scroller);
 }
 
 tagToggle?.addEventListener("click", () => {
@@ -63,3 +66,12 @@ document.querySelectorAll(".meta .tag").forEach(link => {
 searchInput?.addEventListener("input", () => {
   if (searchInput.value.trim() === "") filterByTag(null);
 });
+
+// Drop the bottom fade once the list is scrolled to the end (or doesn't need scrolling).
+function updateTagFade() {
+  const scroller = tagMenu.querySelector(".tag-scroll");
+  if (!scroller) return;
+  const atEnd = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 2;
+  scroller.classList.toggle("at-end", atEnd);
+}
+tagToggle?.addEventListener("click", () => { if (!tagMenu.hidden) updateTagFade(); });
