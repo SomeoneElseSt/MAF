@@ -13,7 +13,7 @@ function currentTheme() {
 
 function updateLabel() {
   if (!toggle) return;
-  toggle.textContent = currentTheme() === "dark" ? "Light" : "Dark";
+  toggle.setAttribute("aria-label", currentTheme() === "dark" ? "Switch to light mode" : "Switch to dark mode");
 }
 
 toggle?.addEventListener("click", () => {

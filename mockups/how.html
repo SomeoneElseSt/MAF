@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>How it works · MAF</title>
+<title>User Guide · MAF</title>
 <link rel="stylesheet" href="style.css">
 <script>try { const saved = localStorage.getItem("theme"); if (saved) document.documentElement.dataset.theme = saved; } catch {}</script>
 </head>
@@ -11,13 +11,13 @@
 <div class="page">
   <header class="top">
     <a class="brand" href="index.html">MAF</a>
-    <nav><a href="submit.html">Submit</a><a href="how.html" aria-current="page">How it works</a></nav>
+    <nav><a href="submit.html">Submit</a></nav>
     <form class="find" action="index.html"><input type="search" name="q" placeholder="Search" aria-label="Search posts and comments"></form>
-    <button class="theme-toggle" type="button">Dark</button>
+    <button class="theme-toggle" type="button" aria-label="Switch to dark mode"><svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><circle cx="10" cy="10" r="7.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" fill="currentColor"/></svg></button>
   </header>
 
   <div class="prose">
-    <h1 class="heading">How it works</h1>
+    <h1 class="heading">User Guide</h1>
 
     <h2>Your email</h2>
     <p>You sign in with your university email so only students get in. MAF sends a code to it and then forgets it. It isn't saved anywhere, and nothing you post is linked to it, including by whoever runs the server.</p>
@@ -43,7 +43,7 @@
   </div>
 
   <footer class="foot">
-    <a href="about.html">About</a><a href="how.html">User Guide</a><a href="https://github.com/">Source Code</a><span class="sep">|</span><span>Please don't name students or staff.</span>
+    <a href="about.html">About</a><a href="how.html">User Guide</a><a href="https://github.com/">Source Code</a>
   </footer>
 </div>
 <script src="theme.js"></script>

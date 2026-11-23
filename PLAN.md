@@ -99,17 +99,19 @@ It looks like Hacker News but has no votes: text or link posts, nested comments,
 
 | Page | What it shows |
 | --- | --- |
-| Home | Search bar and sorter at the top, the post list (newest first by default), plus the no-naming rule |
+| Home | Search bar, light/dark icon and sorter at the top, then the week's posts (newest first by default) |
 | Thread | A post and its comments; hidden posts show a banner with Request unhide and Request nuke ☢️ |
 | Submit | New post form |
-| How it works | Anonymity, per-thread IDs, rules |
+| About | What MAF is and why it exists |
+| User Guide | Anonymity, per-thread IDs, the rule, flags; links to Use this data |
+| Use this data | How to read the forum from an AI agent (MCP), the command line or curl |
 | Sign in | Email and code |
 
 ## Name filter
 
 Posts that seem to name a person get a warning before they're saved, and the poster decides. There are no lists of names to maintain.
 
-- **Rule:** no naming students or staff. It's shown during sign-in and on the home page.
+- **Rule:** no naming students or staff. It's shown on the sign-in and submit pages and in the User Guide.
 - **Tool:** Microsoft Presidio, which detects people's names in text. It runs on the same server and only when someone submits, so reading is unaffected. Expect tens of milliseconds per submission, to be measured during the build.
 - **On a match** the poster sees: "This looks like it names someone. MAF doesn't allow naming students or staff. If it's a public figure, you can post anyway." with two buttons, **Edit post** and **Post anyway**.
 - **No allowlist:** public figures like Ben Nelson, Kant or Elon Musk go through with one extra click. Nothing about Minerva people is stored.
@@ -144,6 +146,20 @@ The community hides posts by flagging them. Anyone can then ask the maintainer t
 - **No admins:** there are no admin codes, roles or buttons, so nothing about moderation can be linked to anyone.
 - **Legal position:** in the US, Section 230 generally protects the operator from liability for what users post. Text and links only removes the serious risks of hosted images. The one real duty is acting on illegal content once told about it, which is what Nuke is for.
 
+## Use this data (developer access)
+
+Students can read MAF from their own tools: an AI agent through MCP, a terminal, or plain curl. The User Guide links to a "Use this data" page that explains how.
+
+- **Read-only.** Agents and scripts can list, read and search posts. Posting stays in the browser, where the name warning and the rule are shown.
+- **Students only, like the site.** Signed in on the Use this data page, you click **Create token** and get a read token, shown once. It belongs to your anonymous pass, so it reveals nothing about who you are. You can revoke it on the same page.
+- **What it returns** is the same as the site: posts, comments and per-thread IDs. Hidden posts are left out, and nuked posts are gone.
+- **Three ways to use it**, all documented on the page with copy-paste examples:
+  - **MCP server** for agents like Claude Code or Cursor, with tools to list a week's posts, read a thread and search.
+  - **curl** against a small JSON API.
+  - **The same API from any script.**
+- **Rate-limited** per token, so one script can't slow the site down.
+- **Trade-off to accept:** posts can leave the students-only wall this way, for example into an AI provider's systems. That was already possible by copying and pasting, so the token adds convenience, not a new hole. The page says so plainly.
+
 ## Infrastructure
 
 Everything runs on AWS using existing credits: one small server, a domain, and Amazon's email service. The only real out-of-pocket cost is about $15 a year for the domain.
@@ -177,6 +193,7 @@ Everything runs on AWS using existing credits: one small server, a domain, and A
 | Search | Built-in SQLite full-text search, queries not logged | No extra dependency, nothing about readers saved |
 | Hiding | 5 flags hide from the main page; Request unhide / nuke emails the maintainer | Students can act at 3am; no admin system to build or trust |
 | Uploads | Text and links only | Avoids hosting illegal images |
+| Developer access | Read-only API + MCP server with per-pass read tokens | Dev-friendly without opening posting to scripts or breaking the students-only gate |
 
 ## Sign-off
 

@@ -53,14 +53,15 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 - **View counts:** each post has a `views` counter shown next to it. Opening a post adds 1, once per pass per 24 hours. The dedupe set `(pass_id, item_id)` lives **in memory only** and is cleared every 24 hours and on restart. Only the counter is written to disk, so no reading history is stored for any pass.
 - **Week pages:** `/` shows posts from the 7 days ending today, grouped under day headings (Today, Yesterday, then e.g. Thursday 19 November). `?week=YYYY-MM-DD` shows the 7 days ending on that date, with Previous week / Next week links. `sort` applies within the week. Search results span all time, 30 per page.
 - **List rows show no IDs:** title, link host, then plain-language metadata ("2 hours ago, 14 comments, 61 views").
-- **Pages:** `/` (week of posts with search bar and sorter, plus the no-naming rule), `/item/<id>`, `/submit`, `/how-it-works`, `/login`
+- **Header:** brand, Submit, search box, and a light/dark icon button. **Footer:** About, User Guide, Source Code.
+- **Pages:** `/` (week of posts with search bar and sorter), `/item/<id>`, `/submit`, `/about`, `/guide` (User Guide), `/guide/data` (Use this data), `/login`
 
 ## Name filter
 
 - Run Presidio `PERSON` detection on titles, bodies and comments **before** saving.
 - If it finds a name above the score threshold (configurable), don't save. Re-render the form with the text intact and the warning: *"This looks like it names someone. MAF doesn't allow naming students or staff. If it's a public figure, you can post anyway."* plus two buttons: **Edit post** (back to editing) and **Post anyway** (resubmits with `confirm_names=1`, which skips the check).
 - No allowlist and no stored list of names.
-- The rule appears in the login flow and on the home page.
+- The rule appears on `/login`, `/submit` and `/guide`.
 
 ## Moderation
 
@@ -83,6 +84,22 @@ No admin roles, codes or buttons. Moderation is community flags plus the maintai
   An unknown id prints `No item #<id>` and exits non-zero.
 - **No bans.**
 
+## Developer access (read-only API + MCP)
+
+- **Tokens:** on `/guide/data`, a signed-in pass can create a read token: 32 random bytes, base64url, shown once. Store `api_token(token_hash PK, pass_id)` with `sha256(token)`. The page lists the pass's tokens by their last 4 characters, each with a Revoke button. No creation time is stored.
+- **Auth:** `Authorization: Bearer <token>`. Tokens are read-only and can't post, comment, flag or request.
+- **Rate limit:** 60 requests per minute per token, kept in memory. Over the limit returns `429` with `Retry-After`.
+- **Endpoints** (JSON; hidden items excluded, same as the site):
+
+  | Endpoint | Returns |
+  |---|---|
+  | `GET /api/v1/posts?week=YYYY-MM-DD&sort=new\|old\|views` | The week's posts: `id, title, url, text_preview, created_at, comment_count, views` |
+  | `GET /api/v1/items/<id>` | A post with its comment tree; each item carries its per-thread `author_id` and an `op` flag |
+  | `GET /api/v1/search?q=...&page=N` | Matching posts and comments, 30 per page |
+
+- **MCP server:** a small stdio server in the same repo (`maf/mcp.py`, console script `maf-mcp`) with three tools, `list_posts(week?, sort?)`, `get_thread(id)` and `search(query, page?)`, which wrap the API. It's configured with `MAF_TOKEN` and `MAF_URL`. Use the official MCP Python SDK; it's the only extra dependency and runs on the user's machine, not the server.
+- **`/guide/data` page:** how to create a token, an MCP config snippet for Claude Code / Cursor, `curl` examples for each endpoint, and a note that anything read this way leaves the students-only site.
+
 ## Data model (sketch)
 
 ```
@@ -92,6 +109,7 @@ item(id, parent_id NULL, thread_id, pass_id, title NULL, url NULL, text NULL, cr
 item_fts  -- FTS5 virtual table over item(title, text), kept in sync with triggers
 flag(pass_id, item_id, PK both)
 moderation_request(pass_id, item_id, kind, PK all)  -- kind: unhide | nuke
+api_token(token_hash PK, pass_id)
 ```
 
 In memory only, never persisted: `pending_code(email → code, expires_at)`, `cooldown(email → expires_at)`, `viewed(pass_id, item_id)` (cleared every 24 h).
