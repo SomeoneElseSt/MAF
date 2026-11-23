@@ -82,6 +82,9 @@ a:hover { text-decoration: underline; text-decoration-thickness: 1px; text-under
 .sort { display: flex; gap: 16px; }
 .sort a { color: var(--meta); }
 .sort strong { color: var(--ink); font-weight: 600; }
+/* Each option reserves its bold width, so changing the selection doesn't shift its neighbours. */
+.sort a, .sort strong { display: inline-grid; }
+.sort a::after, .sort strong::after { content: attr(data-text); font-weight: 600; height: 0; overflow: hidden; visibility: hidden; }
 
 /* Post list */
 

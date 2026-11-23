@@ -18,6 +18,7 @@ function renderSortBar() {
   for (const [key, label] of SORT_OPTIONS) {
     const option = key === sortMode ? document.createElement("strong") : document.createElement("a");
     option.textContent = label;
+    option.dataset.text = label;
     if (key !== sortMode) option.href = urlWithSort(location.href, key);
     bar.append(option);
   }
