@@ -245,3 +245,12 @@ def test_empty_fields_get_the_sites_own_message_not_the_browsers(client, app):
     assert empty_email.status_code == 400 and "Please enter a valid email." in empty_email.text
     empty_code = client.post("/login/code", data={"email": "student@uni.minerva.edu", "code": ""})
     assert empty_code.status_code == 400 and "Enter the 6-digit code from the email." in empty_code.text
+
+
+def test_sign_in_pages_say_already_signed_in(signed_in):
+    pages = [("GET", "/login"), ("POST", "/login"), ("GET", "/login/code"), ("POST", "/login/code"), ("GET", "/redeem")]
+    for method, path in pages:
+        response = signed_in.request(method, path, data={"email": "student@uni.minerva.edu", "code": "123456"})
+        assert response.status_code == 200, path
+        assert "already signed in" in response.text, path
+        assert '<a href="/">home</a>' in response.text, path

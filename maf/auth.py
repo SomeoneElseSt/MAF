@@ -33,13 +33,24 @@ def normalise_email(raw: str) -> str | None:
     return email
 
 
+def signed_out_only(handler):
+    """Sign-in pages say so instead of starting over when the visitor already has a pass."""
+    async def wrapped(request: Request) -> Response:
+        page = page_of(request)
+        if page.pass_id:
+            return render(page, "signed-in.html", title="Sign in")
+        return await handler(request)
+
+    return wrapped
+
+
+@signed_out_only
 async def login_page(request: Request) -> Response:
     page = page_of(request)
-    if page.pass_id:
-        return redirect("/")
     return render(page, "login.html")
 
 
+@signed_out_only
 async def login_submit(request: Request) -> Response:
     page = page_of(request)
     values = await form_values(request, "email")
@@ -59,11 +70,13 @@ async def login_submit(request: Request) -> Response:
     return render(page, "login-code.html", email=email, cooldown_seconds=page.memory.cooldown_left(email))
 
 
+@signed_out_only
 async def code_page(request: Request) -> Response:
     page = page_of(request)
     return render(page, "login-code.html")
 
 
+@signed_out_only
 async def code_submit(request: Request) -> Response:
     page = page_of(request)
     values = await form_values(request, "email", "code")
@@ -115,6 +128,7 @@ async def blind_sign(request: Request) -> Response:
     )
 
 
+@signed_out_only
 async def redeem_page(request: Request) -> Response:
     page = page_of(request)
     return render(page, "redeem.html")

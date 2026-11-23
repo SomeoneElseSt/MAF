@@ -1,0 +1,11 @@
+{#
+  signed-in.html: shown on any sign-in page when the visitor already has a pass.
+  Context: none beyond the layout.
+#}
+{% extends "base.html" %}
+{% block main %}
+<div class="prose">
+  <h1 class="heading">Sign in</h1>
+  <p>You're already signed in. Go <a href="/">home</a>.</p>
+</div>
+{% endblock %}
