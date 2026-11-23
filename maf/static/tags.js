@@ -1,76 +1,19 @@
-// Mockup-only: the # button in the search box opens a list of every hashtag; picking one filters the posts.
-// The real app does this on the server with ?tag=<name>.
+// The # button in the search box opens every hashtag with its post count; picking
+// one filters the posts in place. The list comes from the server as JSON in
+// <script id="tag-data">, so counts match the whole site, not just this page.
+// Without JS the button is a plain link to /tags.
 const tagToggle = document.querySelector(".tag-toggle");
 const tagMenu = document.querySelector(".tag-menu");
 const searchInput = document.querySelector(".find input");
-
-function countTags() {
-  const counts = new Map();
-  document.querySelectorAll(".list li[data-tags]").forEach(item => {
-    item.dataset.tags.split(" ").forEach(tag => counts.set(tag, (counts.get(tag) ?? 0) + 1));
-  });
-  return [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
-}
-
-function filterByTag(tag) {
-  searchInput.value = tag ? `#${tag}` : "";
-  document.querySelectorAll(".list li").forEach(item => {
-    const tags = (item.dataset.tags ?? "").split(" ");
-    item.hidden = Boolean(tag) && !tags.includes(tag);
-  });
-  document.querySelectorAll("h2.day").forEach(heading => {
-    const list = heading.nextElementSibling;
-    const anyVisible = [...list.children].some(item => !item.hidden);
-    heading.hidden = !anyVisible;
-    list.hidden = !anyVisible;
-  });
-  tagMenu.hidden = true;
-  tagToggle.setAttribute("aria-expanded", "false");
-}
-
-function renderTagMenu() {
-  const options = countTags().map(([tag, count]) => {
-    const option = document.createElement("button");
-    option.type = "button";
-    option.innerHTML = `<span>#${tag}</span><span class="tag-count">${count}</span>`;
-    option.addEventListener("click", () => filterByTag(tag));
-    return option;
-  });
-  const scroller = Object.assign(document.createElement("div"), { className: "tag-scroll" });
-  scroller.append(...options);
-  scroller.addEventListener("scroll", updateTagFade);
-  tagMenu.replaceChildren(scrollArrow("up", scroller), scroller, scrollArrow("down", scroller));
-}
-
-tagToggle?.addEventListener("click", () => {
-  const opening = tagMenu.hidden;
-  if (opening) renderTagMenu();
-  tagMenu.hidden = !opening;
-  tagToggle.setAttribute("aria-expanded", String(opening));
-});
-
-document.addEventListener("click", event => {
-  if (!tagMenu || tagMenu.hidden || event.target.closest(".find")) return;
-  tagMenu.hidden = true;
-  tagToggle.setAttribute("aria-expanded", "false");
-});
-
-document.querySelectorAll(".meta .tag").forEach(link => {
-  link.addEventListener("click", event => {
-    event.preventDefault();
-    filterByTag(link.textContent.slice(1));
-  });
-});
-
-// Emptying the search box shows every post again.
-searchInput?.addEventListener("input", () => {
-  if (searchInput.value.trim() === "") filterByTag(null);
-});
-
-// Drop the bottom fade once the list is scrolled to the end (or doesn't need scrolling).
+const tagData = document.getElementById("tag-data");
+const ALL_TAGS = tagData ? JSON.parse(tagData.textContent) : [];
 const SCROLL_STEP = 128;
 const CHEVRON_UP = '<svg viewBox="0 0 16 10" width="14" height="9" aria-hidden="true"><path d="M2 8l6-6 6 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const CHEVRON_DOWN = '<svg viewBox="0 0 16 10" width="14" height="9" aria-hidden="true"><path d="M2 2l6 6 6-6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+function goToTag(tag) {
+  window.location.assign(tag ? `/?tag=${encodeURIComponent(tag)}` : "/");
+}
 
 function scrollArrow(direction, scroller) {
   const arrow = Object.assign(document.createElement("button"), { type: "button", className: `tag-more ${direction}` });
@@ -80,11 +23,66 @@ function scrollArrow(direction, scroller) {
   return arrow;
 }
 
-// Shows the up/down arrow and edge fade wherever there's more list to scroll to.
 function updateTagFade() {
   const scroller = tagMenu.querySelector(".tag-scroll");
   if (!scroller) return;
   tagMenu.classList.toggle("more-above", scroller.scrollTop > 2);
   tagMenu.classList.toggle("more-below", scroller.scrollTop + scroller.clientHeight < scroller.scrollHeight - 2);
 }
-tagToggle?.addEventListener("click", () => { if (!tagMenu.hidden) updateTagFade(); });
+
+function renderTagMenu() {
+  const options = ALL_TAGS.map(([tag, count]) => {
+    const option = document.createElement("button");
+    option.type = "button";
+    option.innerHTML = `<span>#${tag}</span><span class="tag-count">${count}</span>`;
+    option.addEventListener("click", () => goToTag(tag));
+    return option;
+  });
+  const scroller = Object.assign(document.createElement("div"), { className: "tag-scroll" });
+  scroller.append(...options);
+  scroller.addEventListener("scroll", updateTagFade);
+  tagMenu.replaceChildren(scrollArrow("up", scroller), scroller, scrollArrow("down", scroller));
+}
+
+function arrowKeys(event) {
+  if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+  const options = [...tagMenu.querySelectorAll(".tag-scroll button")];
+  const index = options.indexOf(document.activeElement);
+  event.preventDefault();
+  const next = options[event.key === "ArrowDown" ? Math.min(options.length - 1, index + 1) : Math.max(0, index - 1)];
+  (next ?? options[0])?.focus();
+}
+
+tagToggle?.addEventListener("click", () => {
+  const opening = tagMenu.hidden;
+  if (opening) renderTagMenu();
+  tagMenu.hidden = !opening;
+  tagToggle.setAttribute("aria-expanded", String(opening));
+  if (opening) {
+    updateTagFade();
+    tagMenu.querySelector(".tag-scroll button")?.focus();
+  }
+});
+
+document.addEventListener("keydown", event => {
+  if (tagMenu?.hidden) return;
+  if (event.key === "Escape") {
+    tagMenu.hidden = true;
+    tagToggle.setAttribute("aria-expanded", "false");
+    tagToggle.focus();
+    return;
+  }
+  arrowKeys(event);
+});
+
+document.addEventListener("click", event => {
+  if (!tagMenu || tagMenu.hidden || event.target.closest(".find")) return;
+  tagMenu.hidden = true;
+  tagToggle.setAttribute("aria-expanded", "false");
+});
+
+searchInput?.addEventListener("keydown", event => {
+  if (event.key !== "Enter" || !searchInput.value.trim().startsWith("#")) return;
+  event.preventDefault();
+  goToTag(searchInput.value.trim().slice(1).toLowerCase());
+});

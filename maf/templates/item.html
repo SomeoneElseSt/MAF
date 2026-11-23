@@ -30,7 +30,7 @@
 
 {% macro reactions_box(entry) %}
   {% set state = reactions[entry.id] %}
-  <span class="reactions" data-reactions='{{ state.counts|tojson }}' data-mine="{{ state.mine|join(' ') }}">
+  <span class="reactions" data-item="{{ entry.id }}" data-reactions='{{ state.counts|tojson }}' data-mine="{{ state.mine|join(' ') }}">
     {% for emoji, count in state.counts.items() %}
     <form action="/react" method="post" class="react-form">
       <input type="hidden" name="item_id" value="{{ entry.id }}">
@@ -39,15 +39,7 @@
     </form>
     {% endfor %}
   </span>
-  <details class="react-picker">
-    <summary aria-label="Add a reaction">☺</summary>
-    <form action="/react" method="post" class="picker-list">
-      <input type="hidden" name="item_id" value="{{ entry.id }}">
-      {% for emoji in picker_emoji %}
-      <button type="submit" name="emoji" value="{{ emoji }}" aria-pressed="{{ 'true' if emoji in state.mine else 'false' }}">{{ emoji }}</button>
-      {% endfor %}
-    </form>
-  </details>
+  <button class="react-add" type="button" aria-label="Add a reaction" aria-expanded="false">☺</button>
 {% endmacro %}
 
 {% macro comment(node, depth) %}
@@ -56,20 +48,22 @@
   {{ meta_line(entry) }}
   <p>{{ entry.text }}</p>
   <div class="actions">
-    <button class="reply-toggle" type="button" aria-expanded="false">Reply</button>
+    <details class="reply-details">
+    <summary>Reply</summary>
+    <form class="inline-reply" action="/comment" method="post">
+      <input type="hidden" name="parent_id" value="{{ entry.id }}">
+      <textarea name="text" aria-label="Write a reply" placeholder="{{ reply_placeholder or 'Write a reply' }}"></textarea>
+      <p class="help">Replying as: <button class="id" type="button">{{ my_label }}</button> <span class="dot">·</span>
+        {% if entry.pass_id != viewer %}
+        <span class="private-toggle"><label>Make only visible to {{ label_of[entry.pass_id] }} <input type="checkbox" name="private"{% if entry.private_to %} checked disabled{% endif %}></label><button class="info" type="button" aria-label="About private replies" aria-expanded="false">i</button></span>
+        {% endif %}
+      </p>
+      <div class="row"><button class="button" type="submit">Reply</button></div>
+    </form>
+    </details>
     {% if not entry.private_to %}<form action="/flag" method="post" class="inline-form"><input type="hidden" name="item_id" value="{{ entry.id }}"><button type="submit"{% if flags.get(entry.id) %} disabled aria-disabled="true"{% endif %}>{% if flags.get(entry.id) %}Flagged{% else %}Flag{% endif %}</button></form>{% endif %}
     {{ reactions_box(entry) }}
   </div>
-  <form class="inline-reply" action="/comment" method="post" hidden>
-    <input type="hidden" name="parent_id" value="{{ entry.id }}">
-    <textarea name="text" aria-label="Write a reply" placeholder="{{ reply_placeholder or 'Write a reply' }}"></textarea>
-    <p class="help">Replying as: <button class="id" type="button">{{ my_label }}</button> <span class="dot">·</span>
-      {% if entry.pass_id != viewer %}
-      <span class="private-toggle"><label>Make only visible to {{ label_of[entry.pass_id] }} <input type="checkbox" name="private"{% if entry.private_to %} checked disabled{% endif %}></label><button class="info" type="button" aria-label="About private replies" aria-expanded="false">i</button></span>
-      {% endif %}
-    </p>
-    <div class="row"><button class="button" type="submit">Reply</button><button class="button plain cancel" type="button">Cancel</button></div>
-  </form>
   {% if node.children %}
   <ol class="comments">
     {% for child in node.children %}{{ comment(child, depth + 1) }}{% endfor %}
@@ -133,6 +127,7 @@
 {% endblock %}
 
 {% block scripts %}
+<div class="emoji-picker" role="dialog" aria-label="Add a reaction" data-emoji="{{ picker_emoji|join(' ') }}" hidden></div>
 <div id="private-info" class="info-card" role="dialog" aria-label="About private replies" hidden>
   <p class="info-title">Private replies</p>
   <p>Only you and the person you're replying to can see them, inside this thread. Everyone else sees the thread as if they weren't there.</p>

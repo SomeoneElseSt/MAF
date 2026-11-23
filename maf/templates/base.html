@@ -29,11 +29,13 @@
 <div class="page">
   <header class="top">
     <a class="brand" href="/">MAF</a>
-    {% if viewer %}
     <nav>
+      {% if viewer %}
       <a href="/submit"{% if path == "/submit" %} aria-current="page"{% endif %}>Submit</a>
+      {% else %}
+      <a href="/login"{% if path == "/login" %} aria-current="page"{% endif %}>Sign in</a>
+      {% endif %}
     </nav>
-    {% endif %}
     <form class="find" action="/" method="get" role="search">
       {% if sort != "new" %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
       <input type="search" name="q" placeholder="Search" aria-label="Search posts and comments" value="{{ search_query }}">
