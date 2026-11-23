@@ -27,6 +27,9 @@
 
 * { box-sizing: border-box; }
 
+/* Reserve the scrollbar's width on every page so centered content doesn't shift between short and long pages. */
+html { scrollbar-gutter: stable; }
+
 body {
   margin: 0;
   background: var(--paper);
