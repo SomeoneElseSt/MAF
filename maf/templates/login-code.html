@@ -10,18 +10,24 @@
 <h1 class="heading">Check your inbox</h1>
 <p class="lede">We sent you a 6-digit code. It works for 10 minutes.</p>
 
-{% if error %}<div class="notice"><p>{{ error }}</p></div>{% endif %}
+{% if error %}<div class="notice" id="code-error" role="alert"><p>{{ error }}</p></div>{% endif %}
 
 <form action="/login/code" method="post">
   <input type="hidden" name="email" value="{{ email|default('') }}">
   <div class="field">
     <label for="code">Code</label>
     <input id="code" class="code" name="code" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" required{% if error %} aria-describedby="code-error"{% endif %}>
-    {% if error %}<p class="help" id="code-error">{{ error }}</p>{% endif %}
   </div>
   <div class="row">
     <button class="button" type="submit">Continue</button>
     <a class="note" href="/login">Use a different email</a>
+    {% if email %}
+    {# Resend posts the same address back to /login; it unlocks when the cooldown runs out. #}
+    <button class="note resend" type="submit" form="resend-form"{% if cooldown_seconds %} disabled data-seconds="{{ cooldown_seconds }}"{% endif %}>{% if cooldown_seconds %}Send a new code in <span class="countdown">{{ cooldown_seconds }}</span> seconds{% else %}Send a new code{% endif %}</button>
+    {% endif %}
   </div>
 </form>
+{% if email %}<form id="resend-form" action="/login" method="post" hidden><input type="hidden" name="email" value="{{ email }}"></form>{% endif %}
 {% endblock %}
+
+{% block scripts %}{% if cooldown_seconds %}<script src="/static/countdown.js"></script>{% endif %}{% endblock %}

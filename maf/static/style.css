@@ -382,3 +382,12 @@ main { display: block; }
 .faded .post-reactions { margin-top: 6px; }
 /* Signed out there's no search box, so the theme toggle keeps its place on the right. */
 .top nav + .theme-toggle { margin-left: auto; }
+/* Grey notice boxes: even padding (no trailing paragraph margin) and room before whatever follows. */
+.notice > :last-child, .notice p:last-child { margin-bottom: 0; }
+.notice + form, .notice + .field { margin-top: 24px; }
+/* A form error sits under its field, in ink so it reads as more than a hint. */
+.help.error { color: var(--ink); }
+/* "Send a new code" is a button that reads like the link beside it; grey while it counts down. */
+button.note { background: none; border: none; padding: 0; cursor: pointer; }
+button.note:hover:not(:disabled) { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+button.note:disabled { cursor: default; }

@@ -51,11 +51,12 @@ async def login_submit(request: Request) -> Response:
     code = page.memory.issue_code(email)
     if code is None:
         return render(page, "login.html", status_code=429,
-                      error="A code was already sent to that address. Try again in a few minutes.",
+                      error="A code was already sent to that address.",
+                      cooldown_seconds=max(1, page.memory.cooldown_left(email)),
                       email=values["email"])
     page.app.emailer.send(code_email(email, code))
     # Rendered directly rather than redirected, so the address reaches the code form without going into a URL.
-    return render(page, "login-code.html", email=email)
+    return render(page, "login-code.html", email=email, cooldown_seconds=page.memory.cooldown_left(email))
 
 
 async def code_page(request: Request) -> Response:
@@ -70,7 +71,8 @@ async def code_submit(request: Request) -> Response:
     if email is None or not page.memory.check_code(email, values["code"], consume=False):
         return render(page, "login-code.html", status_code=400,
                       error="That code didn't match. Check the 6 digits, or ask for a new code.",
-                      email=values["email"])
+                      email=values["email"],
+                      cooldown_seconds=page.memory.cooldown_left(email) if email else 0)
     return render(page, "login-blind.html", email=email, code=values["code"])
 
 

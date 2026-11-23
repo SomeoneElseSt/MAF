@@ -114,6 +114,11 @@ def test_cooldown_allows_one_code_per_ten_minutes(client, app):
     client.post("/login", data={"email": "student@uni.minerva.edu"})
     second = client.post("/login", data={"email": "student@uni.minerva.edu"})
     assert second.status_code == 429
+    import re
+
+    seconds = int(re.search(r'data-seconds="(\d+)"', second.text).group(1))
+    assert 590 <= seconds <= 600
+    assert second.text.count("A code was already sent to that address.") == 1
 
 
 def test_code_expires_after_ten_minutes(client, app, monkeypatch):
@@ -221,3 +226,13 @@ def test_five_wrong_guesses_throw_the_code_away(client, app):
         client.post("/login/code", data={"email": "student@uni.minerva.edu", "code": wrong})
     response = client.post("/login/code", data={"email": "student@uni.minerva.edu", "code": code})
     assert response.status_code == 400
+
+
+def test_code_page_offers_a_new_code_once_the_cooldown_runs_out(client, app):
+    import re
+
+    page = client.post("/login", data={"email": "student@uni.minerva.edu"}).text
+    seconds = int(re.search(r'class="note resend"[^>]*data-seconds="(\d+)"', page).group(1))
+    assert 590 <= seconds <= 600
+    assert "Send a new code in" in page and "disabled" in page
+    assert 'id="resend-form" action="/login"' in page
