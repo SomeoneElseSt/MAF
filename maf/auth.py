@@ -46,7 +46,7 @@ async def login_submit(request: Request) -> Response:
     email = normalise_email(values["email"])
     if email is None:
         return render(page, "login.html", status_code=400,
-                      error="Enter your Minerva email, ending in @uni.minerva.edu.",
+                      error="Enter your Minerva University email, ending in @uni.minerva.edu.",
                       email=values["email"])
     code = page.memory.issue_code(email)
     if code is None:
