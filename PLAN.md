@@ -37,8 +37,8 @@ Minerva can see who is a member, because it owns the mail server that receives t
 | --- | --- | --- |
 | Minerva | That a student received a code email from MAF's domain | Posts, or which pass belongs to whom |
 | AWS SES (sends the code) | The recipient address while sending | Anything on the forum |
-| MAF server and admins | Posts, passes, per-thread names | Any email, or which email is behind which pass |
-| Other students | Posts and per-thread names | Anything linking one person's posts across threads |
+| MAF server and admins | Posts, passes, per-thread IDs | Any email, or which email is behind which pass |
+| Other students | Posts and per-thread IDs | Anything linking one person's posts across threads |
 
 **Nothing derived from an email is ever written to disk:** no list, no hash, no salted or keyed hash.
 
@@ -64,7 +64,7 @@ Sign-up and login are the same steps: enter your email, enter the 6-digit code, 
 
 **Rules:** passes have no creation time stored, and emails and IPs are never logged.
 
-## Per-thread names
+## Per-thread IDs
 
 Each person gets a random two-word name like `quiet-otter` that stays the same within one thread and changes in every other thread.
 
@@ -100,7 +100,7 @@ It looks like Hacker News but has no votes: text or link posts, nested comments,
 | Home | Search bar and sorter at the top, the post list (newest first by default), plus the no-naming rule |
 | Thread | A post and its comments |
 | Submit | New post form |
-| How it works | Anonymity, per-thread names, rules |
+| How it works | Anonymity, per-thread IDs, rules |
 | Sign in | Email and code |
 | Admin code | Where an admin enters their code |
 
