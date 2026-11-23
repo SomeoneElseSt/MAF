@@ -53,7 +53,7 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 - **View counts:** each post has a `views` counter shown next to it. Opening a post adds 1, once per pass per 24 hours. The dedupe set `(pass_id, item_id)` lives **in memory only** and is cleared every 24 hours and on restart. Only the counter is written to disk, so no reading history is stored for any pass.
 - **Week pages:** `/` shows posts from the 7 days ending today, grouped under day headings (Today, Yesterday, then e.g. Thursday 19 November). `?week=YYYY-MM-DD` shows the 7 days ending on that date, with Previous week / Next week links. `sort` applies within the week. Search results span all time, 30 per page.
 - **List rows show no IDs:** title, link host, then plain-language metadata ("2 hours ago, 14 comments, 61 views").
-- **Header:** brand, Submit, search box, and a light/dark icon button. **Footer:** About, User Guide, Source Code.
+- **Header:** brand, Submit, a Dark/Light text toggle, and the search box on the right. **Footer:** About, User Guide, Source Code.
 - **Pages:** `/` (week of posts with search bar and sorter), `/item/<id>`, `/submit`, `/about`, `/guide` (User Guide), `/guide/data` (Use this data), `/login`
 
 ## Name filter

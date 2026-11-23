@@ -99,7 +99,7 @@ It looks like Hacker News but has no votes: text or link posts, nested comments,
 
 | Page | What it shows |
 | --- | --- |
-| Home | Search bar, light/dark icon and sorter at the top, then the week's posts (newest first by default) |
+| Home | Submit, a Dark/Light toggle, the search bar and the sorter at the top, then the week's posts (newest first by default) |
 | Thread | A post and its comments; hidden posts show a banner with Request unhide and Request nuke ☢️ |
 | Submit | New post form |
 | About | What MAF is and why it exists |
