@@ -1,6 +1,11 @@
 // Mockup-only: applies ?sort=new|old|views to the static front page by reordering the posts in the browser.
 // The real app sorts on the server; this just lets the UX be tried.
 const SORT_OPTIONS = [["new", "Newest"], ["old", "Oldest"], ["views", "Most viewed"]];
+// The mockup's 4-day pages, oldest first. In the real app these come from the database.
+const PAGES = [
+  { file: "index-earlier.html", range: "15 to 18 November" },
+  { file: "index.html", range: "19 to 22 November" },
+];
 const params = new URLSearchParams(location.search);
 const sortMode = SORT_OPTIONS.some(([key]) => key === params.get("sort")) ? params.get("sort") : "new";
 
@@ -19,15 +24,30 @@ function renderSortBar() {
     const option = key === sortMode ? document.createElement("strong") : document.createElement("a");
     option.textContent = label;
     option.dataset.text = label;
-    if (key !== sortMode) option.href = urlWithSort(location.href, key);
+    if (key !== sortMode) option.href = urlWithSort(startPageFor(key), key);
     bar.append(option);
   }
 }
 
-function keepSortOnPageLinks() {
-  document.querySelectorAll(".pager a, .range a").forEach(link => {
-    link.href = urlWithSort(link.getAttribute("href"), sortMode);
-  });
+// Oldest starts at the first page ever; Newest and Most viewed start at the latest one.
+function startPageFor(mode) {
+  return mode === "old" ? PAGES[0].file : PAGES.at(-1).file;
+}
+
+function arrowElement(page, glyph, label) {
+  if (!page) return Object.assign(document.createElement("span"), { className: "arrow", textContent: glyph, ariaHidden: "true" });
+  const link = Object.assign(document.createElement("a"), { className: "arrow", textContent: glyph, href: urlWithSort(page.file, sortMode) });
+  link.setAttribute("aria-label", label);
+  return link;
+}
+
+function renderRange() {
+  const range = document.querySelector(".range");
+  const currentFile = location.pathname.split("/").pop() || "index.html";
+  const index = PAGES.findIndex(page => page.file === currentFile);
+  if (!range || index === -1) return;
+  const dates = Object.assign(document.createElement("span"), { textContent: PAGES.at(index).range });
+  range.replaceChildren(arrowElement(PAGES.at(index - 1) && index > 0 ? PAGES.at(index - 1) : null, "‹", "Earlier posts"), dates, arrowElement(PAGES.at(index + 1) ?? null, "›", "Later posts"));
 }
 
 function reverseDays() {
@@ -56,6 +76,6 @@ function flattenByViews() {
 }
 
 renderSortBar();
-keepSortOnPageLinks();
+renderRange();
 if (sortMode === "old") reverseDays();
 if (sortMode === "views") flattenByViews();

@@ -93,7 +93,7 @@ It looks like Hacker News but has no votes: text or link posts, nested comments,
 - **No votes.** Nothing ranks posts by popularity unless you choose to sort by views.
 - **Search bar** at the top of every page, searching post titles, post text and comments. It uses the database's built-in full-text search, so it adds no dependencies. Searches are never logged.
 - **Sorter** next to the search bar: newest first (default), oldest first, or most viewed. It applies to the post list and to search results.
-- **Four days per page.** The home page shows the last 4 days, grouped by day, with ‹ and › arrows beside the date range at the top to step between pages. The sorter orders posts within those 4 days. Search covers all posts.
+- **Four days per page.** The home page shows the last 4 days, grouped by day, with ‹ and › arrows beside the date range at the top to step between pages. The date range always matches what's on screen: Newest and Most viewed start at the latest 4 days, Oldest starts at the first 4 days MAF ever had posts, and the arrows step through time from there. Search covers all posts.
 - **No IDs in the list.** IDs only appear inside threads, since a random name adds nothing on the front page.
 - **View counts, kept anonymous:** each post shows how many times it's been opened. A pass counts once per post per 24 hours. Which pass opened which post is kept in memory only and wiped daily, so only the total is ever saved and no one's reading history exists.
 
