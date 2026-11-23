@@ -7,33 +7,41 @@
 <link rel="stylesheet" href="style.css">
 <script>try { const saved = localStorage.getItem("theme"); if (saved) document.documentElement.dataset.theme = saved; } catch {}</script>
 <style>
-  .option-name { font: 600 17px var(--serif); color: var(--soft); margin: 34px 0 2px; }
-  .option-note { font: 14px var(--sans); color: var(--meta); margin: 0 0 10px; }
-  .demo textarea { min-height: 70px; resize: vertical; }
-  .choice { font: inherit; background: none; border: none; padding: 0; cursor: pointer; color: var(--meta); }
-  .choice:hover { color: var(--ink); }
+  .option-name { font: 600 17px var(--serif); color: var(--soft); margin: 30px 0 2px; }
+  .option-note { font: 14px var(--sans); color: var(--meta); margin: 0 0 8px; }
+  .states { display: grid; gap: 6px; }
+  .state { font: 14px var(--sans); color: var(--meta); }
+  .tg { position: relative; display: inline-block; margin-left: 7px; padding: 0; border: none; background: none; cursor: pointer; vertical-align: -2px; }
+  .tg::before, .tg::after { content: ""; position: absolute; transition: all 0.15s ease; }
 
-  /* 1. Text toggle: the phrase itself is the control; once on, it reads as a state with an undo */
-  .opt-text .choice { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
-  .opt-text .on { color: var(--ink); text-decoration: none; }
+  /* A. Outline micro switch */
+  .a { width: 22px; height: 12px; border: 1px solid var(--meta); border-radius: 7px; box-sizing: border-box; }
+  .a::after { top: 2px; left: 2px; width: 6px; height: 6px; border-radius: 50%; background: var(--meta); }
+  .a[aria-checked="true"] { background: var(--ink); border-color: var(--ink); }
+  .a[aria-checked="true"]::after { left: 12px; background: var(--paper); }
 
-  /* 2. Small switch: a tiny monochrome slider after the phrase */
-  .switch { position: relative; display: inline-block; width: 26px; height: 15px; margin-left: 6px; vertical-align: -3px; border-radius: 8px; background: var(--line); border: none; padding: 0; cursor: pointer; transition: background 0.15s; }
-  .switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 11px; height: 11px; border-radius: 50%; background: var(--paper); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08); transition: left 0.15s; }
-  .switch[aria-checked="true"] { background: var(--ink); }
-  .switch[aria-checked="true"]::after { left: 13px; }
+  /* B. Hairline track with a sliding dot */
+  .b { width: 20px; height: 12px; }
+  .b::before { left: 0; right: 0; top: 5.5px; height: 1px; background: var(--meta); }
+  .b::after { top: 2px; left: 0; width: 8px; height: 8px; border-radius: 50%; background: var(--paper); border: 1px solid var(--meta); box-sizing: border-box; }
+  .b[aria-checked="true"]::before { background: var(--ink); }
+  .b[aria-checked="true"]::after { left: 12px; background: var(--ink); border-color: var(--ink); }
 
-  /* 3. Two choices, like the sort row: the selected one is dark and semibold */
-  .opt-segment .choice[aria-pressed="true"] { color: var(--ink); font-weight: 600; }
-  .opt-segment .choice + .choice { margin-left: 10px; }
+  /* C. Soft track, like the search box */
+  .c { width: 24px; height: 14px; border-radius: 8px; background: var(--line); }
+  .c::after { top: 2px; left: 2px; width: 10px; height: 10px; border-radius: 50%; background: var(--paper); box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.12); }
+  .c[aria-checked="true"] { background: var(--soft); }
+  .c[aria-checked="true"]::after { left: 12px; }
 
-  /* 4. Refined box: a small hand-drawn square instead of the browser checkbox */
-  .box { display: inline-flex; align-items: center; justify-content: center; width: 12px; height: 12px; margin-left: 6px; vertical-align: -1px; border: 1px solid var(--meta); border-radius: 2px; background: none; padding: 0; cursor: pointer; }
-  .box[aria-checked="true"] { background: var(--ink); border-color: var(--ink); }
-  .box[aria-checked="true"]::after { content: ""; width: 3px; height: 6px; border: solid var(--paper); border-width: 0 1.5px 1.5px 0; transform: translateY(-1px) rotate(45deg); }
+  /* D. Squared switch, same corner radius as the inputs */
+  .d { width: 22px; height: 12px; border: 1px solid var(--meta); border-radius: 3px; box-sizing: border-box; }
+  .d::after { top: 2px; left: 2px; width: 6px; height: 6px; border-radius: 1px; background: var(--meta); }
+  .d[aria-checked="true"] { border-color: var(--ink); }
+  .d[aria-checked="true"]::after { left: 12px; background: var(--ink); }
 
-  /* 5. Public / Private word that flips on click */
-  .opt-word .choice { color: var(--ink); text-decoration: underline dotted var(--meta); text-underline-offset: 3px; }
+  /* E. Dot only: hollow when off, filled when on */
+  .e { width: 9px; height: 9px; border-radius: 50%; border: 1px solid var(--meta); box-sizing: border-box; vertical-align: -1px; }
+  .e[aria-checked="true"] { background: var(--ink); border-color: var(--ink); }
 </style>
 </head>
 <body>
@@ -45,48 +53,42 @@
     <button class="theme-toggle" type="button">Dark</button>
   </header>
 
-  <h1 class="heading">Private reply control: five options</h1>
-  <p class="lede">Each one is clickable. The (i) stays at the end in all of them.</p>
+  <h1 class="heading">Private reply toggle: five subtle switches</h1>
+  <p class="lede">Each shows the off state above the on state. All of them are clickable.</p>
+  <h2 class="option-name">A. Outline micro switch</h2>
+  <p class="option-note">A small rounded outline. When on, it fills black and the knob moves across.</p>
+  <div class="states">
+      <p class="state">Commenting as: <span class="id">calm-badger</span> <span class="dot">·</span> Only visible to amber-fox (OP)<button class="tg a" type="button" role="switch" aria-checked="false" aria-label="Only visible to amber-fox"></button><button class="info" type="button" aria-label="About private replies">i</button></p>
+      <p class="state">Commenting as: <span class="id">calm-badger</span> <span class="dot">·</span> Only visible to amber-fox (OP)<button class="tg a" type="button" role="switch" aria-checked="true" aria-label="Only visible to amber-fox"></button><button class="info" type="button" aria-label="About private replies">i</button></p>
+  </div>
 
-  <h2 class="option-name">1. Text toggle</h2>
-  <p class="option-note">The phrase is the control. Once on, it reads as a state you can undo.</p>
-  <form class="reply demo opt-text" onsubmit="return false">
-    <textarea placeholder="Write a comment"></textarea>
-    <p class="help">Commenting as: <span class="id">calm-badger</span> <span class="dot">·</span> <span class="slot"><button class="choice" type="button" data-toggle-text>Make only visible to amber-fox (OP)</button></span><button class="info" type="button" aria-label="About private replies">i</button></p>
-    <div class="row"><button class="button" type="submit">Comment</button></div>
-  </form>
+  <h2 class="option-name">B. Hairline track</h2>
+  <p class="option-note">A one-pixel line with a dot that slides along it and fills in when on.</p>
+  <div class="states">
+      <p class="state">Commenting as: <span class="id">calm-badger</span> <span class="dot">·</span> Only visible to amber-fox (OP)<button class="tg b" type="button" role="switch" aria-checked="false" aria-label="Only visible to amber-fox"></button><button class="info" type="button" aria-label="About private replies">i</button></p>
+      <p class="state">Commenting as: <span class="id">calm-badger</span> <span class="dot">·</span> Only visible to amber-fox (OP)<button class="tg b" type="button" role="switch" aria-checked="true" aria-label="Only visible to amber-fox"></button><button class="info" type="button" aria-label="About private replies">i</button></p>
+  </div>
 
-  <h2 class="option-name">2. Small switch</h2>
-  <p class="option-note">A tiny black-and-white slider after the phrase.</p>
-  <form class="reply demo" onsubmit="return false">
-    <textarea placeholder="Write a comment"></textarea>
-    <p class="help">Commenting as: <span class="id">calm-badger</span> <span class="dot">·</span> Only visible to amber-fox (OP)<button class="switch" type="button" role="switch" aria-checked="false" data-flip></button><button class="info" type="button" aria-label="About private replies">i</button></p>
-    <div class="row"><button class="button" type="submit">Comment</button></div>
-  </form>
+  <h2 class="option-name">C. Soft track</h2>
+  <p class="option-note">A pale grey track like the search box, with a white knob. Darker grey when on.</p>
+  <div class="states">
+      <p class="state">Commenting as: <span class="id">calm-badger</span> <span class="dot">·</span> Only visible to amber-fox (OP)<button class="tg c" type="button" role="switch" aria-checked="false" aria-label="Only visible to amber-fox"></button><button class="info" type="button" aria-label="About private replies">i</button></p>
+      <p class="state">Commenting as: <span class="id">calm-badger</span> <span class="dot">·</span> Only visible to amber-fox (OP)<button class="tg c" type="button" role="switch" aria-checked="true" aria-label="Only visible to amber-fox"></button><button class="info" type="button" aria-label="About private replies">i</button></p>
+  </div>
 
-  <h2 class="option-name">3. Two choices</h2>
-  <p class="option-note">Same pattern as the sort row: pick who sees it.</p>
-  <form class="reply demo opt-segment" onsubmit="return false">
-    <textarea placeholder="Write a comment"></textarea>
-    <p class="help">Commenting as: <span class="id">calm-badger</span> <span class="dot">·</span> Visible to: <button class="choice" type="button" aria-pressed="true" data-segment>Everyone</button><button class="choice" type="button" aria-pressed="false" data-segment>Only amber-fox (OP)</button><button class="info" type="button" aria-label="About private replies">i</button></p>
-    <div class="row"><button class="button" type="submit">Comment</button></div>
-  </form>
+  <h2 class="option-name">D. Squared switch</h2>
+  <p class="option-note">Like A, but with the same small corner radius as the inputs.</p>
+  <div class="states">
+      <p class="state">Commenting as: <span class="id">calm-badger</span> <span class="dot">·</span> Only visible to amber-fox (OP)<button class="tg d" type="button" role="switch" aria-checked="false" aria-label="Only visible to amber-fox"></button><button class="info" type="button" aria-label="About private replies">i</button></p>
+      <p class="state">Commenting as: <span class="id">calm-badger</span> <span class="dot">·</span> Only visible to amber-fox (OP)<button class="tg d" type="button" role="switch" aria-checked="true" aria-label="Only visible to amber-fox"></button><button class="info" type="button" aria-label="About private replies">i</button></p>
+  </div>
 
-  <h2 class="option-name">4. Refined box</h2>
-  <p class="option-note">Still a checkbox, but drawn to match the type: thin, small, black when on.</p>
-  <form class="reply demo" onsubmit="return false">
-    <textarea placeholder="Write a comment"></textarea>
-    <p class="help">Commenting as: <span class="id">calm-badger</span> <span class="dot">·</span> Make only visible to amber-fox (OP)<button class="box" type="button" role="checkbox" aria-checked="false" data-flip></button><button class="info" type="button" aria-label="About private replies">i</button></p>
-    <div class="row"><button class="button" type="submit">Comment</button></div>
-  </form>
-
-  <h2 class="option-name">5. Public / private word</h2>
-  <p class="option-note">One word you click to flip between the two.</p>
-  <form class="reply demo opt-word" onsubmit="return false">
-    <textarea placeholder="Write a comment"></textarea>
-    <p class="help">Commenting as: <span class="id">calm-badger</span> <span class="dot">·</span> <button class="choice" type="button" data-word>Public</button><button class="info" type="button" aria-label="About private replies">i</button></p>
-    <div class="row"><button class="button" type="submit">Comment</button></div>
-  </form>
+  <h2 class="option-name">E. Dot</h2>
+  <p class="option-note">No track at all: a hollow dot that fills when on.</p>
+  <div class="states">
+      <p class="state">Commenting as: <span class="id">calm-badger</span> <span class="dot">·</span> Only visible to amber-fox (OP)<button class="tg e" type="button" role="switch" aria-checked="false" aria-label="Only visible to amber-fox"></button><button class="info" type="button" aria-label="About private replies">i</button></p>
+      <p class="state">Commenting as: <span class="id">calm-badger</span> <span class="dot">·</span> Only visible to amber-fox (OP)<button class="tg e" type="button" role="switch" aria-checked="true" aria-label="Only visible to amber-fox"></button><button class="info" type="button" aria-label="About private replies">i</button></p>
+  </div>
 
   <footer class="foot">
     <a href="about.html">About</a><a href="how.html">User Guide</a><a href="https://github.com/">Source Code</a>
@@ -94,23 +96,8 @@
 </div>
 <script src="theme.js"></script>
 <script>
-  document.querySelectorAll("[data-toggle-text]").forEach(button => {
-    button.addEventListener("click", () => {
-      const slot = button.closest(".slot");
-      slot.innerHTML = '<span class="on">Only visible to amber-fox (OP)</span> <button class="choice" type="button">undo</button> ';
-      slot.querySelector(".choice").addEventListener("click", () => location.reload());
-    });
-  });
-  document.querySelectorAll("[data-flip]").forEach(control => {
-    control.addEventListener("click", () => control.setAttribute("aria-checked", String(control.getAttribute("aria-checked") !== "true")));
-  });
-  document.querySelectorAll("[data-segment]").forEach(choice => {
-    choice.addEventListener("click", () => {
-      choice.parentElement.querySelectorAll("[data-segment]").forEach(other => other.setAttribute("aria-pressed", String(other === choice)));
-    });
-  });
-  document.querySelectorAll("[data-word]").forEach(word => {
-    word.addEventListener("click", () => { word.textContent = word.textContent === "Public" ? "Private to amber-fox (OP)" : "Public"; });
+  document.querySelectorAll(".tg").forEach(toggle => {
+    toggle.addEventListener("click", () => toggle.setAttribute("aria-checked", String(toggle.getAttribute("aria-checked") !== "true")));
   });
 </script>
 </body>
