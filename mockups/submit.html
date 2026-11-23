@@ -46,7 +46,8 @@
 </div>
 <script src="theme.js"></script>
 <script>
-  // Mockup-only: the Text box's grey template follows the hashtags. Tags with their own template (only #hottakes for now) swap it in.
+  // Mockup-only: with no hashtags the Text box shows an example post; once tags are added it shows a template. Tags with their own template (only #hottakes for now) swap it in.
+  const EXAMPLE = "Every rotation I spend the first few weeks feeling lost. Curious which routines, apps or places made the move easier for you.";
   const TEMPLATES = {
     default: [
       "- What it's about",
@@ -64,6 +65,10 @@
   const textBox = document.getElementById("text");
 
   function applyTemplate() {
+    if (tagsInput.value.trim() === "") {
+      textBox.placeholder = EXAMPLE;
+      return;
+    }
     const tags = tagsInput.value.toLowerCase().split(/[\s,]+/).map(tag => tag.replace(/^#/, ""));
     const template = tags.includes("hottakes") ? TEMPLATES.hottakes : TEMPLATES.default;
     textBox.placeholder = template.join("\n");
