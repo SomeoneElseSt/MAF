@@ -8,7 +8,7 @@
   const TOKEN_BYTES = 32;
   const suite = window.BlindRSA.SHA384.PSS.Randomized();
   const status = form.querySelector(".blind-status");
-  const submit = form.querySelector("button[type=submit]");
+  const retry = form.querySelector(".row");
 
   function base64url(bytes) {
     return btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
@@ -34,7 +34,7 @@
 
   form.addEventListener("submit", async event => {
     event.preventDefault();
-    submit.disabled = true;
+    retry.hidden = true;
     try {
       const key = await publicKey();
       const token = crypto.getRandomValues(new Uint8Array(TOKEN_BYTES));
@@ -53,8 +53,11 @@
       const redeemed = await fetch("/redeem", { method: "POST", body: redeem, redirect: "follow" });
       window.location.assign(redeemed.ok ? "/" : "/redeem");
     } catch {
-      status.textContent = "Something went wrong. Try again, or sign in again.";
-      submit.disabled = false;
+      status.textContent = "Something went wrong making your pass.";
+      retry.hidden = false;
     }
   });
+
+  // Runs straight away; the Try again button only appears if it fails.
+  form.requestSubmit();
 })();

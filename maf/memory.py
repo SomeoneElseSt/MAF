@@ -14,6 +14,7 @@ CODE_TTL_SECONDS = 10 * 60
 COOLDOWN_SECONDS = 10 * 60
 VIEW_WINDOW_SECONDS = 24 * 60 * 60
 RATE_WINDOW_SECONDS = 60
+MAX_CODE_ATTEMPTS = 5  # wrong guesses before a code is thrown away
 
 
 def now() -> float:
@@ -26,6 +27,7 @@ class Memory:
 
     _lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
     codes: dict[str, tuple[str, float]] = field(default_factory=dict)
+    code_failures: dict[str, int] = field(default_factory=dict)
     cooldowns: dict[str, float] = field(default_factory=dict)
     viewed: dict[tuple[str, str], float] = field(default_factory=dict)
     last_view_sweep: float = 0.0
@@ -41,23 +43,33 @@ class Memory:
                 return None
             code = f"{secrets.randbelow(1_000_000):06d}"
             self.codes[email] = (code, current + ttl)
+            self.code_failures.pop(email, None)
             self.cooldowns[email] = current + COOLDOWN_SECONDS
             return code
 
-    def check_code(self, email: str, code: str) -> bool:
-        """Compares a code; a correct code is consumed so it can't be replayed."""
+    def check_code(self, email: str, code: str, consume: bool = True) -> bool:
+        """Compares a code. A correct code is consumed unless consume=False (the code page checks it before
+        the browser's blind-sign step uses it). Too many wrong guesses throw the code away."""
         with self._lock:
             entry = self.codes.get(email)
             if entry is None:
                 return False
             stored, expires = entry
             if expires < now():
-                self.codes.pop(email, None)
+                self._drop_code(email)
                 return False
             if not secrets.compare_digest(stored, code):
+                self.code_failures[email] = self.code_failures.get(email, 0) + 1
+                if self.code_failures[email] >= MAX_CODE_ATTEMPTS:
+                    self._drop_code(email)
                 return False
-            self.codes.pop(email, None)
+            if consume:
+                self._drop_code(email)
             return True
+
+    def _drop_code(self, email: str) -> None:
+        self.codes.pop(email, None)
+        self.code_failures.pop(email, None)
 
     def cooldown_left(self, email: str) -> int:
         with self._lock:
@@ -66,7 +78,7 @@ class Memory:
     def clear_email(self, email: str) -> None:
         """Forgets an email entirely once its code has been used."""
         with self._lock:
-            self.codes.pop(email, None)
+            self._drop_code(email)
             self.cooldowns.pop(email, None)
 
     # -- view dedupe -------------------------------------------------------

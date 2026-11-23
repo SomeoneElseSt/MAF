@@ -94,8 +94,17 @@ def test_other_domains_are_rejected(client, app):
 
 def test_minerva_email_is_accepted(client, app):
     response = client.post("/login", data={"email": "Student@UNI.Minerva.edu"}, follow_redirects=False)
-    assert response.status_code == 303
+    assert response.status_code == 200
     assert "student@uni.minerva.edu" in app.memory.codes
+
+
+def test_code_form_carries_the_email_like_a_browser_would(client, app):
+    """The browser only sends what the code form holds, so the form itself must carry the address."""
+    page = client.post("/login", data={"email": "student@uni.minerva.edu"}).text
+    assert 'name="email" value="student@uni.minerva.edu"' in page
+    assert "student@uni.minerva.edu" not in str(client.cookies)
+    response = client.post("/login/code", data={"email": "student@uni.minerva.edu", "code": latest_code(app)})
+    assert response.status_code == 200
 
 
 # -- cooldown and code lifetime -------------------------------------------
@@ -191,3 +200,24 @@ def test_redeem_rejects_a_token_not_matching_the_prepared_message(client, app):
 def test_passes_have_no_created_at(app):
     columns = [r["name"] for r in app.conn.execute("PRAGMA table_info(pass)").fetchall()]
     assert columns == ["id"]
+
+
+def test_code_page_then_blind_sign_works_like_a_browser(client, app):
+    """The code page checks the code without using it up, so the blind-sign step right after still accepts it."""
+    client.post("/login", data={"email": "student@uni.minerva.edu"})
+    code = latest_code(app)
+    assert client.post("/login/code", data={"email": "student@uni.minerva.edu", "code": code}).status_code == 200
+    browser = Browser(app.public_key)
+    signed = client.post("/login/blind-sign", data={"email": "student@uni.minerva.edu", "code": code, "blinded": browser.blind()})
+    assert signed.status_code == 200
+    assert signed.json().get("blind_sig")
+
+
+def test_five_wrong_guesses_throw_the_code_away(client, app):
+    client.post("/login", data={"email": "student@uni.minerva.edu"})
+    code = latest_code(app)
+    wrong = "000000" if code != "000000" else "111111"
+    for _ in range(5):
+        client.post("/login/code", data={"email": "student@uni.minerva.edu", "code": wrong})
+    response = client.post("/login/code", data={"email": "student@uni.minerva.edu", "code": code})
+    assert response.status_code == 400

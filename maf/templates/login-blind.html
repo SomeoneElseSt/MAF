@@ -7,17 +7,18 @@
 #}
 {% extends "base.html" %}
 {% block main %}
-<h1 class="heading">Almost there</h1>
-<p class="lede">Your browser is making an anonymous pass. This page needs JavaScript.</p>
+<h1 class="heading">Signing you in</h1>
+<p class="lede">Your browser is making an anonymous pass. This takes a second.</p>
+<noscript><div class="notice"><p>This step needs JavaScript, so the pass is made in your browser and the server never sees it unblinded. Turn JavaScript on and sign in again.</p></div></noscript>
 
 <form data-blind action="/login/blind-sign" method="post">
   <input type="hidden" name="email" value="{{ email|default('') }}">
-  <label for="code-blind">The code you just entered</label>
-  <input id="code-blind" name="code" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" value="{{ code|default('') }}" required>
-  <div class="row">
-    <button class="button" type="submit">Continue</button>
-  </div>
+  <input type="hidden" name="code" value="{{ code|default('') }}">
   <p class="help blind-status" aria-live="polite"></p>
+  <div class="row" hidden>
+    <button class="button" type="submit">Try again</button>
+    <a class="note" href="/login">Sign in again</a>
+  </div>
 </form>
 <script src="/static/blindrsa.min.js"></script>
 <script src="/static/login.js"></script>

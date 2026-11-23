@@ -54,7 +54,8 @@ async def login_submit(request: Request) -> Response:
                       error="A code was already sent to that address. Try again in a few minutes.",
                       email=values["email"])
     page.app.emailer.send(code_email(email, code))
-    return redirect("/login/code")
+    # Rendered directly rather than redirected, so the address reaches the code form without going into a URL.
+    return render(page, "login-code.html", email=email)
 
 
 async def code_page(request: Request) -> Response:
@@ -66,7 +67,7 @@ async def code_submit(request: Request) -> Response:
     page = page_of(request)
     values = await form_values(request, "email", "code")
     email = normalise_email(values["email"])
-    if email is None or not page.memory.check_code(email, values["code"]):
+    if email is None or not page.memory.check_code(email, values["code"], consume=False):
         return render(page, "login-code.html", status_code=400,
                       error="That code didn't match. Check the 6 digits, or ask for a new code.",
                       email=values["email"])
