@@ -39,7 +39,7 @@ function renderTagMenu() {
   const scroller = Object.assign(document.createElement("div"), { className: "tag-scroll" });
   scroller.append(...options);
   scroller.addEventListener("scroll", updateTagFade);
-  tagMenu.replaceChildren(scroller);
+  tagMenu.replaceChildren(scrollArrow("up", scroller), scroller, scrollArrow("down", scroller));
 }
 
 tagToggle?.addEventListener("click", () => {
@@ -68,10 +68,23 @@ searchInput?.addEventListener("input", () => {
 });
 
 // Drop the bottom fade once the list is scrolled to the end (or doesn't need scrolling).
+const SCROLL_STEP = 128;
+const CHEVRON_UP = '<svg viewBox="0 0 16 10" width="14" height="9" aria-hidden="true"><path d="M2 8l6-6 6 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const CHEVRON_DOWN = '<svg viewBox="0 0 16 10" width="14" height="9" aria-hidden="true"><path d="M2 2l6 6 6-6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+function scrollArrow(direction, scroller) {
+  const arrow = Object.assign(document.createElement("button"), { type: "button", className: `tag-more ${direction}` });
+  arrow.innerHTML = direction === "up" ? CHEVRON_UP : CHEVRON_DOWN;
+  arrow.setAttribute("aria-label", direction === "up" ? "Scroll up" : "Scroll down");
+  arrow.addEventListener("click", () => scroller.scrollBy({ top: direction === "up" ? -SCROLL_STEP : SCROLL_STEP, behavior: "smooth" }));
+  return arrow;
+}
+
+// Shows the up/down arrow and edge fade wherever there's more list to scroll to.
 function updateTagFade() {
   const scroller = tagMenu.querySelector(".tag-scroll");
   if (!scroller) return;
-  const atEnd = scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 2;
-  scroller.classList.toggle("at-end", atEnd);
+  tagMenu.classList.toggle("more-above", scroller.scrollTop > 2);
+  tagMenu.classList.toggle("more-below", scroller.scrollTop + scroller.clientHeight < scroller.scrollHeight - 2);
 }
 tagToggle?.addEventListener("click", () => { if (!tagMenu.hidden) updateTagFade(); });

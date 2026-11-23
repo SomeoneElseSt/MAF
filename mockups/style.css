@@ -241,14 +241,20 @@ span.arrow { color: var(--line); }
   background: var(--paper); border: 1px solid var(--line); border-radius: 6px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
-/* Scrolls inside the panel with no scrollbar; the list fades at the bottom while there's more below. */
-.tag-scroll {
-  max-height: 260px; overflow-y: auto; padding: 4px 0; scrollbar-width: none;
-  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 36px), transparent);
-  mask-image: linear-gradient(to bottom, #000 calc(100% - 36px), transparent);
-}
+/* Scrolls inside the panel with no scrollbar. Edges fade and a small arrow appears wherever there's more to scroll. */
+.tag-scroll { max-height: 260px; overflow-y: auto; padding: 4px 0; scrollbar-width: none; }
 .tag-scroll::-webkit-scrollbar { display: none; }
-.tag-scroll.at-end { -webkit-mask-image: none; mask-image: none; }
+.tag-menu.more-below .tag-scroll { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 40px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 40px), transparent); }
+.tag-menu.more-above .tag-scroll { -webkit-mask-image: linear-gradient(to top, #000 calc(100% - 40px), transparent); mask-image: linear-gradient(to top, #000 calc(100% - 40px), transparent); }
+.tag-menu.more-above.more-below .tag-scroll { -webkit-mask-image: linear-gradient(to bottom, transparent, #000 40px, #000 calc(100% - 40px), transparent); mask-image: linear-gradient(to bottom, transparent, #000 40px, #000 calc(100% - 40px), transparent); }
+.tag-menu .tag-more {
+  position: absolute; left: 50%; transform: translateX(-50%); z-index: 1; display: none;
+  width: 28px; height: 18px; padding: 0; border: none; background: none; color: var(--meta); cursor: pointer;
+}
+.tag-menu .tag-more:hover { color: var(--ink); background: none; }
+.tag-menu .tag-more.up { top: 2px; }
+.tag-menu .tag-more.down { bottom: 2px; }
+.tag-menu.more-above .tag-more.up, .tag-menu.more-below .tag-more.down { display: flex; align-items: center; justify-content: center; }
 .tag-menu button {
   display: flex; justify-content: space-between; align-items: baseline; width: 100%; padding: 6px 12px;
   font: 15px var(--sans); color: var(--soft); background: none; border: none; text-align: left; cursor: pointer;
