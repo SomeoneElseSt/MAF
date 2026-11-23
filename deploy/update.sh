@@ -18,7 +18,7 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 git -C "$APP_DIR" pull --ff-only
-(cd "$APP_DIR" && uv sync --no-dev)
+(cd "$APP_DIR" && uv sync --frozen --no-dev)
 
 if ! cmp -s "$UNIT_SRC" "$UNIT_DST"; then
   install -m 644 "$UNIT_SRC" "$UNIT_DST"

@@ -26,7 +26,12 @@
   </div>
   {% endfor %}
   <form action="/tokens" method="post" class="row">
+    {% if tokens|length >= max_tokens %}
+    <button class="button" type="submit" disabled aria-describedby="token-limit">Create token</button>
+    <span class="note" id="token-limit">You have {{ max_tokens }} tokens. Revoke one to create another.</span>
+    {% else %}
     <button class="button" type="submit">Create token</button>
+    {% endif %}
   </form>
   {% else %}
   <p><a href="/sign-in">Sign in</a> to create a token.</p>

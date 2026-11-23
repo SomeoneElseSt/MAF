@@ -69,7 +69,7 @@ fetch_code() {
 
 sync_dependencies() {
   log "Installing Python dependencies (includes the spaCy model; takes a few minutes)"
-  (cd "$APP_DIR" && uv sync --no-dev)
+  (cd "$APP_DIR" && uv sync --frozen --no-dev)
 }
 
 create_data_dir() {
@@ -115,7 +115,7 @@ MAF_EMAIL_FROM=code@maforum.net
 AWS_REGION=us-west-2
 MAF_BASE_URL=https://maforum.net
 # Moderation requests are emailed here. The maintainer must replace this value.
-MAINTAINER_EMAIL=$PLACEHOLDER
+MAINTAINER_EMAIL=hello@maforum.net
 ENV
   chown root:"$SERVICE_USER" "$tmp"
   chmod 640 "$tmp"

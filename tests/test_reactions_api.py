@@ -149,3 +149,11 @@ def test_new_token_is_shown_once_and_never_put_in_a_url(signed_in):
     reloaded = signed_in.get("/guide/use-this-data").text
     assert "only shown once" not in reloaded
     assert reloaded.count('class="token-row"') == 1, "reloading must not create more tokens"
+
+
+def test_tokens_are_capped_at_five_and_the_button_greys_out(signed_in, app):
+    for _ in range(7):
+        signed_in.post("/tokens")
+    page = signed_in.get("/guide/use-this-data").text
+    assert page.count('class="token-row"') == 5
+    assert "disabled" in page and "Revoke one to create another" in page

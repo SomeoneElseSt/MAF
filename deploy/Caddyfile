@@ -1,8 +1,15 @@
 # MAF reverse proxy. Caddy terminates HTTPS (certificates are automatic) and forwards to the
 # app on 127.0.0.1:8000. Installed to /etc/caddy/Caddyfile by setup.sh and update.sh.
 #
-# PRIVACY: access logging is OFF and must stay off. Caddy only writes access logs when a `log`
+# PRIVACY: no logs at all. Access logging is OFF and must stay off, and the global block below discards Caddy's runtime log. Caddy only writes access logs when a `log`
 # directive is present in a site block, and there is none below. Do not add one.
+
+{
+	# Caddy's own runtime/error log can include a visitor's IP (e.g. when the app is down), so it's discarded too.
+	log {
+		output discard
+	}
+}
 
 www.maforum.net {
 	redir https://maforum.net{uri} permanent

@@ -16,6 +16,7 @@ from .web import form_values, page_of, redirect, render
 POSTS_PER_MINUTE = 6
 COMMENTS_PER_MINUTE = 12
 TOKEN_BYTES = 32
+MAX_TOKENS_PER_PASS = 5  # the Create token button greys out at this many
 
 
 def _login(page) -> Response:
@@ -147,6 +148,8 @@ async def create_token(request: Request) -> Response:
     page = page_of(request)
     if page.pass_id is None:
         return _login(page)
+    if len(store.list_api_tokens(page.conn, page.pass_id)) >= MAX_TOKENS_PER_PASS:
+        return redirect("/guide/use-this-data")
     token = secrets.token_urlsafe(TOKEN_BYTES)
     store.create_api_token(page.conn, sha256_hex(token), page.pass_id, token[-4:])
     # Redirect so a reload doesn't create another token; the next page load shows it once (see Memory.take_new_token).

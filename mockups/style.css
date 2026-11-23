@@ -397,3 +397,9 @@ main { display: block; }
 /* Revoke beside a token reads like a small text action, not a browser button. */
 .token-row button { padding: 0; border: none; background: none; font: 15px var(--sans); color: var(--soft); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 .token-row button:hover { color: var(--ink); }
+/* Shown beside Flagged: how flags work, and where to go when it can't wait. */
+.flag-note { font: 15px var(--sans); color: var(--meta); }
+.flag-note a { color: var(--soft); text-decoration: underline; text-underline-offset: 3px; }
+/* A button that can't be used right now (e.g. at the token limit) is greyed out. */
+.button:disabled { color: var(--meta); cursor: default; }
+.button:disabled:hover { border-color: transparent; }
