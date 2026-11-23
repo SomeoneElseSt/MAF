@@ -100,7 +100,7 @@ It looks like Hacker News but has no votes: text or link posts, nested comments,
 | Page | What it shows |
 | --- | --- |
 | Home | Submit, a Dark/Light toggle, the search bar and the sorter at the top, then the week's posts (newest first by default) |
-| Thread | A post and its comments; hidden posts show a banner with Request unhide and Request nuke ☢️ |
+| Thread | A post and its comments; hidden posts show a banner with Request unhide and Request deletion |
 | Submit | New post form |
 | About | What MAF is and why it exists |
 | User Guide | Anonymity, per-thread IDs, the rule, flags; links to Use this data |
@@ -126,11 +126,11 @@ The community hides posts by flagging them. Anyone can then ask the maintainer t
 | --- | --- | --- |
 | Flag | Anyone, once per post | Hidden from the main page and search after 5 flags from different passes |
 | Request unhide | Anyone, once per hidden post | Emails the maintainer right away |
-| Request nuke ☢️ | Anyone, once per hidden post | Emails the maintainer right away |
+| Request deletion | Anyone, once per hidden post | Emails the maintainer right away |
 | Unhide | Maintainer, via `maf unhide` | Visible again, and flags can never hide it again |
 | Nuke | Maintainer, via `maf nuke` | Deleted from the database; the link stops working |
 
-- **Hidden posts stay reachable by their direct link.** The post shows a banner, "Hidden after community flags.", with two buttons: **Request unhide** and **Request nuke ☢️**.
+- **Hidden posts stay reachable by their direct link.** The post shows a banner, "Hidden after community flags.", with two buttons: **Request unhide** and **Request deletion**.
 - **Requests are anonymous.** Only the post ID and a count are saved, with no record of who asked.
 - **Notification:** every request sends the maintainer an email through SES right away, for example "Unhide requested for post #123 (4 requests so far)." It names no one. This can be batched later if traffic gets heavy.
 - **The `maf` command-line tool** runs on the server over SSH, so there's no raw SQL:

@@ -68,7 +68,7 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 No admin roles, codes or buttons. Moderation is community flags plus the maintainer using the `maf` CLI over SSH.
 
 - **Flag:** any pass, once per item. At 5 flags from distinct passes the item is `hidden`: excluded from `/`, from search and from comment trees, unless `restored = 1`.
-- **Hidden items stay reachable** at `/item/<id>`, with a banner, "Hidden after community flags.", and two buttons: **Request unhide** and **Request nuke ☢️**.
+- **Hidden items stay reachable** at `/item/<id>`, with a banner, "Hidden after community flags.", and two buttons: **Request unhide** and **Request deletion**.
 - **Requests:** once per pass per item per kind. Stored as `moderation_request(pass_id, item_id, kind)` for deduplication only. On each new request, immediately send an SES email to `MAINTAINER_EMAIL`, for example `Unhide requested for post #123 (4 requests so far) <link>`. No pass or identity goes in the email.
 - **`maf` CLI** (maintainer, run on the server over SSH: `ssh maf-server maf <command>`). It's a console script in the same uv project (`[project.scripts] maf = "maf.cli:main"`), built with stdlib `argparse` and `sqlite3` on the same database file, with no extra dependencies. It reuses the app's own data functions so the logic isn't written twice.
 
