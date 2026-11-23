@@ -207,3 +207,4 @@ dialog p { margin: 0 0 16px; }
 .arrow:hover { color: var(--ink); text-decoration: none; }
 span.arrow { color: var(--line); }
 .list-flat { margin-top: 18px; }
+.reply .help { margin-bottom: 20px; }
