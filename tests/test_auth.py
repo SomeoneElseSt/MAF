@@ -110,14 +110,14 @@ def test_code_form_carries_the_email_like_a_browser_would(client, app):
 # -- cooldown and code lifetime -------------------------------------------
 
 
-def test_cooldown_allows_one_code_per_minute(client, app):
+def test_cooldown_allows_one_code_per_thirty_seconds(client, app):
     client.post("/login", data={"email": "student@uni.minerva.edu"})
     second = client.post("/login", data={"email": "student@uni.minerva.edu"})
     assert second.status_code == 429
     import re
 
     seconds = int(re.search(r'data-seconds="(\d+)"', second.text).group(1))
-    assert 50 <= seconds <= 60
+    assert 20 <= seconds <= 30
     assert second.text.count("A code was already sent to that address.") == 1
 
 
@@ -233,7 +233,7 @@ def test_code_page_offers_a_new_code_once_the_cooldown_runs_out(client, app):
 
     page = client.post("/login", data={"email": "student@uni.minerva.edu"}).text
     seconds = int(re.search(r'class="note resend"[^>]*data-seconds="(\d+)"', page).group(1))
-    assert 50 <= seconds <= 60
+    assert 20 <= seconds <= 30
     assert ">Send a new code</button>" in page and "disabled" not in page
     assert 'id="resend-form" action="/login"' in page
 

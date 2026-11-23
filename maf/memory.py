@@ -11,7 +11,7 @@ import time
 from dataclasses import dataclass, field
 
 CODE_TTL_SECONDS = 10 * 60
-COOLDOWN_SECONDS = 60
+COOLDOWN_SECONDS = 30
 VIEW_WINDOW_SECONDS = 24 * 60 * 60
 RATE_WINDOW_SECONDS = 60
 MAX_CODE_ATTEMPTS = 5  # wrong guesses before a code is thrown away
