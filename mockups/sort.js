@@ -1,11 +1,6 @@
 // Mockup-only: applies ?sort=new|old|views to the static front page by reordering the posts in the browser.
 // The real app sorts on the server; this just lets the UX be tried.
 const SORT_OPTIONS = [["new", "Newest"], ["old", "Oldest"], ["views", "Most viewed"]];
-// The mockup's 4-day pages, oldest first. In the real app these come from the database.
-const PAGES = [
-  { file: "index-earlier.html", range: "15 to 18 November" },
-  { file: "index.html", range: "19 to 22 November" },
-];
 const params = new URLSearchParams(location.search);
 const sortMode = SORT_OPTIONS.some(([key]) => key === params.get("sort")) ? params.get("sort") : "new";
 
