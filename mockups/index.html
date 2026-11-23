@@ -8,6 +8,7 @@
 <script>try { const saved = localStorage.getItem("theme"); if (saved) document.documentElement.dataset.theme = saved; } catch {}</script>
 </head>
 <body>
+<a class="skip" href="#main">Skip to content</a>
 <div class="page">
   <header class="top">
     <a class="brand" href="index.html">MAF</a>
@@ -15,6 +16,7 @@
     <form class="find" action="index.html"><input type="search" name="q" placeholder="Search" aria-label="Search posts and comments"><button class="tag-toggle" type="button" aria-label="Browse hashtags" aria-expanded="false">#</button><div class="tag-menu" hidden></div></form>
     <button class="theme-toggle" type="button">Dark</button>
   </header>
+  <main id="main">
 
   <div class="listbar">
     <div class="sort"><span>Sort by:</span><strong data-text="Newest">Newest</strong><a href="?sort=old" data-text="Oldest">Oldest</a><a href="?sort=views" data-text="Most viewed">Most viewed</a></div>
@@ -92,6 +94,7 @@
       <div class="meta"><a href="item.html">15 comments</a>, 205 views <span class="dot">·</span> <a class="tag" href="?tag=careers">#careers</a></div>
     </li>
   </ol>
+  </main>
 
   <footer class="foot">
     <a href="about.html">About</a><a href="how.html">User Guide</a><a href="https://github.com/">Source Code</a>

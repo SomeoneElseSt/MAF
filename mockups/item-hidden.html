@@ -8,6 +8,7 @@
 <script>try { const saved = localStorage.getItem("theme"); if (saved) document.documentElement.dataset.theme = saved; } catch {}</script>
 </head>
 <body>
+<a class="skip" href="#main">Skip to content</a>
 <div class="page">
   <header class="top">
     <a class="brand" href="index.html">MAF</a>
@@ -15,6 +16,7 @@
     <form class="find" action="index.html"><input type="search" name="q" placeholder="Search" aria-label="Search posts and comments"></form>
     <button class="theme-toggle" type="button">Dark</button>
   </header>
+  <main id="main">
 
   <div class="notice">
     <p>Five people flagged this post, so it's been unlisted. You can still read it here and ask for it to come back or be removed permanently.</p>
@@ -52,6 +54,7 @@
       </li>
     </ol>
   </div>
+  </main>
 
   <footer class="foot">
     <a href="about.html">About</a><a href="how.html">User Guide</a><a href="https://github.com/">Source Code</a>

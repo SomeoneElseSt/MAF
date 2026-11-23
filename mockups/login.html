@@ -8,11 +8,13 @@
 <script>try { const saved = localStorage.getItem("theme"); if (saved) document.documentElement.dataset.theme = saved; } catch {}</script>
 </head>
 <body>
+<a class="skip" href="#main">Skip to content</a>
 <div class="page">
   <header class="top">
     <a class="brand" href="index.html">MAF</a>
     <button class="theme-toggle" type="button">Dark</button>
   </header>
+  <main id="main">
 
   <h1 class="heading">Sign in</h1>
   <p class="lede">MAF is for Minerva students. Enter your university email and we'll send you a code. Your email is used once and never stored.</p>
@@ -26,6 +28,7 @@
   </form>
 
   <p class="small">Please don't name students or staff. Public figures are fine. <a href="how.html">How anonymity works</a></p>
+  </main>
   <footer class="foot">
     <a href="about.html">About</a><a href="how.html">User Guide</a><a href="https://github.com/">Source Code</a>
   </footer>

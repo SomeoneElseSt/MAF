@@ -8,6 +8,7 @@
 <script>try { const saved = localStorage.getItem("theme"); if (saved) document.documentElement.dataset.theme = saved; } catch {}</script>
 </head>
 <body class="hottakes-thread" data-reply-placeholder="Write a reply. Ideally:&#10;- Which part of the take you're responding to&#10;- Your reason, or an experience that backs it up&#10;- What would change your mind">
+<a class="skip" href="#main">Skip to content</a>
 <div class="page">
   <header class="top">
     <a class="brand" href="index.html">MAF</a>
@@ -15,6 +16,7 @@
     <form class="find" action="index.html"><input type="search" name="q" placeholder="Search" aria-label="Search posts and comments"></form>
     <button class="theme-toggle" type="button">Dark</button>
   </header>
+  <main id="main">
 
   <div class="notice etiquette">
     <p><span class="etiquette-tag">#hottakes</span> etiquette: argue with the take, not the person. Push back as hard as you like, assume the poster means it in good faith, and say what would change your mind.</p>
@@ -56,6 +58,7 @@
       <div class="actions"><button class="reply-toggle" type="button">Reply</button><button type="button">Flag</button></div>
     </li>
   </ol>
+  </main>
 
   <footer class="foot">
     <a href="about.html">About</a><a href="how.html">User Guide</a><a href="https://github.com/">Source Code</a>

@@ -5,8 +5,9 @@
   --paper: #ffffff;
   --ink: #000000;
   --soft: #555555;
-  --meta: #7a7a7a;
+  --meta: #6b6b6b;
   --line: #e4e4e4;
+  --border: #949494;
   --tint: #f5f5f3;
   --hot: #b4441c;
   --hot-wash: color-mix(in srgb, var(--hot) 7%, var(--paper));
@@ -17,14 +18,16 @@
 
 /* Dark mode mirrors light mode exactly: each color is 255 minus its light value per channel,
    so every tone keeps the same distance from the background in both themes.
+   --meta and --border are set for WCAG AA contrast: meta text 4.5:1 on paper, tint and the #hottakes wash; input borders 3:1.
    Exceptions: --hot (the #hottakes ember) is hand-tuned per theme, and --tint is lifted to #1c1c1c, because a 4% shade that reads as a box on white disappears on black. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --paper: #000000;
     --ink: #ffffff;
     --soft: #aaaaaa;
-    --meta: #858585;
+    --meta: #949494;
     --line: #1b1b1b;
+    --border: #6b6b6b;
     --tint: #1c1c1c;
     --hot: #e2805a;
     --hot-wash: color-mix(in srgb, var(--hot) 15%, var(--paper));
@@ -36,8 +39,9 @@
   --paper: #000000;
   --ink: #ffffff;
   --soft: #aaaaaa;
-  --meta: #858585;
+  --meta: #949494;
   --line: #1b1b1b;
+  --border: #6b6b6b;
   --tint: #1c1c1c;
   --visited: #909090;
   --hot: #e2805a;
@@ -77,9 +81,9 @@ a:hover { text-decoration: underline; text-decoration-thickness: 1px; text-under
 .theme-toggle:hover { color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
 .find input {
   font: 15px var(--sans); color: var(--ink); background: var(--tint);
-  border: 1px solid transparent; border-radius: 4px; padding: 6px 10px; width: 200px;
+  border: 1px solid var(--border); border-radius: 4px; padding: 6px 10px; width: 200px;
 }
-.find input:focus { outline: none; border-color: var(--line); background: var(--paper); }
+.find input:focus { border-color: var(--ink); background: var(--paper); }
 
 /* Sort row and week range */
 
@@ -127,9 +131,9 @@ a:hover { text-decoration: underline; text-decoration-thickness: 1px; text-under
 
 textarea, input[type=text], input[type=url], input[type=email] {
   width: 100%; font: 17px/1.5 var(--serif); color: var(--ink); background: var(--paper);
-  border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px;
+  border: 1px solid var(--border); border-radius: 4px; padding: 10px 12px;
 }
-textarea:focus, input:focus { outline: none; border-color: var(--meta); }
+textarea:focus, input:focus { border-color: var(--ink); }
 textarea::placeholder, input::placeholder { color: var(--meta); opacity: 1; }
 
 .reply { margin: 30px 0 10px; }
@@ -140,7 +144,7 @@ textarea::placeholder, input::placeholder { color: var(--meta); opacity: 1; }
   border: 1px solid var(--ink); border-radius: 4px; padding: 7px 16px; cursor: pointer;
 }
 .button:hover { text-decoration: none; opacity: 0.85; }
-.button.plain { color: var(--ink); background: transparent; border-color: var(--line); }
+.button.plain { color: var(--ink); background: transparent; border-color: var(--border); }
 .row { display: flex; align-items: center; gap: 16px; margin-top: 10px; }
 .note { font: 15px var(--sans); color: var(--meta); }
 
@@ -241,7 +245,7 @@ span.arrow { color: var(--line); }
   font: 16px var(--sans); color: var(--meta); cursor: pointer;
 }
 .tag-toggle:hover, .tag-toggle[aria-expanded="true"] { color: var(--ink); }
-.tag-toggle:focus-visible { outline: none; color: var(--ink); background: var(--line); }
+.tag-toggle:focus-visible { color: var(--ink); }
 
 .tag-menu {
   position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 10; overflow: hidden;
@@ -314,3 +318,21 @@ span.arrow { color: var(--line); }
 
 /* The guided reply placeholder on #hottakes threads needs a little more room. */
 .hottakes-thread .inline-reply textarea { min-height: 128px; }
+
+/* Accessibility */
+
+/* Skip link: off-screen until a keyboard user tabs to it. */
+.skip { position: absolute; left: -9999px; top: 8px; z-index: 30; font: 16px var(--sans); color: var(--paper); background: var(--ink); padding: 6px 12px; border-radius: 4px; }
+.skip:focus { left: 20px; }
+main { display: block; }
+
+/* Small controls get an invisible 24x24 px tap area (WCAG 2.5.8) without changing how they look. */
+.info, .arrow, .meta-action, .actions a, .actions button, .tag-menu .tag-more { position: relative; }
+.info::after, .arrow::after, .meta-action::after, .actions a::after, .actions button::after, .tag-menu .tag-more::after {
+  content: ""; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: max(100%, 24px); height: max(100%, 24px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+}
