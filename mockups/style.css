@@ -55,7 +55,8 @@ a { color: inherit; text-decoration: none; }
 a:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
 :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 
-.page { max-width: 700px; margin: 0 auto; padding: 0 20px; }
+/* Column fills the window height so the footer sits at the bottom on short pages. */
+.page { max-width: 700px; margin: 0 auto; padding: 0 20px; min-height: 100vh; display: flex; flex-direction: column; }
 
 /* Header */
 
@@ -177,7 +178,7 @@ dialog p { margin: 0 0 16px; }
 
 /* Footer */
 
-.foot { display: flex; flex-wrap: wrap; gap: 6px 22px; margin: 28px 0 0; padding: 0 0 44px; font: 15px var(--sans); color: var(--meta); }
+.foot { display: flex; flex-wrap: wrap; gap: 6px 22px; margin: auto 0 0; padding: 28px 0 32px; font: 15px var(--sans); color: var(--meta); }
 .foot a { color: var(--meta); }
 
 /* Hand-drawn brush stroke behind the lower half of a phrase. Two SVG variants because data URIs can't read CSS variables. */
@@ -220,4 +221,4 @@ span.arrow { color: var(--line); }
 .faded .post-body p:last-child { margin-bottom: 6px; }
 
 /* Empty front page */
-.empty { text-align: center; font: 15px var(--sans); color: var(--meta); margin: 64px 0 40px; }
+.empty { flex: 1; display: flex; align-items: center; justify-content: center; font: 15px var(--sans); color: var(--meta); margin: 0; }
