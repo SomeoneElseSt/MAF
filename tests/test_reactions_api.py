@@ -142,6 +142,10 @@ def test_api_tokens_are_listed_by_last_four_and_revocable(viewer, app):
 
 def test_new_token_is_shown_once_and_never_put_in_a_url(signed_in):
     response = signed_in.post("/tokens", follow_redirects=False)
-    assert response.status_code == 200
-    assert "only shown once" in response.text
-    assert "token=" not in str(response.url) and "location" not in response.headers
+    assert response.status_code == 303
+    assert response.headers["location"] == "/guide/use-this-data"
+    shown = signed_in.get("/guide/use-this-data").text
+    assert "only shown once" in shown
+    reloaded = signed_in.get("/guide/use-this-data").text
+    assert "only shown once" not in reloaded
+    assert reloaded.count('class="token-row"') == 1, "reloading must not create more tokens"

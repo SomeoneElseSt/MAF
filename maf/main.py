@@ -157,7 +157,8 @@ def guide(request: Request) -> Response:
 def guide_data(request: Request) -> Response:
     page = page_of(request)
     tokens = store.list_api_tokens(page.conn, page.pass_id) if page.pass_id else []
-    return render(page, "guide-data.html", title="Use this data", tokens=tokens,
+    new_token = page.memory.take_new_token(page.pass_id) if page.pass_id else None
+    return render(page, "guide-data.html", title="Use this data", tokens=tokens, new_token=new_token,
                   notice=request.query_params.get("notice"))
 
 

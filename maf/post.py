@@ -149,9 +149,9 @@ async def create_token(request: Request) -> Response:
         return _login(page)
     token = secrets.token_urlsafe(TOKEN_BYTES)
     store.create_api_token(page.conn, sha256_hex(token), page.pass_id, token[-4:])
-    # Shown in this response only, never put in a URL, so it can't end up in browser history.
-    return render(page, "guide-data.html", title="Use this data", new_token=token,
-                  tokens=store.list_api_tokens(page.conn, page.pass_id), notice=None)
+    # Redirect so a reload doesn't create another token; the next page load shows it once (see Memory.take_new_token).
+    page.memory.hold_new_token(page.pass_id, token)
+    return redirect("/guide/use-this-data")
 
 
 async def revoke_token(request: Request) -> Response:

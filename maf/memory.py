@@ -14,6 +14,7 @@ CODE_TTL_SECONDS = 10 * 60
 COOLDOWN_SECONDS = 30
 VIEW_WINDOW_SECONDS = 24 * 60 * 60
 RATE_WINDOW_SECONDS = 60
+NEW_TOKEN_SHOW_SECONDS = 60  # how long a just-created API token waits to be shown once
 MAX_CODE_ATTEMPTS = 5  # wrong guesses before a code is thrown away
 
 
@@ -30,6 +31,7 @@ class Memory:
     code_failures: dict[str, int] = field(default_factory=dict)
     cooldowns: dict[str, float] = field(default_factory=dict)
     viewed: dict[tuple[str, str], float] = field(default_factory=dict)
+    new_tokens: dict[str, tuple[str, float]] = field(default_factory=dict)
     last_view_sweep: float = 0.0
     rate: dict[str, list[float]] = field(default_factory=dict)
 
@@ -70,6 +72,20 @@ class Memory:
     def _drop_code(self, email: str) -> None:
         self.codes.pop(email, None)
         self.code_failures.pop(email, None)
+
+    # -- just-created API tokens --------------------------------------------
+
+    def hold_new_token(self, pass_id: str, token: str) -> None:
+        """Keeps a new token for the one page load that shows it, so it never goes into a URL or a resubmittable form."""
+        with self._lock:
+            self.new_tokens[pass_id] = (token, now() + NEW_TOKEN_SHOW_SECONDS)
+
+    def take_new_token(self, pass_id: str) -> str | None:
+        with self._lock:
+            entry = self.new_tokens.pop(pass_id, None)
+        if entry is None or entry[1] < now():
+            return None
+        return entry[0]
 
     def cooldown_left(self, email: str) -> int:
         with self._lock:
