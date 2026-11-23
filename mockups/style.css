@@ -311,3 +311,7 @@ span.arrow { color: var(--line); }
 .notice.etiquette { background: var(--hot-wash); }
 .notice.etiquette .etiquette-tag { color: var(--hot); font-weight: 600; }
 .notice.etiquette p:last-child { margin-bottom: 0; }
+
+/* Guided placeholders on #hottakes threads need a little more room. */
+.hottakes-thread .reply textarea { min-height: 128px; }
+.hottakes-thread .inline-reply textarea { min-height: 128px; }

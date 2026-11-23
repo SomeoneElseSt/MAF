@@ -7,12 +7,14 @@ function buildReplyForm(recipient, insidePrivate) {
   form.className = "inline-reply";
   form.action = "item.html";
   form.innerHTML = `
-    <textarea aria-label="Write a reply" placeholder="Write a reply"></textarea>
+    <textarea aria-label="Write a reply"></textarea>
     <p class="help">Replying as: <button class="id" type="button">${MY_THREAD_ID}</button> <span class="dot">·</span> <span class="private-toggle"><label>Make only visible to ${recipient} <input type="checkbox"${insidePrivate ? " checked disabled" : ""}></label><button class="info" type="button" aria-label="About private replies" aria-expanded="false">i</button></span></p>
     <div class="row">
       <button class="button" type="submit">Reply</button>
       <button class="button plain cancel" type="button">Cancel</button>
     </div>`;
+  // Threads with house rules (e.g. #hottakes) set their own guided placeholder on <body>.
+  form.querySelector("textarea").placeholder = document.body.dataset.replyPlaceholder ?? "Write a reply";
   form.querySelector(".cancel").addEventListener("click", () => form.remove());
   form.querySelector(".id").addEventListener("click", () => document.getElementById("id-dialog")?.showModal());
   return form;
