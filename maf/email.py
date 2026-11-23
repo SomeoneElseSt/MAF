@@ -8,8 +8,21 @@ dropped.
 """
 
 from dataclasses import dataclass
+from pathlib import Path
+
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from .settings import Settings
+
+# HTML versions live in templates/email/ and match the site's look; every email also keeps a plain-text body.
+_templates = Environment(
+    loader=FileSystemLoader(Path(__file__).parent / "templates"),
+    autoescape=select_autoescape(["html"]),
+)
+
+
+def _render(name: str, **context) -> str:
+    return _templates.get_template(f"email/{name}").render(**context)
 
 CODE_SUBJECT = "Your code: {code}"
 CODE_BODY = """Your code is {code}.
@@ -23,23 +36,37 @@ class Email:
     to: str
     subject: str
     body: str
+    html: str = ""
 
 
 def code_email(to: str, code: str) -> Email:
     """The deliberately plain login email: no MAF branding."""
-    return Email(to=to, subject=CODE_SUBJECT.format(code=code), body=CODE_BODY.format(code=code))
+    subject = CODE_SUBJECT.format(code=code)
+    return Email(to=to, subject=subject, body=CODE_BODY.format(code=code),
+                 html=_render("code.html", subject=subject, code=code))
 
 
 def moderation_email(to: str, kind: str, item_id: str, count: int, base_url: str) -> Email:
     label = "Unhide" if kind == "unhide" else "Deletion"
+    subject = f"{label} requested for post #{item_id}"
+    link = f"{base_url}/item/{item_id}"
     return Email(
         to=to,
-        subject=f"{label} requested for post #{item_id}",
+        subject=subject,
         body=(
             f"{label} requested for post #{item_id} ({count} request{'s' if count != 1 else ''} so far).\n"
-            f"{base_url}/item/{item_id}\n"
+            f"{link}\n"
         ),
+        html=_render("moderation.html", subject=subject, label=label, item_id=item_id, count=count, link=link),
     )
+
+
+def _body(email: Email) -> dict:
+    """SES message body: plain text always, HTML too when the email has it."""
+    body = {"Text": {"Data": email.body, "Charset": "UTF-8"}}
+    if email.html:
+        body["Html"] = {"Data": email.html, "Charset": "UTF-8"}
+    return body
 
 
 class Emailer:
@@ -59,7 +86,7 @@ class Emailer:
             Destination={"ToAddresses": [email.to]},
             Message={
                 "Subject": {"Data": email.subject},
-                "Body": {"Text": {"Data": email.body}},
+                "Body": _body(email),
             },
         )
 

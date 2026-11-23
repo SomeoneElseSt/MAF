@@ -159,3 +159,17 @@ def test_cli_dismiss(monkeypatch, settings, app, pass_id, capsys):
     code, _ = run_cli(monkeypatch, settings, capsys, "dismiss", post.id)
     assert code == 0
     assert store.request_counts(app.conn, post.id) == {}
+
+
+def test_emails_have_html_in_the_site_style_and_a_plain_text_fallback():
+    from maf.email import _body, code_email, moderation_email
+
+    code = code_email("student@uni.minerva.edu", "482913")
+    assert "482913" in code.html and "482913" in code.body
+    assert "MAF" not in code.html and "maforum" not in code.html
+    assert "Iowan Old Style" in code.html
+    assert set(_body(code)) == {"Text", "Html"}
+
+    request = moderation_email("me@example.com", "unhide", "<b>x</b>", 2, "https://maforum.net")
+    assert "&lt;b&gt;x&lt;/b&gt;" in request.html and "<b>x</b>" not in request.html
+    assert "2 requests so far" in request.html
