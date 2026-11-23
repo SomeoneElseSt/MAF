@@ -29,16 +29,23 @@ function filterByTag(tag) {
 }
 
 function renderTagMenu() {
-  const options = countTags().map(([tag, count]) => {
-    const option = document.createElement("button");
-    option.type = "button";
-    option.innerHTML = `<span>#${tag}</span><span class="tag-count">${count}</span>`;
-    option.addEventListener("click", () => filterByTag(tag));
-    return option;
-  });
+  const header = document.createElement("div");
+  header.className = "tag-menu-head";
+  const label = Object.assign(document.createElement("span"), { textContent: "Browse by hashtag" });
   const clear = Object.assign(document.createElement("button"), { type: "button", className: "tag-clear", textContent: "All posts" });
   clear.addEventListener("click", () => filterByTag(null));
-  tagMenu.replaceChildren(clear, ...options);
+  header.append(label, clear);
+
+  const grid = document.createElement("div");
+  grid.className = "tag-grid";
+  for (const [tag, count] of countTags()) {
+    const option = document.createElement("button");
+    option.type = "button";
+    option.innerHTML = `#${tag}<span class="tag-count">${count}</span>`;
+    option.addEventListener("click", () => filterByTag(tag));
+    grid.append(option);
+  }
+  tagMenu.replaceChildren(header, grid);
 }
 
 tagToggle?.addEventListener("click", () => {
