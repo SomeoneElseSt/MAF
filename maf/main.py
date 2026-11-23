@@ -1,6 +1,7 @@
 """The Starlette application: routes, middleware and startup."""
 
 from datetime import timedelta
+from urllib.parse import urlparse
 
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
@@ -241,6 +242,14 @@ def create_app(settings: Settings | None = None) -> Starlette:
     return starlette
 
 
+DEFAULT_PORT = 8000
+
+
+def listen_port(base_url: str) -> int:
+    """The port in MAF_BASE_URL (http://localhost:8000), else 8000 (https://maforum.net has none)."""
+    return urlparse(base_url).port or DEFAULT_PORT
+
+
 def main() -> None:
     import uvicorn
 
@@ -248,7 +257,7 @@ def main() -> None:
     uvicorn.run(
         create_app(settings),
         host="127.0.0.1",
-        port=int(settings.base_url.rsplit(":", 1)[-1]) if ":" in settings.base_url else 8000,
+        port=listen_port(settings.base_url),
         access_log=False,  # no IP addresses in logs
     )
 
