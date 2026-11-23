@@ -222,3 +222,27 @@ span.arrow { color: var(--line); }
 
 /* Empty front page */
 .empty { text-align: center; font: 15px var(--sans); color: var(--meta); margin: 56px 0 0; }
+
+/* Hashtags: in the details line, and a # button in the search box that lists them all */
+.meta .tag { color: var(--meta); }
+.meta .tag:hover { color: var(--ink); }
+.find { position: relative; }
+.find input { padding-right: 34px; }
+.tag-toggle {
+  position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+  width: 26px; height: 26px; padding: 0; border: none; border-radius: 4px; background: none;
+  font: 16px var(--sans); color: var(--meta); cursor: pointer;
+}
+.tag-toggle:hover, .tag-toggle[aria-expanded="true"] { color: var(--ink); }
+.tag-menu {
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 10; width: 100%; min-width: 200px;
+  max-height: 280px; overflow-y: auto; padding: 6px 0;
+  background: var(--paper); border: 1px solid var(--line); border-radius: 4px;
+}
+.tag-menu button {
+  display: flex; justify-content: space-between; width: 100%; padding: 6px 12px;
+  font: 15px var(--sans); color: var(--soft); background: none; border: none; text-align: left; cursor: pointer;
+}
+.tag-menu button:hover { color: var(--ink); background: var(--tint); }
+.tag-menu .tag-count { color: var(--meta); }
+.tag-menu .tag-clear { border-bottom: 1px solid var(--line); margin-bottom: 4px; padding-bottom: 8px; }
