@@ -123,9 +123,10 @@ async def flag(request: Request) -> Response:
     item = store.get_item(page.conn, values["item_id"])
     if page.pass_id is None or item is None:
         return _login(page)
-    if item.private_to is None:
+    # Clicking again takes the flag back.
+    if item.private_to is None and not store.remove_flag(page.conn, page.pass_id, item.id):
         store.add_flag(page.conn, page.pass_id, item.id)
-    return redirect(f"/item/{item.thread_id}")
+    return redirect(f"/item/{item.thread_id}#{item.id}")
 
 
 async def moderation_request(request: Request) -> Response:

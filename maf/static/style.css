@@ -13,6 +13,7 @@
   --border: #949494;
   --tint: #f5f5f3;
   --hot: #b4441c;
+  --danger: #8a0303;
   --hot-wash: color-mix(in srgb, var(--hot) 7%, var(--paper));
   --visited: #6f6f6f;
   --serif: "Iowan Old Style", Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
@@ -33,6 +34,7 @@
     --border: #6b6b6b;
     --tint: #1c1c1c;
     --hot: #e2805a;
+    --danger: #ff6b6b;
     --hot-wash: color-mix(in srgb, var(--hot) 15%, var(--paper));
     --visited: #909090;
   }
@@ -48,6 +50,7 @@
   --tint: #1c1c1c;
   --visited: #909090;
   --hot: #e2805a;
+  --danger: #ff6b6b;
   --hot-wash: color-mix(in srgb, var(--hot) 15%, var(--paper));
 }
 
@@ -407,3 +410,7 @@ button.note:disabled { cursor: default; }
 
 /* Replaces an inline style, which the Content-Security-Policy forbids. */
 .after-notice { margin-top: 26px; }
+
+/* A flag you've placed shows in blood red; clicking it again takes the flag back. */
+.meta-action.flagged, .actions button.flagged { color: var(--danger); font-weight: 600; }
+.meta-action.flagged:hover, .actions button.flagged:hover { color: var(--danger); text-decoration: underline; text-underline-offset: 3px; }

@@ -470,6 +470,17 @@ def add_flag(conn: sqlite3.Connection, pass_id: str, item_id: str) -> bool:
     return True
 
 
+def remove_flag(conn: sqlite3.Connection, pass_id: str, item_id: str) -> bool:
+    """Takes a pass's flag back; an item hidden by flags comes back once it drops below 5."""
+    with conn:
+        cur = conn.execute("DELETE FROM flag WHERE pass_id = ? AND item_id = ?", (pass_id, item_id))
+        if cur.rowcount == 0:
+            return False
+        conn.execute("UPDATE item SET flags = flags - 1 WHERE id = ? AND flags > 0", (item_id,))
+        conn.execute("UPDATE item SET hidden = 0 WHERE id = ? AND flags < ?", (item_id, FLAGS_TO_HIDE))
+    return True
+
+
 def has_flagged(conn: sqlite3.Connection, pass_id: str, item_id: str) -> bool:
     row = conn.execute("SELECT 1 FROM flag WHERE pass_id = ? AND item_id = ?", (pass_id, item_id)).fetchone()
     return row is not None

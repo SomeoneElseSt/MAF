@@ -174,3 +174,24 @@ def test_emails_have_html_in_the_site_style_and_a_plain_text_fallback():
     request = moderation_email("me@example.com", "unhide", "<b>x</b>", 2, "https://maforum.net")
     assert "&lt;b&gt;x&lt;/b&gt;" in request.html and "<b>x</b>" not in request.html
     assert "2 requests so far" in request.html
+
+
+def test_clicking_flag_again_takes_it_back(signed_in, app, pass_id):
+    post = make_post(app, store.create_pass(app.conn))
+    signed_in.post("/flag", data={"item_id": post.id})
+    assert store.get_item(app.conn, post.id).flags == 1
+    page = signed_in.get(f"/item/{post.id}").text
+    assert 'class="meta-action flagged"' in page and ">Flagged<" in page
+    signed_in.post("/flag", data={"item_id": post.id})
+    assert store.get_item(app.conn, post.id).flags == 0
+    assert ">Flag Post<" in signed_in.get(f"/item/{post.id}").text
+
+
+def test_a_post_hidden_by_flags_returns_when_one_is_taken_back(app, pass_id):
+    post = make_post(app, pass_id)
+    flaggers = [store.create_pass(app.conn) for _ in range(5)]
+    for flagger in flaggers:
+        store.add_flag(app.conn, flagger, post.id)
+    assert store.get_item(app.conn, post.id).hidden == 1
+    store.remove_flag(app.conn, flaggers[0], post.id)
+    assert store.get_item(app.conn, post.id).hidden == 0
