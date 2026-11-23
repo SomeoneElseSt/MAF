@@ -59,7 +59,7 @@ def render_home(page, sort, before, after):
     if not store.has_any_posts(conn):
         return render(page, "list.html", kind="home", title="", empty=True,
                       groups=[], pinned=[], date_range=range_label(*four_day_window(today())),
-                      sort_links=_home_sort_links(None), prev_url=None, next_url=None)
+                      sort_links=HOME_SORT_LINKS, prev_url=None, next_url=None)
 
     window_end = _window_end(conn, sort, before, after)
     start, end = four_day_window(window_end)
@@ -74,7 +74,7 @@ def render_home(page, sort, before, after):
     next_url = _next_url(sort, end)
     return render(page, "list.html", kind="home", title="", empty=False,
                   groups=groups, pinned=pinned, date_range=range_label(start, end),
-                  prev_url=prev_url, next_url=next_url, sort_links=_home_sort_links(start),
+                  prev_url=prev_url, next_url=next_url, sort_links=HOME_SORT_LINKS,
                   day_param=end.isoformat())
 
 
@@ -90,14 +90,8 @@ def _window_end(conn, sort, before, after):
     return today()
 
 
-def _home_sort_links(start) -> dict[str, str]:
-    base = "/" if start is None else f"/?before={(start + timedelta(days=3)).isoformat()}"
-    joiner = "&" if "?" in base else "?"
-    return {
-        "new": base if start is None else "/",
-        "old": f"{base}{joiner}sort=old",
-        "views": f"{base}{joiner}sort=views",
-    }
+# Switching sort resets the page: Newest and Most viewed open the latest 4 days, Oldest the earliest.
+HOME_SORT_LINKS = {"new": "/", "old": "/?sort=old", "views": "/?sort=views"}
 
 
 def _page_url(sort: str, before: str) -> str:

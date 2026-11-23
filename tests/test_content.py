@@ -210,3 +210,10 @@ def test_hash_search_redirects_to_the_tag(client, app, pass_id):
     make_post(app, pass_id, title="Tagged", tags=["berlin"])
     response = client.get("/search?q=%23berlin", follow_redirects=True)
     assert "Tagged" in response.text
+
+
+def test_sort_links_reset_to_each_sorts_starting_page(client, app, pass_id):
+    make_post(app, pass_id, title="Recent post")
+    body = client.get("/?before=2020-01-10").text
+    assert 'href="/?sort=old"' in body
+    assert 'href="/?sort=views"' in body
