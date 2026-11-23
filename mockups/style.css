@@ -77,7 +77,7 @@ a:hover { text-decoration: underline; text-decoration-thickness: 1px; text-under
 
 .listbar {
   display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 16px;
-  font: 15px var(--sans); color: var(--meta); margin: 26px 0 4px;
+  font: 15px var(--sans); color: var(--meta); margin: 12px 0 4px;
 }
 .sort { display: flex; gap: 16px; }
 .sort a { color: var(--meta); }
