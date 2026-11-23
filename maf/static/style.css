@@ -402,3 +402,6 @@ button.note:disabled { cursor: default; }
 .foot button:hover { color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
 /* Links inside page text (About, User Guide) are underlined so they read as links without relying on colour. */
 .prose a { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+
+/* Replaces an inline style, which the Content-Security-Policy forbids. */
+.after-notice { margin-top: 26px; }

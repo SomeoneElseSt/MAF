@@ -40,3 +40,10 @@ def test_hash_changes_with_file_content(tmp_path):
 
 def test_unknown_static_file_gets_a_plain_url(tmp_path):
     assert make_static_url(tmp_path)("missing.js") == "/static/missing.js"
+
+
+def test_pages_have_no_inline_scripts_or_styles(client):
+    """The production Content-Security-Policy allows only same-origin files."""
+    html = client.get("/login").text
+    assert not re.search(r"<script(?![^>]*\bsrc=)(?![^>]*application/json)[^>]*>", html)
+    assert " style=" not in html

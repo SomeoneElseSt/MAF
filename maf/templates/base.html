@@ -22,7 +22,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% if title %}{{ title }} · MAF{% else %}MAF{% endif %}</title>
 <link rel="stylesheet" href="{{ static('style.css') }}">
-<script>try { const saved = localStorage.getItem("theme"); if (saved) document.documentElement.dataset.theme = saved; } catch {}</script>
+<script src="{{ static('theme-init.js') }}"></script>
 </head>
 <body class="{{ body_class|default('') }}"{% if reply_placeholder is defined and reply_placeholder %} data-reply-placeholder="{{ reply_placeholder|e }}"{% endif %}>
 <a class="skip" href="#main">Skip to content</a>
