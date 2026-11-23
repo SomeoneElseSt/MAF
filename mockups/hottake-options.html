@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hot take options · MAF</title>
+<link rel="stylesheet" href="style.css">
+<script>try { const saved = localStorage.getItem("theme"); if (saved) document.documentElement.dataset.theme = saved; } catch {}</script>
+<style>
+  .option { margin: 0 0 8px; }
+  .option-name { font: 600 17px var(--serif); color: var(--soft); margin: 30px 0 2px; }
+  .option-note { font: 14px var(--sans); color: var(--meta); margin: 0 0 6px; }
+
+  /* 1. Hanging dot: a small ember dot in the left margin, level with the title */
+  .opt-dot li.hot { position: relative; }
+  .opt-dot li.hot::before { content: ""; position: absolute; left: -16px; top: 19px; width: 6px; height: 6px; border-radius: 50%; background: var(--hot); }
+
+  /* 2. Warm wash: the whole row sits on a faint ember tint */
+  .opt-wash li.hot { background: color-mix(in srgb, var(--hot) 7%, var(--paper)); border-radius: 4px; margin: 0 -12px; padding: 8px 12px; }
+
+  /* 3. Trailing dot: a small ember dot right after the title */
+  .opt-trail li.hot .title::after { content: ""; display: inline-block; width: 6px; height: 6px; margin-left: 8px; border-radius: 50%; background: var(--hot); vertical-align: middle; }
+
+  /* 4. Soft bar: a wider, faint ember band in the margin, the full height of the row */
+  .opt-band li.hot { position: relative; }
+  .opt-band li.hot::before { content: ""; position: absolute; left: -16px; top: 8px; bottom: 8px; width: 4px; border-radius: 2px; background: color-mix(in srgb, var(--hot) 35%, var(--paper)); }
+
+  /* 5. Hairline frame: a thin ember outline around the row */
+  .opt-frame li.hot { border: 1px solid color-mix(in srgb, var(--hot) 45%, var(--paper)); border-radius: 4px; margin: 4px -12px; padding: 8px 12px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="top">
+    <a class="brand" href="index.html">MAF</a>
+    <nav><a href="submit.html">Submit</a></nav>
+    <form class="find" action="index.html"><input type="search" name="q" placeholder="Search" aria-label="Search posts and comments"></form>
+    <button class="theme-toggle" type="button">Dark</button>
+  </header>
+
+  <h1 class="heading">#hottake: five options</h1>
+  <p class="lede">The middle post in each list has #hottake. In every option the tag itself is ember; only the marker differs.</p>
+
+  <section class="option">
+    <h2 class="option-name">1. Hanging dot</h2>
+    <p class="option-note">A small ember dot in the margin, level with the title.</p>
+    <ol class="list opt-dot">
+      <li><a class="title" href="item.html">Should we move the Berlin rotation to fall?</a><div class="meta">2 hours ago, <a href="item.html">14 comments</a>, 61 views <span class="dot">·</span> <a class="tag" href="#">#rotations</a></div></li>
+      <li class="hot"><a class="title" href="item.html">The case against cold calls in seminars</a><span class="host">substack.com</span><div class="meta">4 hours ago, <a href="item.html">32 comments</a>, 210 views <span class="dot">·</span> <a class="tag hot-tag" href="#">#hottake</a>, <a class="tag" href="#">#academics</a></div></li>
+      <li><a class="title" href="item.html">Is anyone else running out of money by week 10?</a><div class="meta">6 hours ago, <a href="item.html">22 comments</a>, 187 views <span class="dot">·</span> <a class="tag" href="#">#money</a></div></li>
+    </ol>
+  </section>
+
+  <section class="option">
+    <h2 class="option-name">2. Warm wash</h2>
+    <p class="option-note">The row sits on a very faint ember tint.</p>
+    <ol class="list opt-wash">
+      <li><a class="title" href="item.html">Should we move the Berlin rotation to fall?</a><div class="meta">2 hours ago, <a href="item.html">14 comments</a>, 61 views <span class="dot">·</span> <a class="tag" href="#">#rotations</a></div></li>
+      <li class="hot"><a class="title" href="item.html">The case against cold calls in seminars</a><span class="host">substack.com</span><div class="meta">4 hours ago, <a href="item.html">32 comments</a>, 210 views <span class="dot">·</span> <a class="tag hot-tag" href="#">#hottake</a>, <a class="tag" href="#">#academics</a></div></li>
+      <li><a class="title" href="item.html">Is anyone else running out of money by week 10?</a><div class="meta">6 hours ago, <a href="item.html">22 comments</a>, 187 views <span class="dot">·</span> <a class="tag" href="#">#money</a></div></li>
+    </ol>
+  </section>
+
+  <section class="option">
+    <h2 class="option-name">3. Trailing dot</h2>
+    <p class="option-note">A small ember dot right after the title.</p>
+    <ol class="list opt-trail">
+      <li><a class="title" href="item.html">Should we move the Berlin rotation to fall?</a><div class="meta">2 hours ago, <a href="item.html">14 comments</a>, 61 views <span class="dot">·</span> <a class="tag" href="#">#rotations</a></div></li>
+      <li class="hot"><a class="title" href="item.html">The case against cold calls in seminars</a><span class="host">substack.com</span><div class="meta">4 hours ago, <a href="item.html">32 comments</a>, 210 views <span class="dot">·</span> <a class="tag hot-tag" href="#">#hottake</a>, <a class="tag" href="#">#academics</a></div></li>
+      <li><a class="title" href="item.html">Is anyone else running out of money by week 10?</a><div class="meta">6 hours ago, <a href="item.html">22 comments</a>, 187 views <span class="dot">·</span> <a class="tag" href="#">#money</a></div></li>
+    </ol>
+  </section>
+
+  <section class="option">
+    <h2 class="option-name">4. Soft band</h2>
+    <p class="option-note">Like the bar, but wider and paler, so it reads as a tint rather than a line.</p>
+    <ol class="list opt-band">
+      <li><a class="title" href="item.html">Should we move the Berlin rotation to fall?</a><div class="meta">2 hours ago, <a href="item.html">14 comments</a>, 61 views <span class="dot">·</span> <a class="tag" href="#">#rotations</a></div></li>
+      <li class="hot"><a class="title" href="item.html">The case against cold calls in seminars</a><span class="host">substack.com</span><div class="meta">4 hours ago, <a href="item.html">32 comments</a>, 210 views <span class="dot">·</span> <a class="tag hot-tag" href="#">#hottake</a>, <a class="tag" href="#">#academics</a></div></li>
+      <li><a class="title" href="item.html">Is anyone else running out of money by week 10?</a><div class="meta">6 hours ago, <a href="item.html">22 comments</a>, 187 views <span class="dot">·</span> <a class="tag" href="#">#money</a></div></li>
+    </ol>
+  </section>
+
+  <section class="option">
+    <h2 class="option-name">5. Hairline frame</h2>
+    <p class="option-note">A thin ember outline around the row.</p>
+    <ol class="list opt-frame">
+      <li><a class="title" href="item.html">Should we move the Berlin rotation to fall?</a><div class="meta">2 hours ago, <a href="item.html">14 comments</a>, 61 views <span class="dot">·</span> <a class="tag" href="#">#rotations</a></div></li>
+      <li class="hot"><a class="title" href="item.html">The case against cold calls in seminars</a><span class="host">substack.com</span><div class="meta">4 hours ago, <a href="item.html">32 comments</a>, 210 views <span class="dot">·</span> <a class="tag hot-tag" href="#">#hottake</a>, <a class="tag" href="#">#academics</a></div></li>
+      <li><a class="title" href="item.html">Is anyone else running out of money by week 10?</a><div class="meta">6 hours ago, <a href="item.html">22 comments</a>, 187 views <span class="dot">·</span> <a class="tag" href="#">#money</a></div></li>
+    </ol>
+  </section>
+
+  <footer class="foot">
+    <a href="about.html">About</a><a href="how.html">User Guide</a><a href="https://github.com/">Source Code</a>
+  </footer>
+</div>
+<script src="theme.js"></script>
+</body>
+</html>
