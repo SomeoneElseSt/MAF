@@ -341,3 +341,29 @@ main { display: block; }
 .list li.is-pinned .pin { --pin-fill: currentColor; color: var(--soft); }
 /* Touch screens have no hover, so the pin is always there. */
 @media (hover: none) { .pin { opacity: 1; } }
+
+/* Emoji reactions: quiet by default (emoji + count, no box); yours sit on the soft tint. The smiley opens a picker. */
+.reactions { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.post-reactions { display: flex; margin: -6px 0 4px -6px; }
+.comment .actions { align-items: center; }
+.actions .reactions { margin-left: -2px; }
+.react, .actions .react {
+  display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 7px;
+  border: none; border-radius: 4px; background: none; font: 13px var(--sans); color: var(--meta); cursor: pointer;
+}
+.react-emoji { font-size: 15px; line-height: 1; }
+.react:hover, .actions .react:hover { background: var(--tint); color: var(--ink); }
+.react[aria-pressed="true"], .actions .react[aria-pressed="true"] { background: var(--tint); color: var(--ink); }
+.react-add, .actions .react-add {
+  display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 26px; padding: 0;
+  border: none; border-radius: 4px; background: none; color: var(--meta); cursor: pointer;
+}
+.react-add:hover, .actions .react-add:hover, .react-add[aria-expanded="true"] { color: var(--ink); background: var(--tint); }
+
+.emoji-picker {
+  position: absolute; z-index: 20; display: grid; grid-template-columns: repeat(8, 32px); gap: 2px; padding: 6px;
+  background: var(--paper); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+.emoji-picker[hidden] { display: none; }
+.emoji-picker button { width: 32px; height: 32px; padding: 0; border: none; border-radius: 4px; background: none; font-size: 18px; line-height: 1; cursor: pointer; }
+.emoji-picker button:hover, .emoji-picker button[aria-pressed="true"] { background: var(--tint); }
