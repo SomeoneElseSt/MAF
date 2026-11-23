@@ -106,12 +106,13 @@ It looks like Hacker News but has no votes: text or link posts, nested comments,
 
 ## Name filter
 
-Posts that name a person are rejected before they're saved, using an existing open-source tool rather than custom rules.
+Posts that seem to name a person get a warning before they're saved, and the poster decides. There are no lists of names to maintain.
 
-- **Rule:** no naming people. It's shown during sign-in and on the home page.
+- **Rule:** no naming students or staff. It's shown during sign-in and on the home page.
 - **Tool:** Microsoft Presidio, which detects people's names in text. It runs on the same server and only when someone submits, so reading is unaffected. Expect tens of milliseconds per submission, to be measured during the build.
-- **On a match** the post is rejected with: "This looks like it names someone. MAF doesn't allow naming people. Please rephrase."
-- **Public figures** like Kant or Elon Musk would be caught too, so an allowlist lets them through.
+- **On a match** the poster sees: "This looks like it names someone. MAF doesn't allow naming students or staff. If it's a public figure, you can post anyway." with two buttons, **Edit post** and **Post anyway**.
+- **No allowlist:** public figures like Ben Nelson, Kant or Elon Musk go through with one extra click. Nothing about Minerva people is stored.
+- **Backstop:** if someone clicks Post anyway on a classmate's name, 5 flags hide it.
 - **Limits:** it misses some lowercase names and can be fooled on purpose. It discourages naming people; it can't fully stop it.
 
 ## Moderation
