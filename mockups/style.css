@@ -284,6 +284,7 @@ span.arrow { color: var(--line); }
 
 /* #hottakes: the row sits on a faint ember wash and the tag takes the ember colour, the site's only accent. */
 .list li.hot { background: var(--hot-wash); border-radius: 4px; margin: 0 -12px; padding: 8px 12px; }
+.list li.hot + li.hot { margin-top: 4px; }
 .meta .hot-tag { color: var(--hot); }
 
 /* Private replies: laid out like any comment; the details line says who can see it, with an (i) explaining more. */
