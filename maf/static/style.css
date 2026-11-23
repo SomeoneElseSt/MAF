@@ -391,3 +391,5 @@ main { display: block; }
 button.note { background: none; border: none; padding: 0; cursor: pointer; }
 button.note:hover:not(:disabled) { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 button.note:disabled { cursor: default; }
+/* A centered dot between two links in a button row, closer than the row's usual gap. */
+.row .dot { margin: 0 -8px; color: var(--meta); font: 15px var(--sans); }

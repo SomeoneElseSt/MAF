@@ -27,7 +27,7 @@ def _render(name: str, **context) -> str:
 CODE_SUBJECT = "Your code: {code}"
 CODE_BODY = """Your code is {code}.
 
-It works for 10 minutes. If you didn't ask for this code, ignore this email.
+It's valid for 10 minutes. If you didn't ask for this code, ignore this email.
 """
 
 
