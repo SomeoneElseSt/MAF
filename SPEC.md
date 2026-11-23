@@ -51,7 +51,9 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 - **Search bar** at the top of every page. Uses SQLite's built-in FTS5 full-text index over post titles, post text and comments, so there's no extra dependency. Hidden items are excluded. Search queries are never logged.
 - **Sorter** next to the search bar, applied to the post list and to search results: `newest` (default), `oldest`, `most viewed`. Passed as a query param (`?sort=new|old|views`).
 - **View counts:** each post has a `views` counter shown next to it. Opening a post adds 1, once per pass per 24 hours. The dedupe set `(pass_id, item_id)` lives **in memory only** and is cleared every 24 hours and on restart. Only the counter is written to disk, so no reading history is stored for any pass.
-- **Pages:** `/` (post list with search bar and sorter, plus the no-naming rule), `/item/<id>`, `/submit`, `/how-it-works`, `/login`
+- **Week pages:** `/` shows posts from the 7 days ending today, grouped under day headings (Today, Yesterday, then e.g. Thursday 19 November). `?week=YYYY-MM-DD` shows the 7 days ending on that date, with Previous week / Next week links. `sort` applies within the week. Search results span all time, 30 per page.
+- **List rows show no IDs:** title, link host, then plain-language metadata ("2 hours ago, 14 comments, 61 views").
+- **Pages:** `/` (week of posts with search bar and sorter, plus the no-naming rule), `/item/<id>`, `/submit`, `/how-it-works`, `/login`
 
 ## Name filter
 
