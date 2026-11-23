@@ -29,6 +29,7 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 
 1. The user enters an `@uni.minerva.edu` email. The server rejects any other domain.
 2. **Cooldown:** each email can request one code per 30 seconds. The cooldown lives in memory only. Its job is to keep anyone from flooding a classmate's inbox and to make collecting extra passes slow.
+   **Guess limits:** a code is thrown away after 5 wrong guesses, and at most 30 wrong codes are accepted site-wide per hour; past that, code checks pause ("Too many wrong codes were entered on MAF recently. Try again in N minutes."). This stops anyone guessing across many addresses at once. Only plain addresses (`[a-z0-9._+-]+@uni.minerva.edu`) are accepted, so nothing like `Name <x@gmail.com>, y@uni.minerva.edu` reaches SES.
 3. The server sends a 6-digit code through SES. The email is short: subject `Your code: 482913`, an HTML version in the site's style (MAF wordmark top left, always light) plus a plain-text fallback. Templates: `maf/templates/email/`. Codes expire after 10 minutes and are held in memory only.
 4. The user enters the code. If it matches, the browser generates a random token, blinds it, and sends only the blinded value. The server signs it and forgets the email.
 5. The browser unblinds the token and redeems it at `/sign-in/redeem`. The server verifies the signature, stores `sha256(token)` to block reuse, creates a `pass`, and sets a long-lived HttpOnly session cookie.

@@ -280,3 +280,36 @@ def test_production_refuses_the_public_dev_secrets():
 
     with pytest.raises(ConfigError):
         load_settings({"MAF_ENV": "production", "EMAIL_BACKEND": "ses"})
+
+
+def test_only_plain_minerva_addresses_are_accepted():
+    from maf.auth import normalise_email
+
+    assert normalise_email("  Jane.Doe+x@UNI.minerva.edu ") == "jane.doe+x@uni.minerva.edu"
+    for sneaky in ["attacker@gmail.com,victim@uni.minerva.edu", "x <attacker@gmail.com>, y@uni.minerva.edu",
+                   "a@b@uni.minerva.edu", '"a b"@uni.minerva.edu', "a@uni.minerva.edu.evil.com",
+                   "a@xuni.minerva.edu", "a b@uni.minerva.edu", "a@uni.minerva.edu\nbcc:x@gmail.com"]:
+        assert normalise_email(sneaky) is None, sneaky
+
+
+def test_wrong_codes_are_capped_site_wide():
+    from maf.memory import SITE_WRONG_CODES_LIMIT, Memory
+
+    memory = Memory()
+    emails = [f"s{i}@uni.minerva.edu" for i in range(SITE_WRONG_CODES_LIMIT + 1)]
+    codes = {email: memory.issue_code(email) for email in emails}
+    for email in emails[:SITE_WRONG_CODES_LIMIT]:
+        wrong = f"{(int(codes[email]) + 1) % 1_000_000:06d}"
+        assert not memory.check_code(email, wrong)
+    assert memory.code_guessing_paused()
+    last = emails[-1]
+    assert not memory.check_code(last, codes[last])  # even the right code waits, or guessing could continue
+
+
+def test_code_page_says_when_guessing_is_paused(client, app):
+    from maf.memory import SITE_WRONG_CODES_LIMIT, now
+
+    app.memory.wrong_codes = [now()] * SITE_WRONG_CODES_LIMIT
+    response = client.post("/sign-in/code", data={"email": "s@uni.minerva.edu", "code": "123456"})
+    assert response.status_code == 429
+    assert "Too many wrong codes were entered on MAF recently. Try again in 60 minutes." in response.text

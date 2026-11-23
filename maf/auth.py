@@ -7,6 +7,7 @@ browser unblinds before redeeming. Nothing derived from the email is stored.
 
 import base64
 import binascii
+import re
 
 from starlette.requests import Request
 from starlette.responses import Response
@@ -18,19 +19,21 @@ from .util import new_pass_id, sha256_hex
 from .web import form_values, page_of, redirect, render
 
 ALLOWED_DOMAIN = "uni.minerva.edu"
+EMAIL_PATTERN = re.compile(r"[a-z0-9._+-]+@" + re.escape(ALLOWED_DOMAIN))
+PAUSED_ERROR = "Too many wrong codes were entered on MAF recently. Try again in {minutes} minute{s}."
 CODE_LENGTH = 6
 TOKEN_MIN_BYTES = 32
 
 
 def normalise_email(raw: str) -> str | None:
-    """Lowercases and checks the Minerva domain, else None."""
+    """Lowercases and returns a plain Minerva address, else None. Only simple addresses pass, so nothing like
+    "Name <someone@gmail.com>, x@uni.minerva.edu" can reach SES and send a code somewhere else."""
     email = raw.strip().lower()
-    if "@" not in email:
-        return None
-    local, _, domain = email.rpartition("@")
-    if not local or domain != ALLOWED_DOMAIN:
-        return None
-    return email
+    return email if EMAIL_PATTERN.fullmatch(email) else None
+
+
+def _paused_error(minutes: int) -> str:
+    return PAUSED_ERROR.format(minutes=minutes, s="" if minutes == 1 else "s")
 
 
 def code_accepted(page, email: str, code: str, consume: bool = True) -> bool:
@@ -89,6 +92,10 @@ async def code_submit(request: Request) -> Response:
     page = page_of(request)
     values = await form_values(request, "email", "code")
     email = normalise_email(values["email"])
+    if page.memory.code_guessing_paused():
+        return render(page, "login-code.html", status_code=429,
+                      error=_paused_error(page.memory.code_guessing_minutes_left()),
+                      email=values["email"], cooldown_seconds=page.memory.cooldown_left(email) if email else 0)
     if not values["code"].strip():
         return render(page, "login-code.html", status_code=400, error="Enter the 6-digit code from the email.",
                       email=values["email"], cooldown_seconds=page.memory.cooldown_left(email) if email else 0)
