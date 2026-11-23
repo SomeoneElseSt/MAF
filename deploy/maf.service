@@ -1,0 +1,46 @@
+[Unit]
+Description=MAF anonymous forum
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=maf
+Group=maf
+WorkingDirectory=/opt/maf
+# Secrets and settings. systemd reads this file as root, before dropping to the maf user.
+EnvironmentFile=/etc/maf/env
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONDONTWRITEBYTECODE=1
+# maf.main binds 127.0.0.1 only (Caddy is the public face) and starts uvicorn with access_log=False,
+# so no request lines or IPs are logged. The port comes from MAF_BASE_URL (default 8000).
+ExecStart=/opt/maf/.venv/bin/python -m maf.main
+Restart=always
+RestartSec=3
+
+# Hardening: the app writes only to /var/lib/maf (database and signing key).
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/maf
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+ProtectProc=invisible
+RestrictSUIDSGID=true
+RestrictRealtime=true
+RestrictNamespaces=true
+LockPersonality=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+SystemCallArchitectures=native
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+[Install]
+WantedBy=multi-user.target
