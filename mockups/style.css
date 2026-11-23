@@ -214,3 +214,7 @@ span.arrow { color: var(--line); }
 .inline-reply { margin: 10px 0 4px 26px; }
 .inline-reply textarea { min-height: 80px; resize: vertical; }
 @media (max-width: 560px) { .inline-reply { margin-left: 16px; } }
+
+/* Hidden posts have no comment box, so the first comment follows the post at normal comment spacing. */
+.faded .post-head { padding-bottom: 0; }
+.faded .post-body p:last-child { margin-bottom: 6px; }
