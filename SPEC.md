@@ -174,7 +174,7 @@ Target: everything on the [A11Y Project checklist](https://www.a11yproject.com/c
 - **Targets:** tappable controls at least 24×24 px (the (i), arrows, Flag and Reply need padding to reach it).
 - **Motion:** only small transitions, all off under `prefers-reduced-motion`.
 - **Links:** links in text are underlined or otherwise distinct from plain text without colour, and the Source Code link says if it opens a new tab.
-- **Session:** passes don't expire, so there's no timeout to extend. The 10-minute login code is the exception, and the code page says so and offers "Send a new code".
+- **Session:** passes don't expire, so there's no timeout to extend. The 10-minute login code is the exception, and the code page says so, and "Use a different email" goes back to request another.
 
 ## Out of scope for v1
 

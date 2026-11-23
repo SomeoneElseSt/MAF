@@ -8,7 +8,7 @@
 {% extends "base.html" %}
 {% block main %}
 <h1 class="heading">Check your inbox</h1>
-<p class="lede">We sent you a 6-digit code. It works for 10 minutes. If you can't find it, check your spam folder.</p>
+<p class="lede">We sent you a 6-digit code. It works for 10 minutes.</p>
 
 {% if error %}<div class="notice"><p>{{ error }}</p></div>{% endif %}
 
@@ -24,5 +24,4 @@
     <a class="note" href="/login">Use a different email</a>
   </div>
 </form>
-<p class="small">The code expires after 10 minutes. <a href="/login">Send a new code</a></p>
 {% endblock %}
