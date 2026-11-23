@@ -84,4 +84,8 @@ def load_settings(env: dict[str, str] | None = None) -> Settings:
     )
     if settings.is_production and settings.console_email:
         raise ConfigError("EMAIL_BACKEND=console cannot be used with MAF_ENV=production")
+    # The dev defaults are public (the repo is open source): production must have its own secrets.
+    for name, value in (("LABEL_SECRET", settings.label_secret), ("SESSION_SECRET", settings.session_secret)):
+        if settings.is_production and (not value or value.startswith(b"dev-")):
+            raise ConfigError(f"{name} must be set to a real secret when MAF_ENV=production")
     return settings

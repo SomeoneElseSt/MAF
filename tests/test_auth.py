@@ -272,3 +272,11 @@ def test_dev_login_code_can_never_be_on_in_production():
 
     with pytest.raises(ConfigError):
         load_settings({"EMAIL_BACKEND": "console", "MAF_ENV": "production"})
+
+
+def test_production_refuses_the_public_dev_secrets():
+    import pytest
+    from maf.settings import ConfigError, load_settings
+
+    with pytest.raises(ConfigError):
+        load_settings({"MAF_ENV": "production", "EMAIL_BACKEND": "ses"})
