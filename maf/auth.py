@@ -32,6 +32,12 @@ def normalise_email(raw: str) -> str | None:
     return email if EMAIL_PATTERN.fullmatch(email) else None
 
 
+def _code_page_waiting(page, email: str) -> Response:
+    """After 5 wrong codes the Continue button itself counts down, like Send code does during the cooldown."""
+    return render(page, "login-code.html", status_code=429, email=email,
+                  cooldown_seconds=page.memory.cooldown_left(email), wait_seconds=page.memory.code_lock_left(email))
+
+
 def _paused_error(minutes: int) -> str:
     return PAUSED_ERROR.format(minutes=minutes, s="" if minutes == 1 else "s")
 
@@ -96,6 +102,8 @@ async def code_submit(request: Request) -> Response:
         return render(page, "login-code.html", status_code=429,
                       error=_paused_error(page.memory.code_guessing_minutes_left()),
                       email=values["email"], cooldown_seconds=page.memory.cooldown_left(email) if email else 0)
+    if email and page.memory.code_lock_left(email):
+        return _code_page_waiting(page, email)
     if not values["code"].strip():
         return render(page, "login-code.html", status_code=400, error="Enter the 6-digit code from the email.",
                       email=values["email"], cooldown_seconds=page.memory.cooldown_left(email) if email else 0)
@@ -103,7 +111,8 @@ async def code_submit(request: Request) -> Response:
         return render(page, "login-code.html", status_code=400,
                       error="That code didn't match. Check the 6 digits, or ask for a new code.",
                       email=values["email"],
-                      cooldown_seconds=page.memory.cooldown_left(email) if email else 0)
+                      cooldown_seconds=page.memory.cooldown_left(email) if email else 0,
+                      wait_seconds=page.memory.code_lock_left(email) if email else 0)
     return render(page, "login-blind.html", email=email, code=values["code"])
 
 
@@ -177,8 +186,7 @@ async def redeem_submit(request: Request) -> Response:
 
 
 def _redeem_failed(page) -> Response:
-    return render(page, "redeem.html", status_code=400,
-                  error="That pass couldn't be verified. Sign in again to get a new one.")
+    return render(page, "redeem.html", status_code=400)
 
 
 def _decode_base64url(value: str) -> bytes | None:

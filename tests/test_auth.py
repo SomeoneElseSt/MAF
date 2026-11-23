@@ -217,14 +217,25 @@ def test_code_page_then_blind_sign_works_like_a_browser(client, app):
     assert signed.json().get("blind_sig")
 
 
-def test_five_wrong_guesses_throw_the_code_away(client, app):
+def test_five_wrong_codes_make_continue_wait_30_seconds(client, app):
+    from maf import memory as memory_module
+
     client.post("/sign-in", data={"email": "student@uni.minerva.edu"})
     code = latest_code(app)
     wrong = "000000" if code != "000000" else "111111"
-    for _ in range(5):
-        client.post("/sign-in/code", data={"email": "student@uni.minerva.edu", "code": wrong})
-    response = client.post("/sign-in/code", data={"email": "student@uni.minerva.edu", "code": code})
-    assert response.status_code == 400
+    for _ in range(4):
+        page = client.post("/sign-in/code", data={"email": "student@uni.minerva.edu", "code": wrong})
+        assert "data-wait" not in page.text
+    fifth = client.post("/sign-in/code", data={"email": "student@uni.minerva.edu", "code": wrong})
+    assert "That code didn&#39;t match" in fifth.text
+    assert 'data-wait="30" data-label="Continue">Wait 30 seconds</button>' in fifth.text
+    # Even the right code waits, or the wait would only slow guessing down by one request.
+    waiting = client.post("/sign-in/code", data={"email": "student@uni.minerva.edu", "code": code})
+    assert waiting.status_code == 429 and "That code didn&#39;t match" not in waiting.text
+    assert "data-wait=" in waiting.text
+    app.memory.code_locks["student@uni.minerva.edu"] = memory_module.now() - 1  # 30 seconds later
+    later = client.post("/sign-in/code", data={"email": "student@uni.minerva.edu", "code": code})
+    assert later.status_code == 200 and "Signing you in" in later.text
 
 
 def test_code_page_offers_a_new_code_once_the_cooldown_runs_out(client, app):

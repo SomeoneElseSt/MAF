@@ -41,7 +41,7 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 
 - `label = wordlist(HMAC(LABEL_SECRET, pass_id || thread_id))` gives a name like `quiet-otter` from about 256 adjectives × 256 animals.
 - The thread's author is tagged **OP** in that thread.
-- Clicking a label opens a pop-up: *"Names change per thread so no one can follow you around. There are no profiles, on purpose."*
+- Clicking a label opens a pop-up: *"Names are unique per thread to maintain anonymity."*
 - The User Guide (`/guide`) explains this.
 
 ## Content

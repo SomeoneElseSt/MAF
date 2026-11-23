@@ -81,7 +81,7 @@ Thread: "Best ramen near the res?"                        OP: tidy-crane
 - **Within a thread** you can follow who is replying to whom.
 - **Across threads** nothing connects your posts, so nobody can build a history or profile of you.
 - The thread's author is tagged **OP**.
-- Clicking a name opens a pop-up: "Names change per thread so no one can follow you around. There are no profiles, on purpose."
+- Clicking a name opens a pop-up: "Names are unique per thread to maintain anonymity."
 - The User Guide explains this.
 
 ## Posts and pages

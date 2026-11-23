@@ -8,8 +8,8 @@
 {% extends "base.html" %}
 {% block main %}
 <h1 class="heading">Signing you in</h1>
-<p class="lede">Your browser is making an anonymous pass. This takes a second.</p>
-<noscript><div class="notice"><p>This step needs JavaScript, so the pass is made in your browser and the server never sees it unblinded. Turn JavaScript on and sign in again.</p></div></noscript>
+<p class="lede">This takes a second.</p>
+<noscript><div class="notice"><p>Signing in needs JavaScript. Turn it on and sign in again.</p></div></noscript>
 
 <form data-blind action="/sign-in/blind-sign" method="post">
   <input type="hidden" name="email" value="{{ email|default('') }}">

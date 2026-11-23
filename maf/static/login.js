@@ -53,7 +53,7 @@
       const redeemed = await fetch("/sign-in/redeem", { method: "POST", body: redeem, redirect: "follow" });
       window.location.assign(redeemed.ok ? "/" : "/sign-in/redeem");
     } catch {
-      status.textContent = "Something went wrong making your pass.";
+      status.textContent = "Something went wrong signing you in.";
       retry.hidden = false;
     }
   });

@@ -54,7 +54,8 @@
 {{ sort_row() }}
 
 {% if kind == "search" %}
-  <h1 class="heading">{% if search_query %}Search: {{ search_query }}{% else %}Search{% endif %}</h1>
+  {# The query is already in the search box, so the heading is for screen readers only. #}
+  <h1 class="sr-only">{% if search_query %}Search: {{ search_query }}{% else %}Search{% endif %}</h1>
   {% if page_number > 1 %}<p class="note">Page {{ page_number }}</p>{% endif %}
   {% if results %}
   <ol class="list list-flat">

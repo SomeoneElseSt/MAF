@@ -5,6 +5,7 @@ restart, which is what the privacy model wants: the server keeps no history of
 who logged in or what anyone read.
 """
 
+import math
 import secrets
 import threading
 import time
@@ -15,7 +16,8 @@ COOLDOWN_SECONDS = 30
 VIEW_WINDOW_SECONDS = 24 * 60 * 60
 RATE_WINDOW_SECONDS = 60
 NEW_TOKEN_SHOW_SECONDS = 60  # how long a just-created API token waits to be shown once
-MAX_CODE_ATTEMPTS = 5  # wrong guesses before a code is thrown away
+MAX_CODE_ATTEMPTS = 5  # wrong guesses on one address before it has to wait
+CODE_LOCK_SECONDS = 30  # the wait, shown on the Continue button
 # Site-wide cap on wrong codes. Without it, someone could request codes for many addresses and guess
 # 5 times on each; with it, guessing a 6-digit code takes thousands of hours of emails landing in students' inboxes.
 SITE_WRONG_CODES_LIMIT = 30
@@ -39,6 +41,7 @@ class Memory:
     last_view_sweep: float = 0.0
     rate: dict[str, list[float]] = field(default_factory=dict)
     wrong_codes: list[float] = field(default_factory=list)
+    code_locks: dict[str, float] = field(default_factory=dict)
 
     # -- login codes -------------------------------------------------------
 
@@ -56,10 +59,10 @@ class Memory:
 
     def check_code(self, email: str, code: str, consume: bool = True) -> bool:
         """Compares a code. A correct code is consumed unless consume=False (the code page checks it before
-        the browser's blind-sign step uses it). Too many wrong guesses throw the code away."""
+        the browser's blind-sign step uses it). Every 5 wrong guesses, the address waits 30 seconds."""
         with self._lock:
             entry = self.codes.get(email)
-            if entry is None or self._recent_wrong_codes() >= SITE_WRONG_CODES_LIMIT:
+            if entry is None or self.code_locks.get(email, 0) > now() or self._recent_wrong_codes() >= SITE_WRONG_CODES_LIMIT:
                 return False
             stored, expires = entry
             if expires < now():
@@ -69,7 +72,8 @@ class Memory:
                 self.wrong_codes.append(now())
                 self.code_failures[email] = self.code_failures.get(email, 0) + 1
                 if self.code_failures[email] >= MAX_CODE_ATTEMPTS:
-                    self._drop_code(email)
+                    self.code_failures.pop(email)
+                    self.code_locks[email] = now() + CODE_LOCK_SECONDS
                 return False
             if consume:
                 self._drop_code(email)
@@ -79,6 +83,11 @@ class Memory:
         cutoff = now() - SITE_WRONG_CODES_WINDOW_SECONDS
         self.wrong_codes = [t for t in self.wrong_codes if t > cutoff]
         return len(self.wrong_codes)
+
+    def code_lock_left(self, email: str) -> int:
+        """Seconds until this address may try a code again (0 when it can)."""
+        with self._lock:
+            return max(0, math.ceil(self.code_locks.get(email, 0) - now()))
 
     def code_guessing_paused(self) -> bool:
         with self._lock:
@@ -117,6 +126,7 @@ class Memory:
         with self._lock:
             self._drop_code(email)
             self.cooldowns.pop(email, None)
+            self.code_locks.pop(email, None)
 
     # -- view dedupe -------------------------------------------------------
 
