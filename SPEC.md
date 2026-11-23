@@ -47,8 +47,11 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 
 - **Post:** title + (URL **or** text). Text and links only; no uploads or images.
 - **Comments:** nested.
-- **No votes.** Posts and comments are ordered by `created_at` descending only.
-- **Pages:** `/` (newest posts first, plus the no-naming rule), `/item/<id>`, `/submit`, `/how-it-works`, `/login`, `/admin-code`
+- **No votes.** Comments within a thread are ordered by `created_at`.
+- **Search bar** at the top of every page. Uses SQLite's built-in FTS5 full-text index over post titles, post text and comments, so there's no extra dependency. Hidden items are excluded for non-admins. Search queries are never logged.
+- **Sorter** next to the search bar, applied to the post list and to search results: `newest` (default), `oldest`, `most viewed`. Passed as a query param (`?sort=new|old|views`).
+- **View counts:** each post has a `views` counter shown next to it. Opening a post adds 1, once per pass per 24 hours. The dedupe set `(pass_id, item_id)` lives **in memory only** and is cleared every 24 hours and on restart. Only the counter is written to disk, so no reading history is stored for any pass.
+- **Pages:** `/` (post list with search bar and sorter, plus the no-naming rule), `/item/<id>`, `/submit`, `/how-it-works`, `/login`, `/admin-code`
 
 ## Name filter
 
@@ -76,12 +79,13 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 ```
 pass(id, is_admin, admin_code_id NULL)
 redeemed_token(token_hash PK)
-item(id, parent_id NULL, thread_id, pass_id, title NULL, url NULL, text NULL, created_at, flags, hidden_by_flags, restored, hidden_by_admin)
+item(id, parent_id NULL, thread_id, pass_id, title NULL, url NULL, text NULL, created_at, views, flags, hidden_by_flags, restored, hidden_by_admin)
+item_fts  -- FTS5 virtual table over item(title, text), kept in sync with triggers
 flag(pass_id, item_id, PK both)
 admin_hide_vote(admin_code_id, item_id, PK both)
 ```
 
-In memory only, never persisted: `pending_code(email → code, expires_at)`, `cooldown(email → expires_at)`.
+In memory only, never persisted: `pending_code(email → code, expires_at)`, `cooldown(email → expires_at)`, `viewed(pass_id, item_id)` (cleared every 24 h).
 
 ## Privacy checklist
 
@@ -93,7 +97,7 @@ In memory only, never persisted: `pending_code(email → code, expires_at)`, `co
 
 ## Out of scope for v1
 
-Votes, uploads/images, DMs, notifications, search, karma, profiles, editing, mobile app.
+Votes, uploads/images, DMs, notifications, karma, profiles, editing, mobile app.
 
 ## Deploy
 

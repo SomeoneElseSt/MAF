@@ -25,7 +25,7 @@ v1 is a working forum with real anonymity and as little friction as possible. Gr
 **Non-goals for v1**
 
 - Votes or rankings.
-- Image or file uploads, DMs, notifications, search, karma, profiles, editing posts, a mobile app.
+- Image or file uploads, DMs, notifications, karma, profiles, editing posts, a mobile app.
 - Bans or an admin dashboard.
 - Recovery keys or passwords.
 
@@ -86,15 +86,18 @@ Thread: "Best ramen near the res?"                        OP: tidy-crane
 
 ## Posts and pages
 
-It looks like Hacker News but has no votes: text or link posts, nested comments, and everything ordered newest first.
+It looks like Hacker News but has no votes: text or link posts, nested comments, a search bar, and a sorter for date or views.
 
 - **Posts:** a title plus either a link or text. No images or uploads.
-- **Comments:** nested replies.
-- **No votes.** Posts and comments are ordered by recency only, so extra passes can't push anything up.
+- **Comments:** nested replies, oldest first within a thread.
+- **No votes.** Nothing ranks posts by popularity unless you choose to sort by views.
+- **Search bar** at the top of every page, searching post titles, post text and comments. It uses the database's built-in full-text search, so it adds no dependencies. Searches are never logged.
+- **Sorter** next to the search bar: newest first (default), oldest first, or most viewed. It applies to the post list and to search results.
+- **View counts, kept anonymous:** each post shows how many times it's been opened. A pass counts once per post per 24 hours. Which pass opened which post is kept in memory only and wiped daily, so only the total is ever saved and no one's reading history exists.
 
 | Page | What it shows |
 | --- | --- |
-| Home | Newest posts first, plus the no-naming rule |
+| Home | Search bar and sorter at the top, the post list (newest first by default), plus the no-naming rule |
 | Thread | A post and its comments |
 | Submit | New post form |
 | How it works | Anonymity, per-thread names, rules |
@@ -155,7 +158,10 @@ Everything runs on AWS using existing credits: one small server, a domain, and A
 | --- | --- | --- |
 | Login method | Email code via AWS SES | Google sign-in would show the app in Minerva's admin console |
 | Limiting extra passes | No cap; 10-minute in-memory cooldown | Any record that catches repeat sign-ups lets the operator check membership |
-| Votes | None; recency only | Removes the main thing extra passes could abuse |
+| Votes | None | Removes the main thing extra passes could abuse |
+| Ordering | Newest (default), oldest, or most viewed | Recency first; views are an opt-in sort |
+| View counts | Total only; per-pass dedupe in memory for 24 h | Counts stay honest without storing reading history |
+| Search | Built-in SQLite full-text search, queries not logged | No extra dependency, nothing about readers saved |
 | Hiding | 5 flags auto-hide, admin Restore | Students can act at 3am; abuse is slow and undone with one click |
 | Uploads | Text and links only | Avoids hosting illegal images |
 
