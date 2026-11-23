@@ -3,7 +3,7 @@
 
 /* Type scale. Serif for reading: 32 page title, 20 heading, 18 body (24 for the MAF wordmark).
    Sans for interface: 16 controls (header, buttons), 15 interface (meta, labels, actions, footer), 13 fine print.
-   Emoji, arrows and the (i) glyph are sized as icons, outside the scale. */
+   Code samples: mono 14. Emoji, arrows and the (i) glyph are sized as icons, outside the scale. */
 :root {
   --paper: #ffffff;
   --ink: #000000;
@@ -17,6 +17,7 @@
   --hot-wash: color-mix(in srgb, var(--hot) 7%, var(--paper));
   --visited: #6f6f6f;
   --serif: "Iowan Old Style", Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --sans: "Gill Sans", "Gill Sans MT", Seravek, "Trebuchet MS", Calibri, sans-serif;
 }
 
@@ -382,3 +383,11 @@ main { display: block; }
 /* A flag you've placed shows in blood red; clicking it again takes the flag back. */
 .meta-action.flagged, .actions button.flagged { color: var(--danger); font-weight: 600; }
 .meta-action.flagged:hover, .actions button.flagged:hover { color: var(--danger); text-decoration: underline; text-underline-offset: 3px; }
+
+/* Code samples (Use this data): a grey box that scrolls sideways on its own instead of pushing the page wider. */
+.prose pre { background: var(--tint); border-radius: 4px; padding: 14px 16px; margin: 8px 0 16px; overflow-x: auto; font: 14px/1.5 var(--mono); }
+.prose code { font: 14px/1.5 var(--mono); }
+.prose p code, .prose li code { background: var(--tint); border-radius: 3px; padding: 1px 5px; }
+/* Revoke beside a token reads like a small text action, not a browser button. */
+.prose li button { margin-left: 10px; padding: 0; border: none; background: none; font: 15px var(--sans); color: var(--soft); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.prose li button:hover { color: var(--ink); }

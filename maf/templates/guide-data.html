@@ -10,7 +10,7 @@
 {% block main %}
 <div class="prose">
   <h1 class="heading">Use this data</h1>
-  <p>Read MAF from your own tools: an AI agent through MCP, a terminal, or plain curl. Access is read-only. Posting stays in the browser, where the name warning and the rule are shown.</p>
+  <p>Read MAF from your own tools: an AI agent through MCP, a terminal, or plain curl. Access is read-only. Posting stays in the browser.</p>
 
   {% if notice %}<div class="notice"><p>{{ notice }}</p></div>{% endif %}
 
@@ -42,23 +42,44 @@
   {% endif %}
 
   <h2>MCP server</h2>
-  <p>For Claude Code, Cursor or any MCP client, run <code>maf-mcp</code> from this project with your token:</p>
+  <p>For Claude Code, Cursor or any MCP client. You need <a href="https://docs.astral.sh/uv/">uv</a> installed; add this to your client's MCP settings with your token:</p>
   <pre><code>{
   "mcpServers": {
     "maf": {
-      "command": "maf-mcp",
-      "env": { "MAF_TOKEN": "&lt;your token&gt;", "MAF_URL": "{{ base_url }}" }
+      "command": "uv",
+      "args": ["run", "https://raw.githubusercontent.com/SomeoneElseSt/MAF/main/maf/mcp.py"],
+      "env": {
+        "MAF_TOKEN": "&lt;your token&gt;",
+        "MAF_URL": "{{ base_url }}"
+      }
     }
   }
 }</code></pre>
   <p>It offers three tools: <code>list_posts</code>, <code>get_thread</code> and <code>search</code>.</p>
 
   <h2>curl</h2>
-  <pre><code>curl -H "Authorization: Bearer $MAF_TOKEN" {{ base_url }}/api/v1/posts
-curl -H "Authorization: Bearer $MAF_TOKEN" "{{ base_url }}/api/v1/posts?sort=views&amp;before=2026-11-20"
-curl -H "Authorization: Bearer $MAF_TOKEN" {{ base_url }}/api/v1/tags
-curl -H "Authorization: Bearer $MAF_TOKEN" {{ base_url }}/api/v1/threads/THREAD_ID
-curl -H "Authorization: Bearer $MAF_TOKEN" "{{ base_url }}/api/v1/search?q=berlin&amp;page=1"</code></pre>
+  <p>Save your token once, then call any endpoint:</p>
+  <pre><code>export MAF_TOKEN="&lt;your token&gt;"
+
+# The latest four days of posts
+curl -H "Authorization: Bearer $MAF_TOKEN" \
+  "{{ base_url }}/api/v1/posts"
+
+# Most viewed, in the four days before a date
+curl -H "Authorization: Bearer $MAF_TOKEN" \
+  "{{ base_url }}/api/v1/posts?sort=views&amp;before=2026-11-20"
+
+# Every hashtag with its post count
+curl -H "Authorization: Bearer $MAF_TOKEN" \
+  "{{ base_url }}/api/v1/tags"
+
+# One thread with its comments
+curl -H "Authorization: Bearer $MAF_TOKEN" \
+  "{{ base_url }}/api/v1/threads/THREAD_ID"
+
+# Search posts and comments
+curl -H "Authorization: Bearer $MAF_TOKEN" \
+  "{{ base_url }}/api/v1/search?q=berlin"</code></pre>
 
   <h2>From a script</h2>
   <p>Send the same header from any language, for example Python:</p>

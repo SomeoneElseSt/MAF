@@ -1,7 +1,12 @@
+# /// script
+# requires-python = ">=3.12"
+# dependencies = ["mcp>=1.2"]
+# ///
 """The MCP stdio server: list_posts, get_thread and search over the MAF API.
 
 Configured with MAF_TOKEN and MAF_URL. It runs on the user's machine, not the
-server, and only reads.
+server, and only reads. It needs nothing from the rest of MAF, so students can run it straight from GitHub:
+`uv run https://raw.githubusercontent.com/SomeoneElseSt/MAF/main/maf/mcp.py` (the block above tells uv to install mcp).
 """
 
 import asyncio
