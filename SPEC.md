@@ -69,20 +69,23 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 | Hide | 2 of 3 admins | Hidden from non-admins, kept in the database |
 
 - **Setting:** `FLAGS_AUTO_HIDE` (default `true`). When set to `false`, flags only surface items to admins and never hide on their own. Switching is a setting change, not a migration.
-- **Admin codes:** 3 codes in env (`ADMIN_CODES`). Entering one at `/admin-code` marks the current pass as an admin and stores which code was used.
-- **Counting admin votes:** dedupe by *admin code*, not by pass, so one admin on two devices counts once.
+- **Admin codes:** 3 random codes of at least 128 bits, stored in env (`ADMIN_CODES`) as `slot:sha256(code)` pairs. They're handed to the other admins in person or over an encrypted chat.
+- **Admin sign-in:** the admin signs in like anyone (email code → pass), then enters their code at `/admin-code`, which nothing links to. On a match, the server sets a **separate** HttpOnly cookie, `admin_session`, holding a signed `(slot, code_hash)`. It is **never** written onto the `pass` row, so an admin's posts can't be linked to their slot.
+- **Each admin request:** verify the `admin_session` signature and check that `code_hash` is still in `ADMIN_CODES`. Rotating a code in env and restarting revokes every device that used the old one immediately.
+- **Rate limit:** 5 wrong `/admin-code` attempts per pass per hour, in memory.
+- **Counting admin votes:** `admin_hide_vote` is keyed by *slot*, so one admin on two devices counts once. It is the only place a slot is ever stored.
 - **Interface:** no dashboard. Admins see Restore/Hide buttons inline, and hidden items appear greyed out for them.
 - **No bans.**
 
 ## Data model (sketch)
 
 ```
-pass(id, is_admin, admin_code_id NULL)
+pass(id)
 redeemed_token(token_hash PK)
 item(id, parent_id NULL, thread_id, pass_id, title NULL, url NULL, text NULL, created_at, views, flags, hidden_by_flags, restored, hidden_by_admin)
 item_fts  -- FTS5 virtual table over item(title, text), kept in sync with triggers
 flag(pass_id, item_id, PK both)
-admin_hide_vote(admin_code_id, item_id, PK both)
+admin_hide_vote(slot, item_id, PK both)
 ```
 
 In memory only, never persisted: `pending_code(email → code, expires_at)`, `cooldown(email → expires_at)`, `viewed(pass_id, item_id)` (cleared every 24 h).

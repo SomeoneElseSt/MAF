@@ -124,8 +124,20 @@ The community hides posts by flagging them, and three admins can restore or hide
 | Restore | Any 1 admin | Visible again, and further flags can't re-hide it |
 | Hide | 2 of 3 admins | Hidden from everyone except admins; kept in the database |
 
-- **Admins** are the maintainer and two friends. Each has an admin code stored in the server's settings. Entering it on any device turns that device into an admin device, so switching phones doesn't lose admin status.
+- **Admins** are the maintainer and two friends, one admin code each.
 - **Votes to hide** count per admin code, not per device, so one admin on two devices counts once.
+
+**Admin sign-up flow**
+
+1. **Setup (once, at deploy):** the maintainer generates 3 long random codes and puts them in the server's settings. The other two codes are handed over in person or over an encrypted chat, never by email.
+2. **Sign in like everyone else:** email code, then an anonymous pass, exactly as for any student.
+3. **Enter the admin code** on the Admin code page, which isn't linked from anywhere. That device gets a separate admin cookie, and the Restore and Hide buttons appear.
+4. **New device:** repeat steps 2 and 3. There's nothing else to set up.
+5. **Lost or leaked code:** the maintainer replaces it in the settings and restarts the server. Devices using the old code lose admin access right away, and the admin re-enters the new code.
+
+**Admin status is kept separate from the admin's pass.** The admin cookie is never written onto the pass. Otherwise anyone who knows which friend holds which code could link that admin's own posts to them. Admins post as anonymously as everyone else. The only thing recorded per code is the Hide vote, which has to be counted per admin.
+
+Wrong admin-code attempts are rate-limited, and the codes are long enough that guessing them isn't realistic.
 - **2 of 3, not 3 of 3**, so one inactive or graduated admin doesn't block hiding something illegal.
 - **No dashboard:** admins see Restore and Hide buttons on the posts themselves, and hidden posts appear greyed out for them.
 - **Not a one-way door:** switching to admin-only review, where flags only notify admins, is a single setting.
