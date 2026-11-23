@@ -1,7 +1,8 @@
 // Mockup-only: clicking Reply opens a reply box right under that comment, indented like a reply.
 const MY_THREAD_ID = "calm-badger";
 
-function buildReplyForm() {
+// Replies inside a private exchange stay private, so the toggle comes on and locked.
+function buildReplyForm(recipient, insidePrivate) {
   const form = document.createElement("form");
   form.className = "inline-reply";
   form.action = "item.html";
@@ -11,6 +12,7 @@ function buildReplyForm() {
     <div class="row">
       <button class="button" type="submit">Reply</button>
       <button class="button plain cancel" type="button">Cancel</button>
+      <label class="private-toggle"><input type="checkbox"${insidePrivate ? " checked disabled" : ""}> Only visible to ${recipient}</label>
     </div>`;
   form.querySelector(".cancel").addEventListener("click", () => form.remove());
   form.querySelector(".id").addEventListener("click", () => document.getElementById("id-dialog")?.showModal());
@@ -23,7 +25,9 @@ document.querySelectorAll(".reply-toggle").forEach(button => {
     const alreadyOpen = actions.nextElementSibling?.classList.contains("inline-reply");
     document.querySelectorAll(".inline-reply").forEach(form => form.remove());
     if (alreadyOpen) return;
-    const form = buildReplyForm();
+    const comment = button.closest(".comment");
+    const recipient = comment.querySelector(".meta .id").textContent;
+    const form = buildReplyForm(recipient, comment.classList.contains("private"));
     actions.after(form);
     form.querySelector("textarea").focus();
   });

@@ -281,3 +281,10 @@ span.arrow { color: var(--line); }
 /* #hottake: the row sits on a faint ember wash and the tag takes the ember colour, the site's only accent. */
 .list li.hot { background: var(--hot-wash); border-radius: 4px; margin: 0 -12px; padding: 8px 12px; }
 .meta .hot-tag { color: var(--hot); }
+
+/* Private replies: visible only to the two IDs in the exchange. A neutral wash marks them, with a plain note in the details. */
+.comment.private { background: var(--tint); border-radius: 4px; margin: 10px 0 0 -12px; padding: 10px 12px 6px; }
+.comment.private .comment.private { margin-left: 14px; }
+.private-note { color: var(--meta); }
+.private-toggle { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; font: 15px var(--sans); color: var(--soft); cursor: pointer; }
+.private-toggle input { accent-color: var(--ink); width: 15px; height: 15px; margin: 0; }
