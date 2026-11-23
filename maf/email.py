@@ -70,7 +70,7 @@ def sign_in_paused_email(to: str, minutes_left: int, now: datetime | None = None
     return Email(
         to=to,
         subject=headline,
-        body=f"{headline}\n{stamp}\n",
+        body=f"{headline}\n{stamp}\n\nTo resume sign-ins early, restart MAF on the server with sudo systemctl restart maf.\n",
         html=_render("paused.html", subject=headline, headline=headline, stamp=stamp),
     )
 

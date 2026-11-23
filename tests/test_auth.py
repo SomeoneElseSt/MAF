@@ -345,5 +345,6 @@ def test_paused_email_layout():
     from maf.email import sign_in_paused_email
 
     email = sign_in_paused_email("hello@maforum.net", 45, now=datetime(2026, 11, 23, 22, 0, tzinfo=UTC))
-    assert email.body == "Sign-ins paused: 30 wrong codes in the last hour\nResumes by 22:45 UTC, as of 23/11/26 22:00 UTC\n"
+    assert email.body == ("Sign-ins paused: 30 wrong codes in the last hour\nResumes by 22:45 UTC, as of 23/11/26 22:00 UTC\n\n"
+                          "To resume sign-ins early, restart MAF on the server with sudo systemctl restart maf.\n")
     assert ">MAF</p>" in email.html
