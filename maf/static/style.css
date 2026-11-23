@@ -172,7 +172,6 @@ h1.heading { font-size: 32px; font-weight: 600; margin: 34px 0 6px; line-height:
 .field label { display: block; font: 600 15px var(--sans); margin-bottom: 6px; }
 .help { font: 14px var(--sans); color: var(--meta); margin: 6px 0 0; }
 .field textarea { min-height: 180px; resize: vertical; }
-.code { font-size: 26px; letter-spacing: 0.3em; width: 9em; }
 .small { font: 15px var(--sans); color: var(--meta); margin: 30px 0 0; }
 
 /* How it works */

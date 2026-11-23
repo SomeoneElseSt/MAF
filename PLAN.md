@@ -60,7 +60,7 @@ Sign-up and login are the same steps: enter your email, enter the 6-digit code, 
 
 **Switching devices** means doing the same steps again, which gives that device its own pass. There are no cross-device accounts, no passwords and no recovery keys.
 
-**Limiting abuse without remembering anyone.** Each email can request a code only once every 10 minutes. That limit lives in memory alongside the code and is never saved. It stops anyone from flooding a classmate's inbox, and makes collecting extra passes slow. Since there are no votes, extra passes could only add flags, which the maintainer can undo.
+**Limiting abuse without remembering anyone.** Each email can request a code only once a minute. That limit lives in memory alongside the code and is never saved. It stops anyone from flooding a classmate's inbox, and makes collecting extra passes slow. Since there are no votes, extra passes could only add flags, which the maintainer can undo.
 
 **Rules:** passes have no creation time stored, and emails and IPs are never logged.
 
@@ -234,7 +234,7 @@ Everything runs on AWS using existing credits: one small server, a domain, and A
 | Decision | Chosen | Why |
 | --- | --- | --- |
 | Login method | Email code via AWS SES | Google sign-in would show the app in Minerva's admin console |
-| Limiting extra passes | No cap; 10-minute in-memory cooldown | Any record that catches repeat sign-ups lets the operator check membership |
+| Limiting extra passes | No cap; 60-second in-memory cooldown | Any record that catches repeat sign-ups lets the operator check membership |
 | Votes | None | Removes the main thing extra passes could abuse |
 | Ordering | Newest (default), oldest, or most viewed | Recency first; views are an opt-in sort |
 | View counts | Total only; per-pass dedupe in memory for 24 h | Counts stay honest without storing reading history |
