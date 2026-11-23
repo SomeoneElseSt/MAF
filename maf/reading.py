@@ -35,7 +35,7 @@ def item(request: Request) -> Response:
         "tree": tree,
         "label_of": label_of,
         "op_pass": op_pass,
-        "my_label": label_of.get(page.pass_id or ""),
+        "my_label": page.labeler_label(thread_id, page.pass_id) if page.pass_id else None,
         "tags_list": tags,
         "hot": is_hot(tags),
         "etiquette_banner": etiquette(tags),

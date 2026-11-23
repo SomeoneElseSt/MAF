@@ -1,13 +1,30 @@
-// Reply boxes under comments are <details> elements, so they open without JS.
-// This keeps only one open at a time and focuses its textarea.
+// Reply opens a reply box under its comment (the mockup behaviour). Without JS the Reply link still opens it via :target.
 (function () {
-  document.querySelectorAll(".reply-details").forEach(details => {
-    details.addEventListener("toggle", () => {
-      if (!details.open) return;
-      document.querySelectorAll(".reply-details[open]").forEach(other => {
-        if (other !== details) other.open = false;
-      });
-      details.querySelector("textarea")?.focus();
+  function setOpen(link, form, open) {
+    form.hidden = !open;
+    link.setAttribute("aria-expanded", String(open));
+    if (open) form.querySelector("textarea")?.focus();
+  }
+
+  function closeAll(except) {
+    document.querySelectorAll(".reply-toggle[aria-expanded='true']").forEach(link => {
+      if (link === except) return;
+      setOpen(link, document.getElementById(link.getAttribute("aria-controls")), false);
+    });
+  }
+
+  document.querySelectorAll(".reply-toggle").forEach(link => {
+    const form = document.getElementById(link.getAttribute("aria-controls"));
+    if (!form) return;
+    link.addEventListener("click", event => {
+      event.preventDefault();
+      closeAll(link);
+      setOpen(link, form, form.hidden);
+    });
+    form.querySelector(".cancel")?.addEventListener("click", event => {
+      event.preventDefault();
+      setOpen(link, form, false);
+      link.focus();
     });
   });
 

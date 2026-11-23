@@ -367,3 +367,16 @@ main { display: block; }
 .emoji-picker[hidden] { display: none; }
 .emoji-picker button { width: 32px; height: 32px; padding: 0; border: none; border-radius: 4px; background: none; font-size: 18px; line-height: 1; cursor: pointer; }
 .emoji-picker button:hover, .emoji-picker button[aria-pressed="true"] { background: var(--tint); }
+
+/* Real app only: rules for markup the static mockups didn't need. */
+
+/* Flag, reaction and moderation buttons are small POST forms; they lay out as if the button stood alone. */
+.inline-form, .react-form { display: contents; }
+
+/* Reply boxes start hidden. Reply links to the box, so it opens even without JavaScript. */
+.inline-reply[hidden]:target { display: block; }
+.post-link { font: 15px var(--sans); margin: 16px 0 14px; }
+.post-link a { color: var(--soft); text-decoration: underline; text-underline-offset: 3px; }
+/* Request unhide / Request deletion are form buttons here; they look like the mockup's links. */
+.notice .actions button { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.faded .post-reactions { margin-top: 6px; }
