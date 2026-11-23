@@ -1,0 +1,8 @@
+{
+  "name": "maf-blind-spike",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@cloudflare/blindrsa-ts": "0.4.6"
+  }
+}
