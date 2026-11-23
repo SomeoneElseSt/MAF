@@ -31,7 +31,7 @@ def _table(rows: list[list[str]], headers: list[str]) -> str:
 
 
 def _missing(item_id: str) -> int:
-    print(f"No item #{item_id}")
+    print(f"No item {item_id}")
     return 1
 
 
@@ -60,7 +60,7 @@ def cmd_show(conn: sqlite3.Connection, args) -> int:
     if item is None:
         return _missing(args.id)
     counts = store.request_counts(conn, item.id)
-    print(f"#{item.id}")
+    print(item.id)
     print(f"  title:    {item.title or '(comment)'}")
     if item.url:
         print(f"  url:      {item.url}")
@@ -76,15 +76,15 @@ def cmd_show(conn: sqlite3.Connection, args) -> int:
 def cmd_unhide(conn: sqlite3.Connection, args) -> int:
     if not store.unhide(conn, args.id):
         return _missing(args.id)
-    print(f"Unhid #{args.id}. Flags can never hide it again.")
+    print(f"Unhid {args.id}. Flags can never hide it again.")
     return 0
 
 
 def cmd_dismiss(conn: sqlite3.Connection, args) -> int:
     if not store.dismiss_requests(conn, args.id):
-        print(f"No requests for #{args.id}.")
+        print(f"No requests for {args.id}.")
         return 1
-    print(f"Cleared requests for #{args.id}.")
+    print(f"Cleared requests for {args.id}.")
     return 0
 
 
@@ -100,7 +100,7 @@ def cmd_nuke(conn: sqlite3.Connection, args) -> int:
         print("Cancelled.")
         return 0
     store.delete_item(conn, item.id)
-    print(f"Deleted #{args.id}.")
+    print(f"Deleted {args.id}.")
     return 0
 
 
@@ -110,7 +110,7 @@ def cmd_pin(conn: sqlite3.Connection, args, pinned: bool) -> int:
         print(f"No post {args.id}")
         return 1
     store.set_pinned(conn, args.id, pinned)
-    print(("Pinned" if pinned else "Unpinned") + f" #{args.id}.")
+    print(("Pinned" if pinned else "Unpinned") + f" {args.id}.")
     return 0
 
 
