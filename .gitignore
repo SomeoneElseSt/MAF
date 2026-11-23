@@ -7,4 +7,3 @@ uv.lock
 .env
 node_modules/
 *.key
-*.key
