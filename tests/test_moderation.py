@@ -73,8 +73,13 @@ def test_request_emails_the_maintainer(client, signed_in, app, settings, capsys)
 def test_request_email_names_no_one(client, signed_in, app, settings):
     from maf.email import moderation_email
 
-    email = moderation_email(settings.maintainer_email, "nuke", "abc123", 3, "https://maforum.net")
-    assert email.body == "Deletion requested for post abc123 (3 requests so far).\nhttps://maforum.net/thread/abc123\n"
+    from datetime import UTC, datetime
+
+    sent = datetime(2026, 11, 23, 22, 41, tzinfo=UTC)
+    email = moderation_email(settings.maintainer_email, "nuke", "abc123", 3, "https://maforum.net", now=sent)
+    assert email.body == ("Deletion requested for post: abc123\nhttps://maforum.net/thread/abc123\n\n"
+                          "3 requests so far as of 23/11/26 22:41 UTC\n")
+    assert '<a href="https://maforum.net/thread/abc123"' in email.html and "Open the post" not in email.html
 
 
 # -- CLI -----------------------------------------------------------------

@@ -8,6 +8,7 @@ dropped.
 """
 
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -46,18 +47,16 @@ def code_email(to: str, code: str) -> Email:
                  html=_render("code.html", subject=subject, code=code))
 
 
-def moderation_email(to: str, kind: str, item_id: str, count: int, base_url: str) -> Email:
+def moderation_email(to: str, kind: str, item_id: str, count: int, base_url: str, now: datetime | None = None) -> Email:
     label = "Unhide" if kind == "unhide" else "Deletion"
     subject = f"{label} requested for post {item_id}"
     link = f"{base_url}/thread/{item_id}"
+    tally = f"{count} request{'' if count == 1 else 's'} so far as of {(now or datetime.now(UTC)):%d/%m/%y %H:%M} UTC"
     return Email(
         to=to,
         subject=subject,
-        body=(
-            f"{label} requested for post {item_id} ({count} request{'s' if count != 1 else ''} so far).\n"
-            f"{link}\n"
-        ),
-        html=_render("moderation.html", subject=subject, label=label, item_id=item_id, count=count, link=link),
+        body=f"{label} requested for post: {item_id}\n{link}\n\n{tally}\n",
+        html=_render("moderation.html", subject=subject, label=label, item_id=item_id, tally=tally, link=link),
     )
 
 
