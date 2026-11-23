@@ -110,7 +110,7 @@ Posts can carry up to 3 hashtags, which make it easy to browse one topic.
 
 ### Tags with templates
 
-Five tags come with their own guidance. Each one sets the outline in the submit Text box and the "Write a reply" placeholder in its threads; the top "Write a comment" box stays plain. Other tags are free-form topics with the default outline. More templated tags can be added later if they turn out to be needed.
+Four tags describe what kind of post it is, and each comes with its own guidance. Each one sets the outline in the submit Text box and the "Write a reply" placeholder in its threads; the top "Write a comment" box stays plain. Other tags, such as `#minerva`, `#academics` or a city, are plain free-form topics with the default outline. More templated tags can be added later if they turn out to be needed.
 
 | Tag | For | Submit outline | Reply prompt | Thread banner |
 | --- | --- | --- | --- | --- |
@@ -118,7 +118,6 @@ Five tags come with their own guidance. Each one sets the outline in the submit 
 | `#help` | Practical help | What you need help with; what you've already tried; your situation (city, deadline, anything that narrows it down); what kind of answer would help most | What worked for you, or who to ask; how sure you are and how recent your experience is | None |
 | `#wondering` | Open, low-stakes questions | Your question; why you're curious; your best guess so far | Your answer or a guess; what it's based on | None |
 | `#confession` | Something you did or feel | What happened or what you're feeling; how you feel about it now; what you'd like back (to be heard, advice, or company). The outline ends: "Leave out details that could identify you or anyone else." | Respond to the person, not the verdict; share something similar if you have it | "#confession etiquette: respond to the person, not the verdict. Be kind, and don't guess who wrote it or who it's about." |
-| `#minerva` | The institution: policies, housing, work-study, financial aid | What I experienced or noticed myself; what's public or widely known, with a link; what I don't know and the limits of my view; why it matters and who it affects; what I want us to discuss or change | Whether you saw this yourself or heard it secondhand; a link if it's public; what you'd do about it | "#minerva etiquette: say what you saw yourself and what you heard secondhand, link what's public, and don't name staff." |
 
 - **Only `#hottakes` is highlighted** in lists: the row sits on a faint warm (ember) tint and the tag is ember. Banners use the same tint.
 - **If a post has two templated tags,** the first one typed sets the templates and banner.
@@ -236,7 +235,7 @@ Everything runs on AWS using existing credits: one small server, a domain, and A
 | Developer access | Read-only API + MCP server with per-pass read tokens | Dev-friendly without opening posting to scripts or breaking the students-only gate |
 | Pinning | Maintainer pins via `maf pin`; anyone pins for themselves in their browser; shown under Newest only | A welcome post without admins, and saved threads without the server knowing what anyone saved |
 | Hashtags | Up to 3 free-form tags per post, browsed from a # button in the search bar | Topic browsing without the maintainer curating categories |
-| Templated tags | #hottakes, #help, #wondering, #confession, #minerva, each with submit and reply outlines; only #hottakes is highlighted | Shapes the kinds of post that most need it; start small and add more once real posts show the need |
+| Templated tags | The four kinds of post (#hottakes, #help, #wondering, #confession) get submit and reply outlines; topics like #minerva are plain tags; only #hottakes is highlighted | Shapes the kinds of post that most need it; start small and add more once real posts show the need |
 | Private replies | Checkbox per reply, visible to the two people only, tied to the pass | Lets people follow up one-to-one without leaving the thread or adding DMs |
 
 ## Sign-off

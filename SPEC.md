@@ -69,7 +69,7 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 - **Submit placeholder** for Text: no tags → an example post ("Every rotation I spend the first few weeks feeling lost…"). Any tags → the default dash outline. `#hottakes` among them → the hot-take outline. Wording is in `mockups/submit.html`.
 - **House tags:** tags with their own rules live in one config dict, so new ones need no code changes:
   `HOUSE_TAGS = {"<tag>": {"submit_template": [...], "reply_placeholder": "...", "etiquette": "..." | None, "highlight": bool}}`.
-  v1 has five, worded exactly as in PLAN.md's "Tags with templates" table: `hottakes` (highlight, etiquette), `help`, `wondering`, `confession` (etiquette, and the submit template ends with "Leave out details that could identify you or anyone else."), `minerva` (etiquette).
+  v1 has four, worded exactly as in PLAN.md's "Tags with templates" table: `hottakes` (highlight, etiquette), `help`, `wondering`, `confession` (etiquette, and the submit template ends with "Leave out details that could identify you or anyone else."). Topic tags such as `minerva` are plain tags with no entry.
   - The submit Text placeholder uses the first house tag in the Hashtags field, else the default outline if any tag is present, else the example post.
   - On the thread page, the post's first house tag picks the etiquette banner (`.notice.etiquette`) and the inline "Write a reply" placeholder (`Write a reply. Ideally:` then dash lines), with a taller box. The top "Write a comment" box stays plain.
   - `highlight: true` (only `hottakes`) gives list rows class `hot`: a faint ember wash (`--hot-wash`) and the tag in `--hot`.
