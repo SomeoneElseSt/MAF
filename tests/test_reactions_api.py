@@ -138,3 +138,10 @@ def test_api_tokens_are_listed_by_last_four_and_revocable(viewer, app):
     assert not listed[0]["hash"] == token  # only the hash is stored
     assert store.revoke_api_token(app.conn, listed[0]["hash"], pass_id)
     assert store.list_api_tokens(app.conn, pass_id) == []
+
+
+def test_new_token_is_shown_once_and_never_put_in_a_url(signed_in):
+    response = signed_in.post("/tokens", follow_redirects=False)
+    assert response.status_code == 200
+    assert "only shown once" in response.text
+    assert "token=" not in str(response.url) and "location" not in response.headers

@@ -385,9 +385,15 @@ main { display: block; }
 .meta-action.flagged:hover, .actions button.flagged:hover { color: var(--danger); text-decoration: underline; text-underline-offset: 3px; }
 
 /* Code samples (Use this data): a grey box that scrolls sideways on its own instead of pushing the page wider. */
-.prose pre { background: var(--tint); border-radius: 4px; padding: 14px 16px; margin: 8px 0 16px; overflow-x: auto; font: 14px/1.5 var(--mono); }
+/* Long lines wrap inside the box; a Copy button sits in the top-right corner. */
+.prose pre { position: relative; background: var(--tint); border-radius: 4px; padding: 14px 72px 14px 16px; margin: 8px 0 16px; white-space: pre-wrap; overflow-wrap: anywhere; font: 14px/1.5 var(--mono); }
+.prose pre .copy { position: absolute; top: 8px; right: 8px; padding: 3px 10px; border: 1px solid transparent; border-radius: 4px; background: var(--paper); font: 13px var(--sans); color: var(--soft); cursor: pointer; }
+.prose pre .copy:hover { color: var(--ink); border-color: var(--border); }
+.prose .help + pre { margin-top: 6px; }
+.token-row { display: flex; align-items: baseline; gap: 8px; margin: 0 0 8px; font: 15px var(--sans); color: var(--soft); }
+.token-row .dot { color: var(--meta); }
 .prose code { font: 14px/1.5 var(--mono); }
 .prose p code, .prose li code { background: var(--tint); border-radius: 3px; padding: 1px 5px; }
 /* Revoke beside a token reads like a small text action, not a browser button. */
-.prose li button { margin-left: 10px; padding: 0; border: none; background: none; font: 15px var(--sans); color: var(--soft); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
-.prose li button:hover { color: var(--ink); }
+.token-row button { padding: 0; border: none; background: none; font: 15px var(--sans); color: var(--soft); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.token-row button:hover { color: var(--ink); }

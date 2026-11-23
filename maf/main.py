@@ -158,8 +158,7 @@ def guide_data(request: Request) -> Response:
     page = page_of(request)
     tokens = store.list_api_tokens(page.conn, page.pass_id) if page.pass_id else []
     return render(page, "guide-data.html", title="Use this data", tokens=tokens,
-                  notice=request.query_params.get("notice"),
-                  new_token=request.query_params.get("token"))
+                  notice=request.query_params.get("notice"))
 
 
 def logout(request: Request) -> Response:

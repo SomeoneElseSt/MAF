@@ -149,7 +149,9 @@ async def create_token(request: Request) -> Response:
         return _login(page)
     token = secrets.token_urlsafe(TOKEN_BYTES)
     store.create_api_token(page.conn, sha256_hex(token), page.pass_id, token[-4:])
-    return redirect(f"/guide/use-this-data?token={token}")
+    # Shown in this response only, never put in a URL, so it can't end up in browser history.
+    return render(page, "guide-data.html", title="Use this data", new_token=token,
+                  tokens=store.list_api_tokens(page.conn, page.pass_id), notice=None)
 
 
 async def revoke_token(request: Request) -> Response:

@@ -17,26 +17,17 @@
   {% if viewer %}
   <h2>Your tokens</h2>
   {% if new_token %}
-  <div class="notice">
-    <p>Copy this token now. It's shown once.</p>
-    <p><code>{{ new_token }}</code></p>
-  </div>
+  <p class="help">Copy this token now. It's only shown once.</p>
+  <pre><code>{{ new_token }}</code></pre>
   {% endif %}
+  {% for token in tokens %}
+  <div class="token-row">Ending in <code>{{ token.last4 }}</code> <span class="dot" aria-hidden="true">·</span>
+    <form action="/tokens/revoke" method="post" class="inline-form"><input type="hidden" name="token_hash" value="{{ token.hash }}"><button type="submit">Revoke</button></form>
+  </div>
+  {% endfor %}
   <form action="/tokens" method="post" class="row">
     <button class="button" type="submit">Create token</button>
   </form>
-  {% if tokens %}
-  <ul>
-    {% for token in tokens %}
-    <li>Ending in <code>{{ token.last4 }}</code>
-      <form action="/tokens/revoke" method="post" class="inline-form">
-        <input type="hidden" name="token_hash" value="{{ token.hash }}">
-        <button type="submit">Revoke</button>
-      </form>
-    </li>
-    {% endfor %}
-  </ul>
-  {% endif %}
   {% else %}
   <p><a href="/sign-in">Sign in</a> to create a token.</p>
   {% endif %}
@@ -47,7 +38,10 @@
   "mcpServers": {
     "maf": {
       "command": "uv",
-      "args": ["run", "https://raw.githubusercontent.com/SomeoneElseSt/MAF/main/maf/mcp.py"],
+      "args": [
+        "run",
+        "https://raw.githubusercontent.com/SomeoneElseSt/MAF/main/maf/mcp.py"
+      ],
       "env": {
         "MAF_TOKEN": "&lt;your token&gt;",
         "MAF_URL": "{{ base_url }}"
@@ -93,3 +87,5 @@ print(urllib.request.urlopen(request).read().decode())</code></pre>
   <p class="small">Anything you read this way leaves the students-only site, for example into an AI provider's systems. Copying and pasting already did that, so a token adds convenience rather than a new hole.</p>
 </div>
 {% endblock %}
+
+{% block scripts %}<script src="{{ static('copy.js') }}"></script>{% endblock %}
