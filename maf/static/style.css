@@ -393,3 +393,6 @@ button.note:hover:not(:disabled) { color: var(--ink); text-decoration: underline
 button.note:disabled { cursor: default; }
 /* A centered dot between two links in a button row, closer than the row's usual gap. */
 .row .dot { margin: 0 -8px; color: var(--meta); font: 15px var(--sans); }
+/* Sign Out is a small POST form in the footer; it looks like the footer links beside it. */
+.foot button { font: inherit; color: var(--meta); background: none; border: none; padding: 0; cursor: pointer; }
+.foot button:hover { color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }

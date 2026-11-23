@@ -101,3 +101,14 @@ def test_signed_in_students_still_see_everything(signed_in, seeded):
     assert SECRET_TAG in home
     thread = signed_in.get(f"/item/{seeded['post'].id}").text
     assert SECRET_COMMENT in thread
+
+
+def test_sign_out_shows_only_when_signed_in_and_signs_you_out(starlette_app, signed_in):
+    from maf.sessions import COOKIE_NAME
+
+    assert "Sign Out" in signed_in.get("/").text
+    assert "Sign Out" not in TestClient(starlette_app).get("/about").text
+    response = signed_in.post("/logout", follow_redirects=False)
+    assert response.status_code == 303
+    cleared = response.headers["set-cookie"]
+    assert cleared.startswith(f"{COOKIE_NAME}=") and ("Max-Age=0" in cleared or "expires=Thu, 01 Jan 1970" in cleared)

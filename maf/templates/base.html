@@ -51,7 +51,7 @@
   </main>
 
   <footer class="foot">
-    <a href="/about">About</a><a href="/guide">User Guide</a><a href="https://github.com/SomeoneElseSt/MAF" target="_blank" rel="noopener">Source Code<span class="sr-only"> (opens in a new tab)</span></a>
+    <a href="/about">About</a><a href="/guide">User Guide</a><a href="https://github.com/SomeoneElseSt/MAF" target="_blank" rel="noopener">Source Code<span class="sr-only"> (opens in a new tab)</span></a>{% if viewer %}<form action="/logout" method="post" class="inline-form"><button type="submit">Sign Out</button></form>{% endif %}
   </footer>
 </div>
 <script src="/static/theme.js"></script>
