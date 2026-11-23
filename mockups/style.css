@@ -169,7 +169,7 @@ dialog p { margin: 0 0 16px; }
 
 /* Footer */
 
-.foot { display: flex; flex-wrap: wrap; gap: 6px 22px; margin: 60px 0 0; padding: 0 0 44px; font: 15px var(--sans); color: var(--meta); }
+.foot { display: flex; flex-wrap: wrap; gap: 6px 22px; margin: 28px 0 0; padding: 0 0 44px; font: 15px var(--sans); color: var(--meta); }
 .foot a { color: var(--meta); }
 
 /* Hand-drawn brush stroke behind the lower half of a phrase. Two SVG variants because data URIs can't read CSS variables. */
