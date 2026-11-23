@@ -18,7 +18,7 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 ## Stack
 
 - Python 3.12, managed with **uv**
-- Starlette (or FastAPI) + Jinja2 for server-rendered HTML, plus one CSS file. The only client-side JS is the blind-signature step at login.
+- Starlette (or FastAPI) + Jinja2 for server-rendered HTML, plus one CSS file (port `mockups/style.css`). Client-side JS is small vanilla files only: the blind-signature step at login, the theme toggle, the hashtag menu, inline reply boxes, the (i) info card, the ID pop-up and the submit placeholder. Every page must still work without JS, except login.
 - SQLite as a single file
 - Name filter: **Presidio** with a spaCy model, running in-process on the same server. Start with `en_core_web_md`, benchmark it, and drop to `sm` if it's too slow.
 - Blind signatures (RFC 9474): `blindrsa-ts` in the browser, vendored as a single file rather than loaded from a CDN, plus a Python RFC 9474 library on the server. Confirm the two interoperate before building on them.
@@ -41,7 +41,7 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 - `label = wordlist(HMAC(LABEL_SECRET, pass_id || thread_id))` gives a name like `quiet-otter` from about 256 adjectives × 256 animals.
 - The thread's author is tagged **OP** in that thread.
 - Clicking a label opens a pop-up: *"Names change per thread so no one can follow you around. There are no profiles, on purpose."*
-- `/how-it-works` explains this.
+- The User Guide (`/guide`) explains this.
 
 ## Content
 
@@ -52,9 +52,32 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 - **Sorter** next to the search bar, applied to the post list and to search results: `newest` (default), `oldest`, `most viewed`. Passed as a query param (`?sort=new|old|views`).
 - **View counts:** each post has a `views` counter shown next to it. Opening a post adds 1, once per pass per 24 hours. The dedupe set `(pass_id, item_id)` lives **in memory only** and is cleared every 24 hours and on restart. Only the counter is written to disk, so no reading history is stored for any pass.
 - **Four-day pages:** `/` shows posts from the 4 days ending today, grouped under day headings (Today, Yesterday, then e.g. Thursday 19 November). `?before=YYYY-MM-DD` shows the 4 days ending the day before that date, with ‹ / › arrows beside the date range at the top (no bottom pager). `sort` applies within those 4 days. Switching sort resets the page: `new` and `views` open the latest 4 days, `old` opens the earliest 4 days that have posts (`?after=YYYY-MM-DD` for later pages in that mode), so the range label always matches the posts shown. Search results span all time, 30 per page.
-- **List rows show no IDs:** title, link host, then plain-language metadata ("2 hours ago, 14 comments, 61 views").
-- **Header:** brand, Submit, a Dark/Light text toggle, and the search box on the right. **Footer:** About, User Guide, Source Code.
-- **Pages:** `/` (week of posts with search bar and sorter), `/item/<id>`, `/submit`, `/about`, `/guide` (User Guide), `/guide/data` (Use this data), `/login`
+- **List rows show no IDs:** title, link host, then plain-language metadata ("2 hours ago, 14 comments, 61 views"), then ` · #tag1, #tag2` if the post has tags.
+- **Pinned:** posts with `pinned = 1` render in a "Pinned" group above Today, only when `sort=new` and on the latest page (no `before`). They aren't repeated in their day group there. Under `old` and `views` they appear in their normal day. Set with `maf pin` / `maf unpin`.
+- **Header:** brand, Submit, the search box (with the # button) and the Dark/Light text toggle to its right. **Footer on every page:** About, User Guide, Source Code, pinned to the bottom of short pages.
+- **Empty state:** when there are no posts at all, `/` keeps the sort row and shows "No posts yet." near the top.
+- **Pages:** `/` (four days of posts with search bar and sorter), `/item/<id>`, `/submit`, `/about`, `/guide` (User Guide), `/guide/data` (Use this data), `/login`
+
+## Hashtags
+
+- **Input:** the submit form's Hashtags field, "Up to 3, separated by commas." Normalise each tag: strip a leading `#`, lowercase, keep `[a-z0-9-]`, 1–24 characters, dedupe. More than 3 re-renders the form with an error on that field. Tags are free-form; there's no fixed list.
+- **Storage:** `item_tag(item_id, tag)`, posts only (comments have no tags).
+- **Display:** after the metadata, separated by a centered dot: `· #rotations, #berlin`. Each tag links to `/?tag=<tag>`.
+- **Filter:** `/?tag=<tag>` lists posts with that tag across all time, 30 per page, with `sort` applied (like search). The search box shows `#<tag>`. Typing `#tag` into search does the same.
+- **# menu:** a button inside the search box opens a scrollable list of every tag on visible posts with its post count, most used first, then alphabetical. Up/down chevrons with fades show when there's more to scroll. Without JS the button links to `/tags`, a plain list of the same.
+- **Submit placeholder** for Text: no tags → an example post ("Every rotation I spend the first few weeks feeling lost…"). Any tags → the default dash outline. `#hottakes` among them → the hot-take outline. Wording is in `mockups/submit.html`.
+- **House tags:** tags with their own rules live in one config dict, e.g. `HOUSE_TAGS = {"hottakes": {"etiquette": ..., "submit_template": [...], "reply_placeholder": ...}}`, so new ones need no code changes. `#hottakes` is the only one for now:
+  - List rows get class `hot`: a faint ember wash (`--hot-wash`) and the tag in `--hot`.
+  - The thread page shows the etiquette banner (`.notice.etiquette`) above the post.
+  - Inline "Write a reply" boxes use the guided placeholder ("Write a reply. Ideally: - Which part of the take you're responding to - Your reason, or an experience that backs it up - What would change your mind"), with a taller box. The top "Write a comment" box stays plain.
+
+## Private replies
+
+- **UI:** under every comment and reply box, the help line reads `Commenting as: <id> · [ ] Make only visible to <recipient> (i)`. For the top-level box the recipient is the OP, labelled `(OP)`; for a reply it's the parent comment's author. The (i) opens a card: only you and that person can see it, it belongs to the device you posted from, other students can't see or flag it, and it's stored on the server like any comment.
+- **Storage:** `item.private_to` holds the recipient's `pass_id` (NULL for public). The author is `item.pass_id`.
+- **Visibility:** a private item is rendered only for its author's pass and the `private_to` pass, with ` · Private, only you and <other id> (i)` in its metadata. For everyone else it and its descendants are absent. Replies to a private item are forced private to the other party; the checkbox shows ticked and disabled.
+- **Excluded from:** search/FTS, `comment_count`, the API and MCP, the tag menu counts. Private items have no Flag button. The name filter still runs before saving.
+- **Can't reply privately to yourself:** the checkbox is hidden when the recipient is your own pass (e.g. the OP replying to the post).
 
 ## Name filter
 
@@ -68,7 +91,7 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 No admin roles, codes or buttons. Moderation is community flags plus the maintainer using the `maf` CLI over SSH.
 
 - **Flag:** any pass, once per item. At 5 flags from distinct passes the item is `hidden`: excluded from `/`, from search and from comment trees, unless `restored = 1`.
-- **Hidden items stay reachable** at `/item/<id>`, with a banner, "Hidden after community flags.", and two buttons: **Request unhide** and **Request deletion**.
+- **Hidden items stay reachable** at `/item/<id>`, faded, with a banner, "Five people flagged this post, so it's been unlisted. You can still read it here and ask for it to come back or be removed permanently.", and two buttons: **Request unhide** and **Request deletion**.
 - **Requests:** once per pass per item per kind. Stored as `moderation_request(pass_id, item_id, kind)` for deduplication only. On each new request, immediately send an SES email to `MAINTAINER_EMAIL`, for example `Unhide requested for post #123 (4 requests so far) <link>`. No pass or identity goes in the email.
 - **`maf` CLI** (maintainer, run on the server over SSH: `ssh maf-server maf <command>`). It's a console script in the same uv project (`[project.scripts] maf = "maf.cli:main"`), built with stdlib `argparse` and `sqlite3` on the same database file, with no extra dependencies. It reuses the app's own data functions so the logic isn't written twice.
 
@@ -80,6 +103,8 @@ No admin roles, codes or buttons. Moderation is community flags plus the maintai
   | `maf unhide <id>` | Sets `hidden = 0, restored = 1` and clears its requests. Once `restored = 1`, flags never hide it again |
   | `maf nuke <id>` | Prints the item, asks `Delete post #<id> and its N comments? [y/N]`, then deletes the item (and, for a post, its whole thread) along with its flags and requests. FTS rows go via triggers. `/item/<id>` then returns 404 |
   | `maf dismiss <id>` | Clears its requests without changing anything |
+  | `maf pin <id>` | Sets `pinned = 1` on a post (not a comment). Pinned posts show above Today under Newest |
+  | `maf unpin <id>` | Sets `pinned = 0` |
 
   An unknown id prints `No item #<id>` and exits non-zero.
 - **No bans.**
@@ -93,7 +118,8 @@ No admin roles, codes or buttons. Moderation is community flags plus the maintai
 
   | Endpoint | Returns |
   |---|---|
-  | `GET /api/v1/posts?before=YYYY-MM-DD&sort=new\|old\|views` | Four days of posts: `id, title, url, text_preview, created_at, comment_count, views` |
+  | `GET /api/v1/posts?before=YYYY-MM-DD&sort=new\|old\|views&tag=...` | Four days of posts (or, with `tag`, that tag's posts 30 per page): `id, title, url, text_preview, created_at, comment_count, views, tags, pinned` |
+  | `GET /api/v1/tags` | Every tag with its post count |
   | `GET /api/v1/items/<id>` | A post with its comment tree; each item carries its per-thread `author_id` and an `op` flag |
   | `GET /api/v1/search?q=...&page=N` | Matching posts and comments, 30 per page |
 
@@ -105,8 +131,9 @@ No admin roles, codes or buttons. Moderation is community flags plus the maintai
 ```
 pass(id)
 redeemed_token(token_hash PK)
-item(id, parent_id NULL, thread_id, pass_id, title NULL, url NULL, text NULL, created_at, views, flags, hidden, restored)
-item_fts  -- FTS5 virtual table over item(title, text), kept in sync with triggers
+item(id, parent_id NULL, thread_id, pass_id, title NULL, url NULL, text NULL, created_at, views, flags, hidden, restored, pinned, private_to NULL)
+item_tag(item_id, tag, PK both)  -- index on tag
+item_fts  -- FTS5 virtual table over item(title, text) for public items only, kept in sync with triggers
 flag(pass_id, item_id, PK both)
 moderation_request(pass_id, item_id, kind, PK all)  -- kind: unhide | nuke
 api_token(token_hash PK, pass_id)
@@ -120,11 +147,26 @@ In memory only, never persisted: `pending_code(email → code, expires_at)`, `co
 - No analytics and no third-party scripts or fonts
 - SES event publishing / CloudWatch delivery logs **off**
 - Posting rate limits keyed by pass, never by IP
-- The "How it works" page states the guarantee precisely: anonymous passes, with known limits (timing, shared IPs, and that MAF's server delivers the page's code)
+- The User Guide states the guarantee precisely: anonymous passes, with known limits (timing, shared IPs, and that MAF's server delivers the page's code)
+
+## Accessibility
+
+Target: everything on the [A11Y Project checklist](https://www.a11yproject.com/checklist/) (WCAG 2.2 A and AA), in both light and dark themes. Check every page against it before launch.
+
+- **Structure:** `lang="en"`, a unique `<title>` per page, one `h1`, no skipped heading levels, `header`/`nav`/`main`/`footer` landmarks, and a "Skip to content" link that appears on focus. Lists are `ol`/`ul`; tables have `th scope` and a `caption`.
+- **Keyboard:** every control is a real `<a href>` or `<button>`, reachable in visual order, with a visible `:focus-visible` outline. No `autofocus` and no positive `tabindex`. The # menu, info card and ID pop-up open with Enter/Space, close with Escape, and return focus to the button that opened them. The # menu is navigable with arrow keys. The ID pop-up uses `<dialog>`.
+- **State for screen readers:** `aria-expanded` on the # button, (i) buttons and Reply toggles; `aria-current` on the active sort; `aria-pressed` or an accessible label on the Dark/Light toggle; disabled arrows are `aria-disabled`. Private replies say "Private" in text, and #hottakes rows say "#hottakes" in text, so neither relies on colour.
+- **Forms:** every field has a `<label for>`; help text and errors are linked with `aria-describedby`. Errors (including the name warning and "more than 3 hashtags") are listed above the form, each linking to its field. `autocomplete="email"` on login and `autocomplete="one-time-code"` with `inputmode="numeric"` on the code field. Placeholders are hints only, never the sole label.
+- **Contrast:** body and meta text at least 4.5:1, including on `--tint` and `--hot-wash`; input borders, the checkbox and icons at least 3:1. Custom `::selection` colours must pass too.
+- **Zoom and reflow:** never disable zoom; no horizontal scroll at 320 px wide or at 200% text size; any orientation works.
+- **Targets:** tappable controls at least 24×24 px (the (i), arrows, Flag and Reply need padding to reach it).
+- **Motion:** only small transitions, all off under `prefers-reduced-motion`.
+- **Links:** links in text are underlined or otherwise distinct from plain text without colour, and the Source Code link says if it opens a new tab.
+- **Session:** passes don't expire, so there's no timeout to extend. The 10-minute login code is the exception, and the code page says so and offers "Send a new code".
 
 ## Out of scope for v1
 
-Votes, uploads/images, DMs, notifications, karma, profiles, editing, mobile app.
+Votes, uploads/images, DMs outside threads, notifications, karma, profiles, editing, mobile app.
 
 ## Deploy
 
