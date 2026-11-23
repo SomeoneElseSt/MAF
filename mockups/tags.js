@@ -29,23 +29,14 @@ function filterByTag(tag) {
 }
 
 function renderTagMenu() {
-  const header = document.createElement("div");
-  header.className = "tag-menu-head";
-  const label = Object.assign(document.createElement("span"), { textContent: "Browse by hashtag" });
-  const clear = Object.assign(document.createElement("button"), { type: "button", className: "tag-clear", textContent: "All posts" });
-  clear.addEventListener("click", () => filterByTag(null));
-  header.append(label, clear);
-
-  const grid = document.createElement("div");
-  grid.className = "tag-grid";
-  for (const [tag, count] of countTags()) {
+  const options = countTags().map(([tag, count]) => {
     const option = document.createElement("button");
     option.type = "button";
-    option.innerHTML = `#${tag}<span class="tag-count">${count}</span>`;
+    option.innerHTML = `<span>#${tag}</span><span class="tag-count">${count}</span>`;
     option.addEventListener("click", () => filterByTag(tag));
-    grid.append(option);
-  }
-  tagMenu.replaceChildren(header, grid);
+    return option;
+  });
+  tagMenu.replaceChildren(...options);
 }
 
 tagToggle?.addEventListener("click", () => {
@@ -66,4 +57,9 @@ document.querySelectorAll(".meta .tag").forEach(link => {
     event.preventDefault();
     filterByTag(link.textContent.slice(1));
   });
+});
+
+// Emptying the search box shows every post again.
+searchInput?.addEventListener("input", () => {
+  if (searchInput.value.trim() === "") filterByTag(null);
 });
