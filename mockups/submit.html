@@ -35,7 +35,7 @@
     </div>
     <div class="field">
       <label for="text">Text (optional)</label>
-      <textarea id="text" placeholder="Every rotation I spend the first few weeks feeling lost. Curious which routines, apps or places made the move easier for you."></textarea>
+      <textarea id="text"></textarea>
       <p class="help">Please don't name students or staff.</p>
     </div>
     <div class="row">
@@ -45,5 +45,33 @@
   </form>
 </div>
 <script src="theme.js"></script>
+<script>
+  // Mockup-only: the Text box's grey template follows the hashtags. Tags with their own template (only #hottakes for now) swap it in.
+  const TEMPLATES = {
+    default: [
+      "• What it's about",
+      "• Your claim or question",
+      "• What kind of conversation you'd like: debate, advice, or just sharing",
+    ],
+    hottakes: [
+      "• My take in one sentence",
+      "• Why I think this, with one experience or piece of evidence",
+      "• The strongest argument against my take, as I understand it",
+      "• What could change my mind, and whether I want debate, advice, or just listening",
+    ],
+  };
+  const tagsInput = document.getElementById("tags");
+  const textBox = document.getElementById("text");
+
+  function applyTemplate() {
+    const tags = tagsInput.value.toLowerCase().split(/[\s,]+/).map(tag => tag.replace(/^#/, ""));
+    const template = tags.includes("hottakes") ? TEMPLATES.hottakes : TEMPLATES.default;
+    textBox.placeholder = template.join("\n");
+  }
+
+  tagsInput.addEventListener("input", applyTemplate);
+  applyTemplate();
+</script>
+
 </body>
 </html>
