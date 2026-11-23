@@ -116,21 +116,29 @@ Posts that seem to name a person get a warning before they're saved, and the pos
 
 ## Moderation
 
-The community hides posts by flagging them. Anyone can then ask the maintainer to unhide or remove a hidden post, and the maintainer acts directly in the database. There are no admins, no bans and no dashboard.
+The community hides posts by flagging them. Anyone can then ask the maintainer to unhide or remove a hidden post, and the maintainer acts with a small command-line tool on the server. There are no admins, no bans and no dashboard.
 
 | Action | Who | Effect |
 | --- | --- | --- |
 | Flag | Anyone, once per post | Hidden from the main page and search after 5 flags from different passes |
 | Request unhide | Anyone, once per hidden post | Emails the maintainer right away |
 | Request nuke ☢️ | Anyone, once per hidden post | Emails the maintainer right away |
-| Unhide | Maintainer, by SQL | Visible again, and flags can never hide it again |
-| Nuke | Maintainer, by SQL | Deleted from the database; the link stops working |
+| Unhide | Maintainer, via `maf unhide` | Visible again, and flags can never hide it again |
+| Nuke | Maintainer, via `maf nuke` | Deleted from the database; the link stops working |
 
 - **Hidden posts stay reachable by their direct link.** The post shows a banner, "Hidden after community flags.", with two buttons: **Request unhide** and **Request nuke ☢️**.
 - **Requests are anonymous.** Only the post ID and a count are saved, with no record of who asked.
 - **Notification:** every request sends the maintainer an email through SES right away, for example "Unhide requested for post #123 (4 requests so far)." It names no one. This can be batched later if traffic gets heavy.
-- **Unhiding** is one SQL update over SSH, which also marks the post as restored so flags can't hide it again.
-- **Nuking** deletes the post's row (and its comments) over SSH.
+- **The `maf` command-line tool** runs on the server over SSH, so there's no raw SQL:
+
+  | Command | What it does |
+  | --- | --- |
+  | `maf requests` | Lists open requests: post ID, title, unhide or nuke, how many |
+  | `maf hidden` | Lists hidden posts |
+  | `maf show <id>` | Prints a post with its flag and request counts |
+  | `maf unhide <id>` | Makes it visible again; flags can never hide it again |
+  | `maf nuke <id>` | Deletes the post and its comments, after a yes/no confirmation |
+  | `maf dismiss <id>` | Clears its requests without changing anything |
 - **No admins:** there are no admin codes, roles or buttons, so nothing about moderation can be linked to anyone.
 - **Legal position:** in the US, Section 230 generally protects the operator from liability for what users post. Text and links only removes the serious risks of hosted images. The one real duty is acting on illegal content once told about it, which is what Nuke is for.
 

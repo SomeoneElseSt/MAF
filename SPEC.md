@@ -62,13 +62,23 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 
 ## Moderation
 
-No admin roles, codes or buttons. Moderation is community flags plus the maintainer acting in SQLite over SSH.
+No admin roles, codes or buttons. Moderation is community flags plus the maintainer using the `maf` CLI over SSH.
 
 - **Flag:** any pass, once per item. At 5 flags from distinct passes the item is `hidden`: excluded from `/`, from search and from comment trees, unless `restored = 1`.
 - **Hidden items stay reachable** at `/item/<id>`, with a banner, "Hidden after community flags.", and two buttons: **Request unhide** and **Request nuke ☢️**.
 - **Requests:** once per pass per item per kind. Stored as `moderation_request(pass_id, item_id, kind)` for deduplication only. On each new request, immediately send an SES email to `MAINTAINER_EMAIL`, for example `Unhide requested for post #123 (4 requests so far) <link>`. No pass or identity goes in the email.
-- **Unhide (maintainer, SSH):** `UPDATE item SET hidden = 0, restored = 1 WHERE id = ?;`. Once `restored = 1`, flags never hide the item again.
-- **Nuke (maintainer, SSH):** `DELETE FROM item WHERE id = ? OR thread_id = ?;` for a post, or `WHERE id = ?` for a comment. `/item/<id>` then returns 404. Remove the matching FTS rows too (handled by triggers).
+- **`maf` CLI** (maintainer, run on the server over SSH: `ssh maf-server maf <command>`). It's a console script in the same uv project (`[project.scripts] maf = "maf.cli:main"`), built with stdlib `argparse` and `sqlite3` on the same database file, with no extra dependencies. It reuses the app's own data functions so the logic isn't written twice.
+
+  | Command | Effect |
+  |---|---|
+  | `maf requests` | Table of items with open `moderation_request` rows: id, title or first 60 chars, kind, count |
+  | `maf hidden` | Table of items with `hidden = 1` |
+  | `maf show <id>` | Prints the item's title, URL or text, flags, hidden/restored state and request counts |
+  | `maf unhide <id>` | Sets `hidden = 0, restored = 1` and clears its requests. Once `restored = 1`, flags never hide it again |
+  | `maf nuke <id>` | Prints the item, asks `Delete post #<id> and its N comments? [y/N]`, then deletes the item (and, for a post, its whole thread) along with its flags and requests. FTS rows go via triggers. `/item/<id>` then returns 404 |
+  | `maf dismiss <id>` | Clears its requests without changing anything |
+
+  An unknown id prints `No item #<id>` and exits non-zero.
 - **No bans.**
 
 ## Data model (sketch)
