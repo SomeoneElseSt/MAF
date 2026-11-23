@@ -154,7 +154,7 @@ Posts and comments can get emoji reactions, picked from a small fixed set.
 
 Posts that seem to name a person get a warning before they're saved, and the poster decides. There are no lists of names to maintain.
 
-- **Rule:** no naming students or staff. It's shown on the sign-in and submit pages and in the User Guide.
+- **Rule:** no naming students or staff. It's shown on the submit page and in the User Guide.
 - **Tool:** Microsoft Presidio, which detects people's names in text. It runs on the same server and only when someone submits, so reading is unaffected. Expect tens of milliseconds per submission, to be measured during the build.
 - **On a match** the poster sees: "This looks like it names someone. MAF doesn't allow naming students or staff. If it's a public figure, you can post anyway." with two buttons, **Edit post** and **Post anyway**.
 - **No allowlist:** public figures like Ben Nelson, Kant or Elon Musk go through with one extra click. Nothing about Minerva people is stored.
