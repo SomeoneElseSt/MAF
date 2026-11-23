@@ -220,4 +220,4 @@ span.arrow { color: var(--line); }
 .faded .post-body p:last-child { margin-bottom: 6px; }
 
 /* Empty front page */
-.empty { text-align: center; color: var(--meta); margin: 64px 0 40px; }
+.empty { text-align: center; font: 15px var(--sans); color: var(--meta); margin: 64px 0 40px; }
