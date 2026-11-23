@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Private toggle options · MAF</title>
+<link rel="stylesheet" href="style.css">
+<script>try { const saved = localStorage.getItem("theme"); if (saved) document.documentElement.dataset.theme = saved; } catch {}</script>
+<style>
+  .option-name { font: 600 17px var(--serif); color: var(--soft); margin: 34px 0 2px; }
+  .option-note { font: 14px var(--sans); color: var(--meta); margin: 0 0 10px; }
+  .demo textarea { min-height: 70px; resize: vertical; }
+  .choice { font: inherit; background: none; border: none; padding: 0; cursor: pointer; color: var(--meta); }
+  .choice:hover { color: var(--ink); }
+
+  /* 1. Text toggle: the phrase itself is the control; once on, it reads as a state with an undo */
+  .opt-text .choice { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  .opt-text .on { color: var(--ink); text-decoration: none; }
+
+  /* 2. Small switch: a tiny monochrome slider after the phrase */
+  .switch { position: relative; display: inline-block; width: 26px; height: 15px; margin-left: 6px; vertical-align: -3px; border-radius: 8px; background: var(--line); border: none; padding: 0; cursor: pointer; transition: background 0.15s; }
+  .switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 11px; height: 11px; border-radius: 50%; background: var(--paper); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08); transition: left 0.15s; }
+  .switch[aria-checked="true"] { background: var(--ink); }
+  .switch[aria-checked="true"]::after { left: 13px; }
+
+  /* 3. Two choices, like the sort row: the selected one is dark and semibold */
+  .opt-segment .choice[aria-pressed="true"] { color: var(--ink); font-weight: 600; }
+  .opt-segment .choice + .choice { margin-left: 10px; }
+
+  /* 4. Refined box: a small hand-drawn square instead of the browser checkbox */
+  .box { display: inline-flex; align-items: center; justify-content: center; width: 12px; height: 12px; margin-left: 6px; vertical-align: -1px; border: 1px solid var(--meta); border-radius: 2px; background: none; padding: 0; cursor: pointer; }
+  .box[aria-checked="true"] { background: var(--ink); border-color: var(--ink); }
+  .box[aria-checked="true"]::after { content: ""; width: 3px; height: 6px; border: solid var(--paper); border-width: 0 1.5px 1.5px 0; transform: translateY(-1px) rotate(45deg); }
+
+  /* 5. Public / Private word that flips on click */
+  .opt-word .choice { color: var(--ink); text-decoration: underline dotted var(--meta); text-underline-offset: 3px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="top">
+    <a class="brand" href="index.html">MAF</a>
+    <nav><a href="submit.html">Submit</a></nav>
+    <form class="find" action="index.html"><input type="search" name="q" placeholder="Search" aria-label="Search posts and comments"></form>
+    <button class="theme-toggle" type="button">Dark</button>
+  </header>
+
+  <h1 class="heading">Private reply control: five options</h1>
+  <p class="lede">Each one is clickable. The (i) stays at the end in all of them.</p>
+
+  <h2 class="option-name">1. Text toggle</h2>
+  <p class="option-note">The phrase is the control. Once on, it reads as a state you can undo.</p>
+  <form class="reply demo opt-text" onsubmit="return false">
+    <textarea placeholder="Write a comment"></textarea>
+    <p class="help">Commenting as: <span class="id">calm-badger</span> <span class="dot">·</span> <span class="slot"><button class="choice" type="button" data-toggle-text>Make only visible to amber-fox (OP)</button></span><button class="info" type="button" aria-label="About private replies">i</button></p>
+    <div class="row"><button class="button" type="submit">Comment</button></div>
+  </form>
+
+  <h2 class="option-name">2. Small switch</h2>
+  <p class="option-note">A tiny black-and-white slider after the phrase.</p>
+  <form class="reply demo" onsubmit="return false">
+    <textarea placeholder="Write a comment"></textarea>
+    <p class="help">Commenting as: <span class="id">calm-badger</span> <span class="dot">·</span> Only visible to amber-fox (OP)<button class="switch" type="button" role="switch" aria-checked="false" data-flip></button><button class="info" type="button" aria-label="About private replies">i</button></p>
+    <div class="row"><button class="button" type="submit">Comment</button></div>
+  </form>
+
+  <h2 class="option-name">3. Two choices</h2>
+  <p class="option-note">Same pattern as the sort row: pick who sees it.</p>
+  <form class="reply demo opt-segment" onsubmit="return false">
+    <textarea placeholder="Write a comment"></textarea>
+    <p class="help">Commenting as: <span class="id">calm-badger</span> <span class="dot">·</span> Visible to: <button class="choice" type="button" aria-pressed="true" data-segment>Everyone</button><button class="choice" type="button" aria-pressed="false" data-segment>Only amber-fox (OP)</button><button class="info" type="button" aria-label="About private replies">i</button></p>
+    <div class="row"><button class="button" type="submit">Comment</button></div>
+  </form>
+
+  <h2 class="option-name">4. Refined box</h2>
+  <p class="option-note">Still a checkbox, but drawn to match the type: thin, small, black when on.</p>
+  <form class="reply demo" onsubmit="return false">
+    <textarea placeholder="Write a comment"></textarea>
+    <p class="help">Commenting as: <span class="id">calm-badger</span> <span class="dot">·</span> Make only visible to amber-fox (OP)<button class="box" type="button" role="checkbox" aria-checked="false" data-flip></button><button class="info" type="button" aria-label="About private replies">i</button></p>
+    <div class="row"><button class="button" type="submit">Comment</button></div>
+  </form>
+
+  <h2 class="option-name">5. Public / private word</h2>
+  <p class="option-note">One word you click to flip between the two.</p>
+  <form class="reply demo opt-word" onsubmit="return false">
+    <textarea placeholder="Write a comment"></textarea>
+    <p class="help">Commenting as: <span class="id">calm-badger</span> <span class="dot">·</span> <button class="choice" type="button" data-word>Public</button><button class="info" type="button" aria-label="About private replies">i</button></p>
+    <div class="row"><button class="button" type="submit">Comment</button></div>
+  </form>
+
+  <footer class="foot">
+    <a href="about.html">About</a><a href="how.html">User Guide</a><a href="https://github.com/">Source Code</a>
+  </footer>
+</div>
+<script src="theme.js"></script>
+<script>
+  document.querySelectorAll("[data-toggle-text]").forEach(button => {
+    button.addEventListener("click", () => {
+      const slot = button.closest(".slot");
+      slot.innerHTML = '<span class="on">Only visible to amber-fox (OP)</span> <button class="choice" type="button">undo</button> ';
+      slot.querySelector(".choice").addEventListener("click", () => location.reload());
+    });
+  });
+  document.querySelectorAll("[data-flip]").forEach(control => {
+    control.addEventListener("click", () => control.setAttribute("aria-checked", String(control.getAttribute("aria-checked") !== "true")));
+  });
+  document.querySelectorAll("[data-segment]").forEach(choice => {
+    choice.addEventListener("click", () => {
+      choice.parentElement.querySelectorAll("[data-segment]").forEach(other => other.setAttribute("aria-pressed", String(other === choice)));
+    });
+  });
+  document.querySelectorAll("[data-word]").forEach(word => {
+    word.addEventListener("click", () => { word.textContent = word.textContent === "Public" ? "Private to amber-fox (OP)" : "Public"; });
+  });
+</script>
+</body>
+</html>
