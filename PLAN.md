@@ -130,17 +130,17 @@ The community hides posts by flagging them, and three admins can restore or hide
 
 **Admin sign-up flow**
 
-1. **Setup (once, at deploy):** the maintainer generates 3 long random codes and puts them in the server's settings. The other two codes are handed over in person or over an encrypted chat, never by email. The launch post names who the admins are.
+1. **Setup (once, at deploy):** the maintainer generates 3 starter codes, puts them in the server's settings, and hands one to each admin in person or over an encrypted chat, never by email. The launch post names who the admins are.
 2. **Sign in like everyone else:** email code, then an anonymous pass, exactly as for any student.
-3. **Enter the admin code** on the Admin code page, which isn't linked from anywhere. That device gets a separate admin cookie, and the Restore and Hide buttons appear.
-4. **New device:** repeat steps 2 and 3. There's nothing else to set up.
-5. **Lost or leaked code:** the maintainer replaces it in the settings and restarts the server. Devices using the old code lose admin access right away, and the admin re-enters the new code.
+3. **Enter the starter code** on the Admin code page, which isn't linked from anywhere. MAF then shows a new **personal code** that only that admin's browser sees: "Save this in your password manager. The code you were given no longer works." The device becomes an admin device, and the Restore and Hide buttons appear.
+4. **New device:** sign in, then paste the personal code.
+5. **Lost or leaked code:** the maintainer issues a fresh starter code and the admin repeats step 3. The old personal code stops working on every device.
 
-**Admin status is kept separate from the admin's pass.** The admin cookie is never written onto the pass. Otherwise anyone who knows which friend holds which code could link that admin's own posts to them. Admins post as anonymously as everyone else. The only thing recorded per code is the Hide vote, which has to be counted per admin.
+**The maintainer never knows anyone's personal code**, so 2-of-3 Hide really means two different people.
+
+**Admin status is kept separate from the admin's pass.** The admin cookie is never written onto the pass. Otherwise anyone who knows which friend holds which code could link that admin's own posts to them. Admins post as anonymously as everyone else. The only thing recorded per admin is the Hide vote, which has to be counted per admin.
 
 Wrong admin-code attempts are rate-limited, and the codes are long enough that guessing them isn't realistic.
-
-**Trust:** the maintainer generates all three codes, so in principle they could act as any admin. The other admins know this and accept it.
 - **2 of 3, not 3 of 3**, so one inactive or graduated admin doesn't block hiding something illegal.
 - **No dashboard:** admins see Restore and Hide buttons on the posts themselves, and hidden posts appear greyed out for them.
 - **Not a one-way door:** switching to admin-only review, where flags only notify admins, is a single setting.

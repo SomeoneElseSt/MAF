@@ -69,9 +69,11 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 | Hide | 2 of 3 admins | Hidden from non-admins, kept in the database |
 
 - **Setting:** `FLAGS_AUTO_HIDE` (default `true`). When set to `false`, flags only surface items to admins and never hide on their own. Switching is a setting change, not a migration.
-- **Admin codes:** 3 random codes of at least 128 bits, stored in env (`ADMIN_CODES`) as `slot:sha256(code)` pairs. They're handed to the other admins in person or over an encrypted chat.
-- **Admin sign-in:** the admin signs in like anyone (email code → pass), then enters their code at `/admin-code`, which nothing links to. On a match, the server sets a **separate** HttpOnly cookie, `admin_session`, holding a signed `(slot, code_hash)`. It is **never** written onto the `pass` row, so an admin's posts can't be linked to their slot.
-- **Each admin request:** verify the `admin_session` signature and check that `code_hash` is still in `ADMIN_CODES`. Rotating a code in env and restarting revokes every device that used the old one immediately.
+- **Starter codes:** 3 random codes of at least 128 bits, stored in env (`ADMIN_STARTER_CODES`) as `slot:sha256(starter)` pairs. The maintainer hands them out in person or over an encrypted chat.
+- **Redeeming a starter code** at `/admin-code` (which nothing links to): the browser sends the starter code plus `sha256(personal)`, where `personal` is a fresh 128-bit code generated in the browser with Web Crypto and never sent. If `sha256(starter)` matches a slot and hasn't been used yet, the server stores `admin_slot(slot, starter_hash_used, personal_hash)` and the page shows the personal code once, with "Save this in your password manager. The code you were given no longer works."
+- **Signing in with a personal code:** the browser sends the personal code, and the server matches `sha256(personal)` against `admin_slot.personal_hash`. On a match it sets a **separate** HttpOnly cookie, `admin_session`, holding a signed `(slot, personal_hash)`. It is **never** written onto the `pass` row, so an admin's posts can't be linked to their slot.
+- **Each admin request:** verify the `admin_session` signature and check that `personal_hash` is still the slot's current one.
+- **Lost or leaked code:** the maintainer puts a new starter hash for that slot in env and restarts. Because it differs from `starter_hash_used`, it can be redeemed, and redeeming replaces `personal_hash`, which revokes every device that used the old personal code.
 - **Rate limit:** 5 wrong `/admin-code` attempts per pass per hour, in memory.
 - **Counting admin votes:** `admin_hide_vote` is keyed by *slot*, so one admin on two devices counts once. It is the only place a slot is ever stored.
 - **Interface:** no dashboard. Admins see Restore/Hide buttons inline, and hidden items appear greyed out for them.
@@ -85,6 +87,7 @@ redeemed_token(token_hash PK)
 item(id, parent_id NULL, thread_id, pass_id, title NULL, url NULL, text NULL, created_at, views, flags, hidden_by_flags, restored, hidden_by_admin)
 item_fts  -- FTS5 virtual table over item(title, text), kept in sync with triggers
 flag(pass_id, item_id, PK both)
+admin_slot(slot PK, starter_hash_used, personal_hash)
 admin_hide_vote(slot, item_id, PK both)
 ```
 
