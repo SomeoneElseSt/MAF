@@ -54,7 +54,7 @@ Why this keeps the maintainer in the clear: if anyone asks who posted something,
 Sign-up and login are the same steps: enter your email, enter the 6-digit code, and your device gets an anonymous pass.
 
 1. You enter a `@uni.minerva.edu` address. Any other domain is rejected.
-2. MAF sends a 6-digit code through AWS SES. The email is short: subject "Your code: 482913", with the MAF name at the top in the site's style. The code expires after 10 minutes and is held in memory only.
+2. MAF sends a 6-digit code through AWS SES. The email is short: subject "Your MAF code: 482913", with the MAF name at the top in the site's style. The code expires after 10 minutes and is held in memory only.
 3. You enter the code. Your browser then gets a pass signed with a **blind signature**: the server signs it without seeing it, so it can later check the pass is genuine but can't tell whose it is. This is a standard technique (RFC 9474, the method behind Privacy Pass) with existing libraries.
 4. The server forgets the email. Your device keeps the pass in a long-lived cookie.
 

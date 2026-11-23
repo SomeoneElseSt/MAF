@@ -25,7 +25,7 @@ _templates = Environment(
 def _render(name: str, **context) -> str:
     return _templates.get_template(f"email/{name}").render(**context)
 
-CODE_SUBJECT = "Your code: {code}"
+CODE_SUBJECT = "Your MAF code: {code}"
 CODE_BODY = """Your code is {code}.
 
 It's valid for 10 minutes. If you didn't ask for a code, ignore this email.
