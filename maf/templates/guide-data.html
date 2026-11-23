@@ -1,0 +1,74 @@
+{#
+  guide-data.html: developer access (read-only API + MCP), token management.
+
+  Context:
+    tokens    [{hash, last4}, ...] the viewer's tokens, if signed in
+    notice    a one-line message after an action
+    new_token the token just created, shown once
+#}
+{% extends "base.html" %}
+{% block main %}
+<div class="prose">
+  <h1 class="heading">Use this data</h1>
+  <p>Read MAF from your own tools: an AI agent through MCP, a terminal, or plain curl. Access is read-only. Posting stays in the browser, where the name warning and the rule are shown.</p>
+
+  {% if notice %}<div class="notice"><p>{{ notice }}</p></div>{% endif %}
+
+  {% if viewer %}
+  <h2>Your tokens</h2>
+  {% if new_token %}
+  <div class="notice">
+    <p>Copy this token now. It's shown once.</p>
+    <p><code>{{ new_token }}</code></p>
+  </div>
+  {% endif %}
+  <form action="/tokens" method="post" class="row">
+    <button class="button" type="submit">Create token</button>
+  </form>
+  {% if tokens %}
+  <ul>
+    {% for token in tokens %}
+    <li>Ending in <code>{{ token.last4 }}</code>
+      <form action="/tokens/revoke" method="post" class="inline-form">
+        <input type="hidden" name="token_hash" value="{{ token.hash }}">
+        <button type="submit">Revoke</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% else %}
+  <p><a href="/login">Sign in</a> to create a token.</p>
+  {% endif %}
+
+  <h2>MCP server</h2>
+  <p>For Claude Code, Cursor or any MCP client, run <code>maf-mcp</code> from this project with your token:</p>
+  <pre><code>{
+  "mcpServers": {
+    "maf": {
+      "command": "maf-mcp",
+      "env": { "MAF_TOKEN": "&lt;your token&gt;", "MAF_URL": "{{ base_url }}" }
+    }
+  }
+}</code></pre>
+  <p>It offers three tools: <code>list_posts</code>, <code>get_thread</code> and <code>search</code>.</p>
+
+  <h2>curl</h2>
+  <pre><code>curl -H "Authorization: Bearer $MAF_TOKEN" {{ base_url }}/api/v1/posts
+curl -H "Authorization: Bearer $MAF_TOKEN" "{{ base_url }}/api/v1/posts?sort=views&amp;before=2026-11-20"
+curl -H "Authorization: Bearer $MAF_TOKEN" {{ base_url }}/api/v1/tags
+curl -H "Authorization: Bearer $MAF_TOKEN" {{ base_url }}/api/v1/items/ITEM_ID
+curl -H "Authorization: Bearer $MAF_TOKEN" "{{ base_url }}/api/v1/search?q=berlin&amp;page=1"</code></pre>
+
+  <h2>From a script</h2>
+  <p>Send the same header from any language, for example Python:</p>
+  <pre><code>import os, urllib.request
+request = urllib.request.Request(
+    "{{ base_url }}/api/v1/posts",
+    headers={"Authorization": f"Bearer {os.environ['MAF_TOKEN']}"},
+)
+print(urllib.request.urlopen(request).read().decode())</code></pre>
+
+  <p class="small">Anything you read this way leaves the students-only site, for example into an AI provider's systems. Copying and pasting already did that, so a token adds convenience rather than a new hole.</p>
+</div>
+{% endblock %}

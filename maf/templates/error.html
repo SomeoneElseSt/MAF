@@ -1,0 +1,14 @@
+{#
+  error.html: a plain error page.
+
+  Context:
+    message  what went wrong
+#}
+{% extends "base.html" %}
+{% block main %}
+<div class="prose">
+  <h1 class="heading">Not found</h1>
+  <p>{{ message }}</p>
+  <p><a href="/">Back to the front page</a></p>
+</div>
+{% endblock %}

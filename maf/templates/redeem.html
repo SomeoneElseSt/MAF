@@ -1,0 +1,13 @@
+{#
+  redeem.html: fallback for /redeem when the browser step failed.
+
+  Context:
+    error   why redemption failed, if it did
+#}
+{% extends "base.html" %}
+{% block main %}
+<h1 class="heading">Sign in</h1>
+<p class="lede">Your pass couldn't be set up in this browser. Sign in again to get a new one.</p>
+{% if error %}<div class="notice"><p>{{ error }}</p></div>{% endif %}
+<p><a class="button" href="/login">Sign in again</a></p>
+{% endblock %}

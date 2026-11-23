@@ -1,0 +1,25 @@
+{#
+  login.html: the email step.
+
+  Context:
+    error   an error message, if the last submit failed
+    email   the email value to keep in the field
+#}
+{% extends "base.html" %}
+{% block main %}
+<h1 class="heading">Sign in</h1>
+<p class="lede">MAF is for Minerva students. Enter your university email and we'll send you a code. Your email is used once and never stored.</p>
+
+{% if error %}<div class="notice"><p>{{ error }}</p></div>{% endif %}
+
+<form action="/login" method="post">
+  <div class="field">
+    <label for="email">University email</label>
+    <input id="email" name="email" type="email" placeholder="you@uni.minerva.edu" autocomplete="email" value="{{ email|default('') }}" required{% if error %} aria-describedby="login-error"{% endif %}>
+    {% if error %}<p class="help" id="login-error">{{ error }}</p>{% endif %}
+  </div>
+  <button class="button" type="submit">Send code</button>
+</form>
+
+<p class="small">Please don't name students or staff. Public figures are fine. <a href="/guide">How anonymity works</a></p>
+{% endblock %}

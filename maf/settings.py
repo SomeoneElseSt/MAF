@@ -1,0 +1,77 @@
+"""Configuration, read once from the environment at startup.
+
+Every secret and path is an environment variable (see docs in NOTES.md). Nothing
+here writes anything to disk.
+"""
+
+import os
+from dataclasses import dataclass, field
+from pathlib import Path
+
+PRODUCTION = "production"
+
+
+class ConfigError(Exception):
+    """The environment is not usable; the app must refuse to start."""
+
+
+@dataclass(frozen=True)
+class Settings:
+    env: str = "development"
+    database_path: Path = Path("maf.db")
+    label_secret: bytes = b""
+    signing_key_path: Path | None = None
+    session_secret: bytes = b""
+    maintainer_email: str = ""
+    email_backend: str = "ses"
+    email_from: str = ""
+    aws_region: str = "us-east-1"
+    name_filter_threshold: float = 0.85
+    name_filter_enabled: bool = True
+    spacy_model: str = "en_core_web_sm"
+    base_url: str = "http://localhost:8000"
+    static_dir: Path = field(default_factory=lambda: Path(__file__).parent / "static")
+    templates_dir: Path = field(default_factory=lambda: Path(__file__).parent / "templates")
+
+    @property
+    def is_production(self) -> bool:
+        return self.env == PRODUCTION
+
+    @property
+    def console_email(self) -> bool:
+        return self.email_backend == "console"
+
+
+def _bool(name: str, default: bool) -> bool:
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _secret(name: str, default: str = "") -> bytes:
+    return os.environ.get(name, default).encode()
+
+
+def load_settings(env: dict[str, str] | None = None) -> Settings:
+    """Builds Settings from the environment, refusing unsafe combinations."""
+    source = os.environ if env is None else env
+    backend = source.get("EMAIL_BACKEND", "ses").strip().lower()
+    settings = Settings(
+        env=source.get("MAF_ENV", "development").strip().lower(),
+        database_path=Path(source.get("MAF_DATABASE", "maf.db")),
+        label_secret=_secret("LABEL_SECRET", "dev-label-secret"),
+        signing_key_path=Path(source["MAF_SIGNING_KEY"]) if source.get("MAF_SIGNING_KEY") else None,
+        session_secret=_secret("SESSION_SECRET", "dev-session-secret"),
+        maintainer_email=source.get("MAINTAINER_EMAIL", ""),
+        email_backend=backend,
+        email_from=source.get("MAF_EMAIL_FROM", "maf@maforum.net"),
+        aws_region=source.get("AWS_REGION", "us-east-1"),
+        name_filter_threshold=float(source.get("NAME_FILTER_THRESHOLD", "0.85")),
+        name_filter_enabled=_bool("NAME_FILTER_ENABLED", True),
+        spacy_model=source.get("SPACY_MODEL", "en_core_web_sm"),
+        base_url=source.get("MAF_BASE_URL", "http://localhost:8000").rstrip("/"),
+    )
+    if settings.is_production and settings.console_email:
+        raise ConfigError("EMAIL_BACKEND=console cannot be used with MAF_ENV=production")
+    return settings

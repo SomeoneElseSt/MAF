@@ -1,0 +1,58 @@
+{#
+  base.html: the shared layout. Every page extends it.
+
+  Context (set by maf/web.py render()):
+    title        page title, shown as "<title> · MAF" (or just MAF when empty)
+    viewer       the signed-in pass id, or None
+    tags         [(tag, post_count), ...] for the # menu, most used first
+    search_query the current search box text
+    active_tag   the tag being filtered, if any
+    sort         "new" | "old" | "views"
+    path         current request path, for aria-current
+    body_class   optional class on <body>
+    reply_placeholder  optional guided reply placeholder for the thread page
+  Blocks:
+    main         page content
+    scripts      extra script tags
+#}
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% if title %}{{ title }} · MAF{% else %}MAF{% endif %}</title>
+<link rel="stylesheet" href="/static/style.css">
+<script>try { const saved = localStorage.getItem("theme"); if (saved) document.documentElement.dataset.theme = saved; } catch {}</script>
+</head>
+<body class="{{ body_class|default('') }}"{% if reply_placeholder is defined and reply_placeholder %} data-reply-placeholder="{{ reply_placeholder|e }}"{% endif %}>
+<a class="skip" href="#main">Skip to content</a>
+<div class="page">
+  <header class="top">
+    <a class="brand" href="/">MAF</a>
+    {% if viewer %}
+    <nav>
+      <a href="/submit"{% if path == "/submit" %} aria-current="page"{% endif %}>Submit</a>
+    </nav>
+    {% endif %}
+    <form class="find" action="/" method="get" role="search">
+      {% if sort != "new" %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
+      <input type="search" name="q" placeholder="Search" aria-label="Search posts and comments" value="{{ search_query }}">
+      <button class="tag-toggle" type="button" aria-label="Browse hashtags" aria-expanded="false">#</button>
+      <div class="tag-menu" hidden></div>
+    </form>
+    <button class="theme-toggle" type="button">Dark</button>
+  </header>
+  <main id="main">
+{% block main %}{% endblock %}
+  </main>
+
+  <footer class="foot">
+    <a href="/about">About</a><a href="/guide">User Guide</a><a href="https://github.com/" target="_blank" rel="noopener">Source Code (opens in a new tab)</a>
+  </footer>
+</div>
+<script src="/static/theme.js"></script>
+{% if tags %}<script type="application/json" id="tag-data">{{ tags|tojson }}</script>{% endif %}
+<script src="/static/tags.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

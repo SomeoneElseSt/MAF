@@ -1,0 +1,37 @@
+{#
+  guide.html: the User Guide. No extra context.
+#}
+{% extends "base.html" %}
+{% block main %}
+<div class="prose">
+  <h1 class="heading">User Guide</h1>
+
+  <h2>Your email</h2>
+  <p>You sign in with your university email so only students get in. MAF sends a code to it and then forgets it. It isn't saved anywhere, and nothing you post is linked to it, including by whoever runs the server.</p>
+
+  <h2>Names change per thread</h2>
+  <p>In each thread you get a random name like quiet-otter, so a conversation can be followed. In the next thread you get a different one. There are no profiles and no post history.</p>
+
+  <h2>The rule</h2>
+  <p>Don't name students or staff. If a post looks like it names someone, you'll be asked before it goes up. Public figures are fine.</p>
+
+  <h2>Flags</h2>
+  <p>Five flags take a post off the front page and out of search. It stays reachable by its link, where anyone can ask for it to come back or be removed for good.</p>
+
+  <h2>What can be seen</h2>
+  <ul>
+    <li>The university can see that a code email reached your inbox, since it runs that inbox.</li>
+    <li>The server sees posts and names. It doesn't see emails and doesn't log IP addresses.</li>
+    <li>The timing of posts and shared networks can still give clues, and you're trusting that the server runs the published source code.</li>
+  </ul>
+
+  <h2>New device</h2>
+  <p>Sign in again with your email. There's no password.</p>
+
+  <h2>Private replies</h2>
+  <p>Under any comment box you can tick "Make only visible to ...". Only you and that person see the reply, inside the thread. It belongs to the device you posted from.</p>
+
+  <h2>Using the data</h2>
+  <p>You can read MAF from your own tools. <a href="/guide/data">Use this data</a> explains how.</p>
+</div>
+{% endblock %}

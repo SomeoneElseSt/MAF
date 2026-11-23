@@ -1,0 +1,24 @@
+{#
+  login-blind.html: the JS blind-signature step, submitted by /static/login.js.
+
+  Context:
+    email   the verified email, carried in a hidden field
+    code    the code the user just entered, carried forward and consumed at blind-sign
+#}
+{% extends "base.html" %}
+{% block main %}
+<h1 class="heading">Almost there</h1>
+<p class="lede">Your browser is making an anonymous pass. This page needs JavaScript.</p>
+
+<form data-blind action="/login/blind-sign" method="post">
+  <input type="hidden" name="email" value="{{ email|default('') }}">
+  <label for="code-blind">The code you just entered</label>
+  <input id="code-blind" name="code" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" value="{{ code|default('') }}" required>
+  <div class="row">
+    <button class="button" type="submit">Continue</button>
+  </div>
+  <p class="help blind-status" aria-live="polite"></p>
+</form>
+<script src="/static/blindrsa.min.js"></script>
+<script src="/static/login.js"></script>
+{% endblock %}

@@ -1,0 +1,28 @@
+{#
+  login-code.html: the 6-digit code step.
+
+  Context:
+    error   an error message, if the last submit failed
+    email   the email, carried forward in a hidden field
+#}
+{% extends "base.html" %}
+{% block main %}
+<h1 class="heading">Check your inbox</h1>
+<p class="lede">We sent you a 6-digit code. It works for 10 minutes. If you can't find it, check your spam folder.</p>
+
+{% if error %}<div class="notice"><p>{{ error }}</p></div>{% endif %}
+
+<form action="/login/code" method="post">
+  <input type="hidden" name="email" value="{{ email|default('') }}">
+  <div class="field">
+    <label for="code">Code</label>
+    <input id="code" class="code" name="code" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" required{% if error %} aria-describedby="code-error"{% endif %}>
+    {% if error %}<p class="help" id="code-error">{{ error }}</p>{% endif %}
+  </div>
+  <div class="row">
+    <button class="button" type="submit">Continue</button>
+    <a class="note" href="/login">Use a different email</a>
+  </div>
+</form>
+<p class="small">The code expires after 10 minutes. <a href="/login">Send a new code</a></p>
+{% endblock %}

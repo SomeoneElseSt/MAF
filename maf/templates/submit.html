@@ -1,0 +1,56 @@
+{#
+  submit.html: the new post form.
+
+  Context:
+    tags        the tags parsed so far (picks the Text placeholder)
+    placeholder the Text box hint for those tags
+    values      {title, url, text, tags} to re-fill after an error
+    errors      {field: message} plus an optional "form" entry
+#}
+{% extends "base.html" %}
+{% block main %}
+<h1 class="heading">Submit a post</h1>
+<p class="lede">Share a link, write something, or both. You'll get a random name for this thread.</p>
+
+{% if errors %}
+<div class="notice">
+  <ul>
+    {% for field, message in errors.items() %}
+    <li><a href="#{{ 'title' if field == 'form' else field }}">{{ message }}</a></li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+<script type="application/json" id="submit-templates">{{ submit_templates|tojson }}</script>
+<form action="/submit" method="post" data-submit-form data-example="{{ example_post|e }}">
+  <div class="field">
+    <label for="title">Title</label>
+    <input id="title" name="title" type="text" placeholder="What helped you settle into a new city fast?" value="{{ values.title|default('') }}"{% if errors.title %} aria-describedby="title-error"{% endif %}>
+    {% if errors.title %}<p class="help" id="title-error">{{ errors.title }}</p>{% endif %}
+  </div>
+  <div class="field">
+    <label for="url">Link (optional)</label>
+    <input id="url" name="url" type="url" placeholder="https://en.wikipedia.org/wiki/Culture_shock" value="{{ values.url|default('') }}"{% if errors.url %} aria-describedby="url-error"{% endif %}>
+    {% if errors.url %}<p class="help" id="url-error">{{ errors.url }}</p>{% endif %}
+  </div>
+  <div class="field">
+    <label for="tags">Hashtags (optional)</label>
+    <input id="tags" name="tags" type="text" placeholder="#life, #berlin" value="{{ values.tags|default('') }}"{% if errors.tags %} aria-describedby="tags-help tags-error"{% else %} aria-describedby="tags-help"{% endif %}>
+    <p class="help" id="tags-help">Up to 3, separated by commas.</p>
+    {% if errors.tags %}<p class="help" id="tags-error">{{ errors.tags }}</p>{% endif %}
+  </div>
+  <div class="field">
+    <label for="text">Text (optional)</label>
+    <textarea id="text" name="text" placeholder="{{ placeholder }}">{{ values.text|default('') }}</textarea>
+    <p class="help">Please don't name students or staff. <a href="/guide">The rule</a></p>
+  </div>
+  <div class="row">
+    <button class="button" type="submit">Submit</button>
+    <a class="note" href="/">Cancel</a>
+  </div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script src="/static/submit.js"></script>
+{% endblock %}

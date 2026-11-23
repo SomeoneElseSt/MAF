@@ -1,0 +1,19 @@
+{#
+  tags.html: every hashtag with its post count (the no-JS version of the # menu).
+
+  Context:
+    tag_list  [(tag, count), ...] most used first, then alphabetical
+#}
+{% extends "base.html" %}
+{% block main %}
+<h1 class="heading">Hashtags</h1>
+{% if tag_list %}
+<ol class="list list-flat">
+  {% for tag, count in tag_list %}
+  <li><a class="title" href="/?tag={{ tag }}">#{{ tag }}</a> <span class="meta">{{ count }} post{{ '' if count == 1 else 's' }}</span></li>
+  {% endfor %}
+</ol>
+{% else %}
+<p class="empty">No hashtags yet.</p>
+{% endif %}
+{% endblock %}

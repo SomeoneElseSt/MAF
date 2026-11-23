@@ -1,0 +1,51 @@
+{#
+  submit-warning.html: the name filter found a likely person's name.
+
+  Context:
+    values      {title, url, text, tags} kept intact
+    tags        parsed tags
+    placeholder the Text box hint
+#}
+{% extends "base.html" %}
+{% block main %}
+<h1 class="heading">Submit a post</h1>
+
+<div class="notice" role="alert">
+  <p>This looks like it names someone. MAF doesn't allow naming students or staff. If it's a public figure, you can post anyway.</p>
+  <div class="row">
+    <a class="button plain" href="#post-fields">Edit post</a>
+    <form action="/submit" method="post" class="inline-form">
+      <input type="hidden" name="title" value="{{ values.title }}">
+      <input type="hidden" name="url" value="{{ values.url }}">
+      <input type="hidden" name="text" value="{{ values.text }}">
+      <input type="hidden" name="tags" value="{{ values.tags }}">
+      <input type="hidden" name="confirm_names" value="1">
+      <button class="button" type="submit">Post anyway</button>
+    </form>
+  </div>
+</div>
+
+<form id="post-fields" action="/submit" method="post" style="margin-top: 26px">
+  <div class="field">
+    <label for="title">Title</label>
+    <input id="title" name="title" type="text" value="{{ values.title }}">
+  </div>
+  <div class="field">
+    <label for="url">Link (optional)</label>
+    <input id="url" name="url" type="url" value="{{ values.url }}">
+  </div>
+  <div class="field">
+    <label for="tags">Hashtags (optional)</label>
+    <input id="tags" name="tags" type="text" value="{{ values.tags }}">
+    <p class="help">Up to 3, separated by commas.</p>
+  </div>
+  <div class="field">
+    <label for="text">Text (optional)</label>
+    <textarea id="text" name="text" placeholder="{{ placeholder }}">{{ values.text }}</textarea>
+  </div>
+  <div class="row">
+    <button class="button" type="submit">Submit</button>
+    <a class="note" href="/">Cancel</a>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,150 @@
+{#
+  item.html: one thread: the post, the top comment box, and the nested comments.
+
+  Context:
+    post            the root store.Item (post)
+    tree            [{item, children}, ...] nested comment nodes
+    label_of        {pass_id: per-thread label}
+    op_pass         the post author's pass id
+    my_label        the viewer's label in this thread, or None when signed out
+    tags_list       the post's tags
+    hot             True for #hottakes threads
+    etiquette       (tag, text) banner tuple or None
+    reply_placeholder  guided placeholder for inline reply boxes
+    reactions       {item_id: {counts: {emoji: n}, mine: {emoji}}}
+    flags           {item_id: already flagged by the viewer}
+    requests        {"unhide": n, "nuke": n} request counts for the post
+    notice          a one-line message from the last action
+    body_class      "hottakes-thread" for highlighted tags
+  Macros:
+    comment(node, depth) renders one comment and its replies.
+#}
+{% extends "base.html" %}
+
+{% macro meta_line(entry) %}
+  <div class="meta">
+    <button class="id" type="button">{{ label_of[entry.pass_id] }}</button>{% if entry.pass_id == op_pass %} (OP){% elif entry.pass_id == viewer %} (you){% endif %}, {{ entry.created_at|rel }}
+    {% if entry.private_to %} <span class="dot">·</span> <span class="private-note">Private, only you and {{ label_of[entry.private_to] if entry.pass_id == viewer else label_of[entry.pass_id] }}</span> <button class="info" type="button" aria-label="About private replies" aria-expanded="false">i</button>{% endif %}
+  </div>
+{% endmacro %}
+
+{% macro reactions_box(entry) %}
+  {% set state = reactions[entry.id] %}
+  <span class="reactions" data-reactions='{{ state.counts|tojson }}' data-mine="{{ state.mine|join(' ') }}">
+    {% for emoji, count in state.counts.items() %}
+    <form action="/react" method="post" class="react-form">
+      <input type="hidden" name="item_id" value="{{ entry.id }}">
+      <input type="hidden" name="emoji" value="{{ emoji }}">
+      <button class="react" type="submit" aria-pressed="{{ 'true' if emoji in state.mine else 'false' }}" aria-label="{{ emoji }} {{ count }}{{ ', including you' if emoji in state.mine }}. {{ 'Remove' if emoji in state.mine else 'Add' }} your reaction"><span class="react-emoji">{{ emoji }}</span><span class="react-count">{{ count }}</span></button>
+    </form>
+    {% endfor %}
+  </span>
+  <details class="react-picker">
+    <summary aria-label="Add a reaction">☺</summary>
+    <form action="/react" method="post" class="picker-list">
+      <input type="hidden" name="item_id" value="{{ entry.id }}">
+      {% for emoji in picker_emoji %}
+      <button type="submit" name="emoji" value="{{ emoji }}" aria-pressed="{{ 'true' if emoji in state.mine else 'false' }}">{{ emoji }}</button>
+      {% endfor %}
+    </form>
+  </details>
+{% endmacro %}
+
+{% macro comment(node, depth) %}
+{% set entry = node.item %}
+<li class="comment{% if entry.private_to %} private{% endif %}" id="{{ entry.id }}">
+  {{ meta_line(entry) }}
+  <p>{{ entry.text }}</p>
+  <div class="actions">
+    <button class="reply-toggle" type="button" aria-expanded="false">Reply</button>
+    {% if not entry.private_to %}<form action="/flag" method="post" class="inline-form"><input type="hidden" name="item_id" value="{{ entry.id }}"><button type="submit"{% if flags.get(entry.id) %} disabled aria-disabled="true"{% endif %}>{% if flags.get(entry.id) %}Flagged{% else %}Flag{% endif %}</button></form>{% endif %}
+    {{ reactions_box(entry) }}
+  </div>
+  <form class="inline-reply" action="/comment" method="post" hidden>
+    <input type="hidden" name="parent_id" value="{{ entry.id }}">
+    <textarea name="text" aria-label="Write a reply" placeholder="{{ reply_placeholder or 'Write a reply' }}"></textarea>
+    <p class="help">Replying as: <button class="id" type="button">{{ my_label }}</button> <span class="dot">·</span>
+      {% if entry.pass_id != viewer %}
+      <span class="private-toggle"><label>Make only visible to {{ label_of[entry.pass_id] }} <input type="checkbox" name="private"{% if entry.private_to %} checked disabled{% endif %}></label><button class="info" type="button" aria-label="About private replies" aria-expanded="false">i</button></span>
+      {% endif %}
+    </p>
+    <div class="row"><button class="button" type="submit">Reply</button><button class="button plain cancel" type="button">Cancel</button></div>
+  </form>
+  {% if node.children %}
+  <ol class="comments">
+    {% for child in node.children %}{{ comment(child, depth + 1) }}{% endfor %}
+  </ol>
+  {% endif %}
+</li>
+{% endmacro %}
+
+{% block main %}
+{% if notice %}<div class="notice"><p>{{ notice }}</p></div>{% endif %}
+
+{% if post.unlisted %}
+<div class="notice">
+  <p>Five people flagged this post, so it's been unlisted. You can still read it here and ask for it to come back or be removed permanently.</p>
+  <div class="actions">
+    <form action="/moderation-request" method="post" class="inline-form"><input type="hidden" name="item_id" value="{{ post.id }}"><input type="hidden" name="kind" value="unhide"><button type="submit">Request unhide{% if requests.unhide %} ({{ requests.unhide }}){% endif %}</button></form>
+    <form action="/moderation-request" method="post" class="inline-form"><input type="hidden" name="item_id" value="{{ post.id }}"><input type="hidden" name="kind" value="nuke"><button type="submit">Request deletion{% if requests.nuke %} ({{ requests.nuke }}){% endif %}</button></form>
+  </div>
+</div>
+{% endif %}
+
+{% if etiquette %}
+<div class="notice etiquette">
+  <p><span class="etiquette-tag">#{{ etiquette[0] }}</span> etiquette: {{ etiquette[1] }}</p>
+</div>
+{% endif %}
+
+<div{% if post.unlisted %} class="faded"{% endif %}>
+<article class="post-head">
+  <h1>{{ post.title }}</h1>
+  <div class="meta">Posted by <button class="id" type="button">{{ label_of[post.pass_id] }}</button> {{ post.created_at|rel }}, {{ post.views }} views
+    {% if tags_list %} <span class="dot">·</span> {% for tag in tags_list %}<a class="tag{% if is_hot([tag]) %} hot-tag{% endif %}" href="/?tag={{ tag }}">#{{ tag }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}
+    {% if not post.unlisted %} <span class="sep">|</span>
+    <form action="/flag" method="post" class="inline-form"><input type="hidden" name="item_id" value="{{ post.id }}"><button class="meta-action" type="submit"{% if flags.get(post.id) %} disabled aria-disabled="true"{% endif %}>{% if flags.get(post.id) %}Flagged{% else %}Flag Post{% endif %}</button></form>
+    {% endif %}
+  </div>
+  {% if post.url %}<p class="post-link"><a href="{{ post.url }}" rel="nofollow noopener" target="_blank">{{ post.url|host }} (opens in a new tab)</a></p>{% endif %}
+  {% if post.text %}<div class="post-body">{% for para in post.text.split('\n\n') %}<p>{{ para }}</p>{% endfor %}</div>{% endif %}
+  <div class="post-reactions actions">{{ reactions_box(post) }}</div>
+</article>
+
+{% if not post.unlisted %}
+{% if viewer %}
+<form class="reply" action="/comment" method="post">
+  <input type="hidden" name="parent_id" value="{{ post.id }}">
+  <textarea name="text" aria-label="Write a comment" placeholder="Write a comment"></textarea>
+  <p class="help">Commenting as: <button class="id" type="button">{{ my_label }}</button>
+    {% if post.pass_id != viewer %}<span class="dot">·</span> <span class="private-toggle"><label>Make only visible to {{ label_of[post.pass_id] }} (OP) <input type="checkbox" name="private"></label><button class="info" type="button" aria-label="About private replies" aria-expanded="false">i</button></span>{% endif %}
+  </p>
+  <div class="row"><button class="button" type="submit">Comment</button></div>
+</form>
+{% else %}
+<p class="small"><a href="/login">Sign in</a> to comment.</p>
+{% endif %}
+{% endif %}
+
+<ol class="comments">
+  {% for node in tree %}{{ comment(node, 0) }}{% endfor %}
+</ol>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<div id="private-info" class="info-card" role="dialog" aria-label="About private replies" hidden>
+  <p class="info-title">Private replies</p>
+  <p>Only you and the person you're replying to can see them, inside this thread. Everyone else sees the thread as if they weren't there.</p>
+  <p>They belong to the device you posted from, so you'll only see them on that device.</p>
+  <p class="info-fine">Other students can't see or flag them, but they're stored on the server like any other comment.</p>
+</div>
+<dialog id="id-dialog">
+  <p>Names change per thread so no one can follow you around. There are no profiles, on purpose.</p>
+  <button class="button" type="button">OK</button>
+</dialog>
+<script src="/static/ids.js"></script>
+<script src="/static/replies.js"></script>
+<script src="/static/info.js"></script>
+<script src="/static/reactions.js"></script>
+{% endblock %}
