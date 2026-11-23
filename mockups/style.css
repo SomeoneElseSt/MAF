@@ -221,4 +221,4 @@ span.arrow { color: var(--line); }
 .faded .post-body p:last-child { margin-bottom: 6px; }
 
 /* Empty front page */
-.empty { flex: 1; display: flex; align-items: center; justify-content: center; font: 15px var(--sans); color: var(--meta); margin: 0; }
+.empty { text-align: center; font: 15px var(--sans); color: var(--meta); margin: 56px 0 0; }
