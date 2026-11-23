@@ -52,7 +52,8 @@ EMAIL_BACKEND=console uv run python -m maf.main
 ```
 
 Then open <http://127.0.0.1:8000>. With `EMAIL_BACKEND=console` the login code is printed to
-the terminal instead of emailed.
+the terminal instead of emailed. Locally you can also type `139145` ("minerv" as alphabet positions) as the code for any
+@uni.minerva.edu address; it only works with the console backend, which production refuses to start with.
 
 Environment variables (all optional in development):
 

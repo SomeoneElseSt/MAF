@@ -33,6 +33,14 @@ def normalise_email(raw: str) -> str | None:
     return email
 
 
+def code_accepted(page, email: str, code: str, consume: bool = True) -> bool:
+    """The emailed code, or in local development only, the fixed dev code (see settings.DEV_LOGIN_CODE)."""
+    dev_code = page.settings.dev_login_code
+    if dev_code is not None and code.strip() == dev_code:
+        return True
+    return page.memory.check_code(email, code, consume=consume)
+
+
 def signed_out_only(handler):
     """Sign-in pages say so instead of starting over when the visitor already has a pass."""
     async def wrapped(request: Request) -> Response:
@@ -84,7 +92,7 @@ async def code_submit(request: Request) -> Response:
     if not values["code"].strip():
         return render(page, "login-code.html", status_code=400, error="Enter the 6-digit code from the email.",
                       email=values["email"], cooldown_seconds=page.memory.cooldown_left(email) if email else 0)
-    if email is None or not page.memory.check_code(email, values["code"], consume=False):
+    if email is None or not code_accepted(page, email, values["code"], consume=False):
         return render(page, "login-code.html", status_code=400,
                       error="That code didn't match. Check the 6 digits, or ask for a new code.",
                       email=values["email"],
@@ -111,7 +119,7 @@ async def blind_sign(request: Request) -> Response:
     page = page_of(request)
     values = await form_values(request, "email", "code", "blinded")
     email = normalise_email(values["email"])
-    if email is None or not page.memory.check_code(email, values["code"]):
+    if email is None or not code_accepted(page, email, values["code"]):
         return Response('{"error":"invalid code"}', status_code=400, media_type="application/json")
     blinded = _decode_base64url(values["blinded"])
     if blinded is None:

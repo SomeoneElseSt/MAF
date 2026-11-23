@@ -9,6 +9,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 PRODUCTION = "production"
+# "minerv" as alphabet positions (m13 i9 n14 e5 r18 v22), cut to six digits. Local development only.
+DEV_LOGIN_CODE = "139145"
 
 
 class ConfigError(Exception):
@@ -40,6 +42,14 @@ class Settings:
     @property
     def console_email(self) -> bool:
         return self.email_backend == "console"
+
+    @property
+    def dev_login_code(self) -> str | None:
+        """A fixed code that signs in locally without fetching one. Never set in production: it needs the
+        console email backend, which load_settings refuses to combine with MAF_ENV=production."""
+        if self.is_production or not self.console_email:
+            return None
+        return DEV_LOGIN_CODE
 
 
 def _bool(name: str, default: bool) -> bool:

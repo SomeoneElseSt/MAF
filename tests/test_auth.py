@@ -255,3 +255,20 @@ def test_sign_in_pages_say_already_signed_in(signed_in):
         assert response.status_code == 200, path
         assert "already signed in" in response.text, path
         assert '<a href="/">home</a>' in response.text, path
+
+
+def test_dev_login_code_only_works_locally():
+    from maf.settings import DEV_LOGIN_CODE, load_settings
+
+    assert DEV_LOGIN_CODE == "139145"
+    local = load_settings({"EMAIL_BACKEND": "console", "MAF_ENV": "development"})
+    assert local.dev_login_code == DEV_LOGIN_CODE
+    assert load_settings({"EMAIL_BACKEND": "ses", "MAF_ENV": "development"}).dev_login_code is None
+
+
+def test_dev_login_code_can_never_be_on_in_production():
+    import pytest
+    from maf.settings import ConfigError, load_settings
+
+    with pytest.raises(ConfigError):
+        load_settings({"EMAIL_BACKEND": "console", "MAF_ENV": "production"})
