@@ -70,6 +70,9 @@ HOUSE_TAGS: dict[str, dict] = {
     },
 }
 
+# The tags offered in the Submit page's Hashtags dropdown: every house tag plus common topic tags.
+SUGGESTED_TAGS = sorted([*HOUSE_TAGS, "minerva"])
+
 DEFAULT_SUBMIT_TEMPLATE = [
     "- What it's about",
     "- Your claim or question",

@@ -35,7 +35,10 @@
   </div>
   <div class="field">
     <label for="tags">Hashtags (optional)</label>
-    <input id="tags" name="tags" type="text" placeholder="#life, #berlin" value="{{ values.tags|default('') }}"{% if errors.tags %} aria-describedby="tags-help tags-error"{% else %} aria-describedby="tags-help"{% endif %}>
+    <div class="tag-field">
+      <input id="tags" name="tags" type="text" autocomplete="off" placeholder="#life, #berlin" value="{{ values.tags|default('') }}"{% if errors.tags %} aria-describedby="tags-help tags-error"{% else %} aria-describedby="tags-help"{% endif %}>
+      <div class="tag-menu tag-suggest" id="tag-suggest" data-tags="{{ suggested_tags|join(' ') }}" hidden></div>
+    </div>
     <p class="help" id="tags-help">Up to 3, separated by commas.</p>
     {% if errors.tags %}<p class="help" id="tags-error">{{ errors.tags }}</p>{% endif %}
   </div>

@@ -66,7 +66,7 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 
 ## Hashtags
 
-- **Input:** the submit form's Hashtags field, "Up to 3, separated by commas." Normalise each tag: strip a leading `#`, lowercase, keep `[a-z0-9-]`, 1–24 characters, dedupe. More than 3 re-renders the form with an error on that field. Tags are free-form; there's no fixed list.
+- **Input:** the submit form's Hashtags field, "Up to 3, separated by commas." Normalise each tag: strip a leading `#`, lowercase, keep `[a-z0-9-]`, 1–24 characters, dedupe. More than 3 re-renders the form with an error on that field. Tags are free-form; there's no fixed list. Clicking into the field drops down suggested tags (the house tags and #minerva); picking one adds it. The list skips tags already in the box, narrows as you type, and hides once there are 3.
 - **Storage:** `item_tag(item_id, tag)`, posts only (comments have no tags).
 - **Display:** after the metadata, separated by a centered dot: `· #rotations, #berlin`. Each tag links to `/?tag=<tag>`.
 - **Filter:** `/?tag=<tag>` lists posts with that tag across all time, 30 per page, with `sort` applied (like search). The search box shows `#<tag>`. Typing `#tag` into search does the same.

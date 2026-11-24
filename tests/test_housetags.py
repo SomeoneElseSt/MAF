@@ -150,3 +150,8 @@ def test_the_hashtag_menu_works_on_the_submit_page(signed_in, app, pass_id):
     store.create_post(app.conn, pass_id, "Tagged", "text", None, ["berlin"])
     for body in (signed_in.get("/submit").text, signed_in.post("/submit", data={"title": ""}).text):
         assert 'id="tag-data"' in body and '"berlin"' in body
+
+
+def test_the_submit_page_suggests_house_tags_and_minerva(signed_in):
+    body = signed_in.get("/submit").text
+    assert 'data-tags="confession help hottakes minerva wondering"' in body

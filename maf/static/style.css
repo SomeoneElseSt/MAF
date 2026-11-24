@@ -282,6 +282,9 @@ span.arrow { color: var(--line); cursor: default; }
 }
 .tag-menu button:hover { color: var(--ink); background: var(--tint); }
 .tag-count { font-size: 13px; color: var(--meta); }
+/* Submit: the preset hashtags drop down under the Hashtags box. */
+.tag-field { position: relative; }
+.tag-suggest { top: calc(100% + 4px); padding: 4px 0; }
 
 /* Search box clear button: same grey as the # button instead of the browser's blue. */
 .find input::-webkit-search-cancel-button {
