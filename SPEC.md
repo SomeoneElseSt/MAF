@@ -93,7 +93,7 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 
 ## Reactions
 
-- **Set:** a fixed list of 24 emoji (see `PICKER_EMOJI` in `mockups/reactions.js`): 👍 👎 ❤️ 😂 😮 😢 😡 🔥 🎉 🤔 👀 🙏 💯 🙌 😅 🫠 💀 🤝 👏 🫶 😬 🙃 ✅ ☕. The server rejects anything else.
+- **Set:** a fixed list of 24 emoji (see `PICKER_EMOJI` in `mockups/reactions.js`): 👍 👎 ❤️ 😂 😮 😢 😡 🔥 🎉 🤔 👀 🙏 💯 🙌 😅 🫠 💀 🤝 👏 🫶 😬 🙃 ✅ ❤️‍🔥. The server rejects anything else.
 - **Storage:** `reaction(pass_id, item_id, emoji, PK all)`, used to dedupe and to show which ones are yours. Counts are computed with `GROUP BY`. No timestamps.
 - **UI (thread page only):** post reactions in a row under the post body; comment reactions in the `.actions` line after Reply and Flag. Each is a `button.react` with `aria-pressed` for yours; `.react-add` opens the picker (`role="dialog"`, Escape and outside click close it and return focus). Without JS, each reaction is a small form that POSTs `/react` with `item_id` and `emoji`, and the picker is a `<details>` list.
 - **Rules:** any pass, once per emoji per item, toggled. Private items: only the two parties can react or see reactions. Hidden posts keep their reactions. Not shown in lists, not used for sorting, included in the API item response as `{emoji: count}`.

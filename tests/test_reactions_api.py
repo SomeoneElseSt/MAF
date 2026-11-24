@@ -166,3 +166,14 @@ def test_a_reaction_pings_pages_watching_its_thread(client, app, pass_id):
     watching = app.live.subscribe(post.id)
     sign_in_as(client, app, pass_id).post("/react", data={"item_id": post.id, "emoji": "👍"}, follow_redirects=False)
     assert watching.qsize() == 1
+
+
+def test_heart_on_fire_is_a_reaction_and_coffee_is_gone(client, app, pass_id):
+    from tests.conftest import sign_in_as
+
+    post = make_post(app, pass_id)
+    viewer = sign_in_as(client, app, pass_id)
+    viewer.post("/react", data={"item_id": post.id, "emoji": "❤️‍🔥"}, follow_redirects=False)
+    viewer.post("/react", data={"item_id": post.id, "emoji": "☕"}, follow_redirects=False)
+    counts, _ = store.reaction_summary(app.conn, post.id, pass_id)
+    assert counts == {"❤️‍🔥": 1}
