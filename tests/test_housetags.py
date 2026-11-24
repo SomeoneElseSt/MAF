@@ -77,10 +77,17 @@ def test_submit_creates_a_post(signed_in, app, pass_id):
     assert post.title == "My title" and post.tags == ["berlin", "help"]
 
 
-def test_submit_needs_a_title_and_a_body(signed_in):
+def test_submit_needs_a_title(signed_in):
     body = signed_in.post("/submit", data={"title": "", "text": ""}).text
     assert "Add a title." in body
-    assert "Write something or add a link." in body
+
+
+def test_a_title_alone_is_a_post(signed_in, app):
+    response = signed_in.post("/submit", data={"title": "Is the library open on Sundays?"}, follow_redirects=False)
+    assert response.status_code == 303
+    post = store.get_item(app.conn, response.headers["location"].rsplit("/", 1)[-1])
+    assert post.title == "Is the library open on Sundays?" and post.text is None and post.url is None
+    assert signed_in.get(response.headers["location"]).status_code == 200
 
 
 def test_submit_rejects_a_bad_url(signed_in):

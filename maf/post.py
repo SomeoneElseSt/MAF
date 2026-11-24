@@ -63,8 +63,6 @@ def _validate_post(values: dict[str, str], too_many: bool) -> dict[str, str]:
         errors["title"] = "Add a title."
     elif len(values["title"]) > store.TITLE_MAX:
         errors["title"] = f"Keep the title under {store.TITLE_MAX} characters."
-    if not values["text"] and not values["url"]:
-        errors["form"] = "Write something or add a link."
     if values["url"] and not _valid_url(values["url"]):
         errors["url"] = "That link doesn't look like a web address."
     if len(values["text"]) > store.BODY_MAX:

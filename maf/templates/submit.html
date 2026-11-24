@@ -10,10 +10,10 @@
 {% extends "base.html" %}
 {% block main %}
 <h1 class="heading">Submit a post</h1>
-<p class="lede">Share a link, write something, or both. You'll get a random name for this thread.</p>
+<p class="lede">A title is enough. Add a link or some text if you like. You'll get a random name for this thread.</p>
 
 {% if errors %}
-<div class="notice">
+<div class="notice form-errors">
   <ul>
     {% for field, message in errors.items() %}
     <li><a href="#{{ 'title' if field == 'form' else field }}">{{ message }}</a></li>

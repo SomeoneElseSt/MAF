@@ -46,7 +46,7 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 
 ## Content
 
-- **Post:** title + (URL **or** text). Text and links only; no uploads or images.
+- **Post:** a title, plus an optional URL and/or text (a title alone is a post). Text and links only; no uploads or images.
 - **Comments:** nested.
 - **No votes.** Comments within a thread are ordered by `created_at`.
 - **Search bar** at the top of every page. Uses SQLite's built-in FTS5 full-text index over post titles, post text and comments, so there's no extra dependency. Hidden items are excluded. Search queries are never logged.
