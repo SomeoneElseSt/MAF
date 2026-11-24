@@ -13,6 +13,7 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
+from . import azure_email
 from .settings import Settings
 
 # HTML versions live in templates/email/ and match the site's look; every email also keeps a plain-text body.
@@ -94,6 +95,10 @@ class Emailer:
         if self._settings.console_email:
             # flushed so the code shows up when stdout is a pipe or a log file
             print(f"[email to {email.to}] {email.subject}\n{email.body}", flush=True)
+            return
+        if self._settings.email_backend == "azure":
+            azure_email.send(self._settings.azure_email_connection, self._settings.email_from,
+                             email.to, email.subject, email.body, email.html)
             return
         self._ses().send_email(
             Source=self._settings.email_from,

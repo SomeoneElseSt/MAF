@@ -64,8 +64,10 @@ Environment variables (all optional in development):
 | `LABEL_SECRET` | HMAC secret for per-thread labels |
 | `SESSION_SECRET` | Secret that signs the pass cookie |
 | `MAF_SIGNING_KEY` | Path to the RSA blind-signature key (required in production) |
-| `EMAIL_BACKEND` | `ses` (default) or `console` (dev only) |
-| `MAF_EMAIL_FROM`, `AWS_REGION` | SES sender and region |
+| `EMAIL_BACKEND` | `ses` (default), `azure`, or `console` (dev only) |
+| `MAF_EMAIL_FROM` | Sender address (with Azure, `DoNotReply@maforum.net` unless more senders are approved) |
+| `AWS_REGION` | SES region |
+| `AZURE_EMAIL_CONNECTION_STRING` | Azure Communication Services connection string, when `EMAIL_BACKEND=azure` |
 | `MAINTAINER_EMAIL` | Where moderation requests go |
 | `MAF_BASE_URL` | Public base URL, used in links and by `main` for host/port |
 | `NAME_FILTER_THRESHOLD`, `NAME_FILTER_ENABLED`, `SPACY_MODEL` | Name filter tuning |

@@ -11,6 +11,7 @@ from pathlib import Path
 PRODUCTION = "production"
 # "minerv" as alphabet positions (m13 i9 n14 e5 r18 v22), cut to six digits. Local development only.
 DEV_LOGIN_CODE = "139145"
+EMAIL_BACKENDS = {"ses", "azure", "console"}
 
 
 class ConfigError(Exception):
@@ -28,6 +29,7 @@ class Settings:
     email_backend: str = "ses"
     email_from: str = ""
     aws_region: str = "us-east-1"
+    azure_email_connection: str = ""
     name_filter_threshold: float = 0.85
     name_filter_enabled: bool = True
     spacy_model: str = "en_core_web_sm"
@@ -77,11 +79,16 @@ def load_settings(env: dict[str, str] | None = None) -> Settings:
         email_backend=backend,
         email_from=source.get("MAF_EMAIL_FROM", "maf@maforum.net"),
         aws_region=source.get("AWS_REGION", "us-east-1"),
+        azure_email_connection=source.get("AZURE_EMAIL_CONNECTION_STRING", ""),
         name_filter_threshold=float(source.get("NAME_FILTER_THRESHOLD", "0.85")),
         name_filter_enabled=_bool("NAME_FILTER_ENABLED", True),
         spacy_model=source.get("SPACY_MODEL", "en_core_web_sm"),
         base_url=source.get("MAF_BASE_URL", "http://localhost:8000").rstrip("/"),
     )
+    if backend not in EMAIL_BACKENDS:
+        raise ConfigError(f"EMAIL_BACKEND must be one of {', '.join(sorted(EMAIL_BACKENDS))}")
+    if backend == "azure" and not settings.azure_email_connection:
+        raise ConfigError("EMAIL_BACKEND=azure needs AZURE_EMAIL_CONNECTION_STRING")
     if settings.is_production and settings.console_email:
         raise ConfigError("EMAIL_BACKEND=console cannot be used with MAF_ENV=production")
     # The dev defaults are public (the repo is open source): production must have its own secrets.
