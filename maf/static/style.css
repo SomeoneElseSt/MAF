@@ -127,7 +127,7 @@ a:hover { text-decoration: underline; text-decoration-thickness: 1px; text-under
 .post-head { padding: 34px 0 10px; }
 .post-head h1 { font-size: 32px; line-height: 1.2; font-weight: 600; margin: 0 0 8px; }
 .post-body { margin-top: 20px; }
-.post-body p { margin: 0 0 16px; }
+.post-body p { margin: 0 0 16px; white-space: pre-line; } /* single line breaks stay; blank lines make paragraphs */
 
 .id { font: inherit; color: var(--soft); background: none; border: none; padding: 0; cursor: pointer; }
 .id:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
@@ -162,7 +162,7 @@ textarea::placeholder, input::placeholder { color: var(--meta); opacity: 1; }
 .comments { list-style: none; margin: 0; padding: 0; }
 .comments .comments { margin-left: 26px; }
 .comment { padding: 18px 0 0; }
-.comment p { margin: 4px 0 6px; }
+.comment p { margin: 4px 0 6px; white-space: pre-line; }
 
 /* Hidden post notice */
 

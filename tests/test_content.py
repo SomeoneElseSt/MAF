@@ -262,3 +262,12 @@ def test_sort_links_reset_to_each_sorts_starting_page(client, app, pass_id):
     body = client.get("/?before=2020-01-10").text
     assert 'href="/?sort=old"' in body
     assert 'href="/?sort=views"' in body
+
+
+def test_line_breaks_survive_from_the_browser_to_the_page(signed_in, app):
+    text = "- First point\r\n- Second point\r\n\r\nNew paragraph"
+    signed_in.post("/submit", data={"title": "Lines", "text": text, "tags": "help"})
+    post = app.conn.execute("SELECT id, text FROM item WHERE title = 'Lines'").fetchone()
+    assert post["text"] == "- First point\n- Second point\n\nNew paragraph"
+    page = signed_in.get(f"/thread/{post['id']}").text
+    assert "<p>- First point\n- Second point</p>" in page and "<p>New paragraph</p>" in page

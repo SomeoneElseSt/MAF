@@ -155,7 +155,8 @@ async def form_values(request: Request, *names: str) -> dict[str, str]:
     values = {}
     for name in names:
         raw = form.get(name)
-        values[name] = raw.strip() if isinstance(raw, str) else ""
+        # Browsers send textarea line breaks as \r\n; store plain \n so blank lines split paragraphs.
+        values[name] = raw.replace("\r\n", "\n").replace("\r", "\n").strip() if isinstance(raw, str) else ""
     return values
 
 
