@@ -20,7 +20,7 @@
       <input type="hidden" name="text" value="{{ values.text }}">
       <input type="hidden" name="tags" value="{{ values.tags }}">
       <input type="hidden" name="confirm_names" value="1">
-      <button class="button" type="submit">Post anyway</button>
+      <button class="button" type="submit" data-pending="Submitting…">Post anyway</button>
     </form>
   </div>
 </div>
@@ -44,7 +44,7 @@
     <textarea id="text" name="text" placeholder="{{ placeholder }}">{{ values.text }}</textarea>
   </div>
   <div class="row">
-    <button class="button" type="submit">Submit</button>
+    <button class="button" type="submit" data-pending="Submitting…">Submit</button>
     <a class="note" href="/">Cancel</a>
   </div>
 </form>
