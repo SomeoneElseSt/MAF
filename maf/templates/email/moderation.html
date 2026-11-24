@@ -1,10 +1,12 @@
 {#
-  email/moderation.html: tells the maintainer someone asked for a hidden post to come back or be deleted.
-  Context: subject, label ("Unhide" | "Deletion"), item_id, tally ("3 requests so far as of …"), link
+  email/moderation.html: tells the maintainer a post or reply needs a look: someone asked for a hidden post
+  to come back or be deleted, or a reply was hidden by flags.
+  Context: subject, label ("Unhide" | "Deletion" | "Review"), noun ("post" | "reply"), item_id,
+           tally ("3 requests so far as of …"), link, footer
 #}
 {% extends "email/base.html" %}
 {% block content %}
-<p style="margin:0 0 4px; font-size:20px; line-height:1.35; font-weight:600;">{{ label }} requested for post: <a href="{{ link }}" style="color:#000000; text-decoration:underline; font-weight:400;">{{ item_id }}</a></p>
+<p style="margin:0 0 4px; font-size:20px; line-height:1.35; font-weight:600;">{{ label }} requested for {{ noun }}: <a href="{{ link }}" style="color:#000000; text-decoration:underline; font-weight:400;">{{ item_id }}</a></p>
 <p style="margin:0 0 22px; font:15px/1.5 'Gill Sans', 'Gill Sans MT', Seravek, 'Trebuchet MS', Calibri, sans-serif; color:#6b6b6b;">{{ tally }}</p>
-<p style="margin:0; padding-top:14px; border-top:1px solid #e4e4e4; font:14px/1.5 'Gill Sans', 'Gill Sans MT', Seravek, 'Trebuchet MS', Calibri, sans-serif; color:#6b6b6b;">Act on it from the server with maf requests.</p>
+<p style="margin:0; padding-top:14px; border-top:1px solid #e4e4e4; font:14px/1.5 'Gill Sans', 'Gill Sans MT', Seravek, 'Trebuchet MS', Calibri, sans-serif; color:#6b6b6b;">{{ footer }}</p>
 {% endblock %}

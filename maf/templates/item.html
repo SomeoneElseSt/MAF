@@ -53,11 +53,15 @@
 {% macro comment(node, depth) %}
 {% set entry = node.item %}
 <li class="comment{% if entry.private_to %} private{% endif %}" id="{{ entry.id }}">
+  {% if entry.unlisted %}
+  {# Five flags hide a comment for everyone; replies under it stay. #}
+  <p class="hidden-comment">Original reply is in review after 5 flags.</p>
+  {% else %}
   {{ meta_line(entry) }}
   {% if entry.sealed %}<p class="sealed" data-sealed="{{ entry.sealed }}">This private reply can only be read on the device that sent or received it.</p>{% else %}<p>{{ entry.text }}</p>{% endif %}
   <div class="actions">
     <a class="reply-toggle" href="#reply-{{ entry.id }}" aria-controls="reply-{{ entry.id }}" aria-expanded="false">Reply</a>
-    {% if not entry.private_to %}<form action="/flag" method="post" class="inline-form"><input type="hidden" name="item_id" value="{{ entry.id }}"><button type="submit"{% if flags.get(entry.id) %} class="flagged"{% endif %} aria-pressed="{{ 'true' if flags.get(entry.id) else 'false' }}">{% if flags.get(entry.id) %}Flagged{% else %}Flag{% endif %}</button></form>{% if flags.get(entry.id) %}<span class="flag-note">5 flags hide a post. Urgent? Email <a href="mailto:hello@maforum.net">hello@maforum.net</a>.</span>{% endif %}{% endif %}
+    {% if not entry.private_to %}<form action="/flag" method="post" class="inline-form"><input type="hidden" name="item_id" value="{{ entry.id }}"><button type="submit"{% if flags.get(entry.id) %} class="flagged"{% endif %} aria-pressed="{{ 'true' if flags.get(entry.id) else 'false' }}">{% if flags.get(entry.id) %}Flagged{% else %}Flag{% endif %}</button></form>{% if flags.get(entry.id) %}<span class="flag-note">5 flags hide a comment. Urgent? Email <a href="mailto:hello@maforum.net">hello@maforum.net</a>.</span>{% endif %}{% endif %}
     {{ reactions_box(entry) }}
   </div>
     <form class="inline-reply" id="reply-{{ entry.id }}" action="/comment" method="post" data-peer-key="{{ thread_keys.get(peer_of(entry), '') }}" hidden>
@@ -68,6 +72,7 @@
       </p>
       <div class="row"><button class="button" type="submit">Reply</button><a class="button plain cancel" href="#{{ entry.id }}">Cancel</a></div>
     </form>
+  {% endif %}
   {% if node.children %}
   <ol class="comments">
     {% for child in node.children %}{{ comment(child, depth + 1) }}{% endfor %}
@@ -136,7 +141,7 @@
   <p class="info-title">Private replies</p>
   <p>Only you and the person you're replying to can read them, inside this thread. Everyone else sees the thread as if they weren't there.</p>
   <p>They're encrypted in your browser before they're sent, so MAF's server only stores scrambled text. You can read them only on the device you used in this thread.</p>
-  <p class="info-fine">Other students can't see or flag them. MAF can't check them for names.</p>
+  <p class="info-fine">Other students can't see or flag them.</p>
 </div>
 <dialog id="id-dialog">
   <p>Names are unique per thread to maintain anonymity.</p>

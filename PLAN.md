@@ -129,7 +129,7 @@ Inside a thread you can reply so only one other person sees it, for example to a
 - **How:** under every comment box, after "Commenting as: calm-badger ·" (or "Replying as:"), a checkbox reads "Make only visible to amber-fox (OP)", naming whoever you're replying to, followed by an (i) that explains it.
 - **What people see:** the two of you see the reply marked "Private, only you and quiet-otter". Everyone else sees the thread as if it weren't there. Replies inside a private exchange stay private; the checkbox is ticked and locked.
 - **Encrypted in the browser:** the reply is encrypted before it's sent, and the server stores only scrambled text. Only the two people's browsers can read it. Each person gets a separate key for each thread they write in, so keys can't link their threads together. The limit: the server also delivers the page's code, so a compromised server could change it to copy replies first; encryption protects the stored database and backups.
-- **Limits, stated in the (i) card:** a private reply belongs to the device you posted from, so you only see it there. It needs JavaScript. Other students can't see or flag it, and MAF can't check it for names.
+- **Limits, stated in the (i) card:** a private reply belongs to the device you posted from, so you only see it there. It needs JavaScript. Other students can't see or flag it.
 - **Left out of** search, comment counts, the developer API and the name filter (the server can't read it).
 
 | Page | What it shows |

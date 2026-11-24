@@ -9,7 +9,7 @@ from starlette.responses import Response
 from starlette.routing import Route
 
 from . import store
-from .email import moderation_email
+from .email import hidden_reply_email, moderation_email
 from .housetags import submit_placeholder
 from .sealed import parse_sealed, valid_public_key
 from .util import sha256_hex
@@ -167,7 +167,17 @@ async def flag(request: Request) -> Response:
     # Clicking again takes the flag back.
     if item.private_to is None and not store.remove_flag(page.conn, page.pass_id, item.id):
         store.add_flag(page.conn, page.pass_id, item.id)
+        _alert_if_reply_hidden(page, item.id)
     return redirect(f"/thread/{item.thread_id}#{item.id}")
+
+
+def _alert_if_reply_hidden(page, item_id: str) -> None:
+    """Emails the maintainer when flags hide a reply. Hidden posts email when someone asks for a review."""
+    item = store.get_item(page.conn, item_id)
+    if item is None or item.is_post or not item.unlisted or not page.memory.take_hide_alert(item.id):
+        return
+    page.app.emailer.send(hidden_reply_email(page.settings.maintainer_email, item.id, item.thread_id, item.flags,
+                                             page.settings.base_url))
 
 
 async def moderation_request(request: Request) -> Response:

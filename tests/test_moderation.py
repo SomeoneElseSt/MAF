@@ -200,3 +200,67 @@ def test_a_post_hidden_by_flags_returns_when_one_is_taken_back(app, pass_id):
     assert store.get_item(app.conn, post.id).hidden == 1
     store.remove_flag(app.conn, flaggers[0], post.id)
     assert store.get_item(app.conn, post.id).hidden == 0
+
+
+def test_a_comment_with_five_flags_is_replaced_by_a_note_and_its_replies_stay(client, app, pass_id):
+    from tests.conftest import sign_in_as
+
+    post = store.create_post(app.conn, pass_id, "Post", "text", None, [])
+    flagged = store.create_comment(app.conn, pass_id, post, "rude words here", None)
+    store.create_comment(app.conn, store.create_pass(app.conn), flagged, "a reply that stays", None)
+    for _ in range(5):
+        store.add_flag(app.conn, store.create_pass(app.conn), flagged.id)
+    page = sign_in_as(client, app, pass_id).get(f"/thread/{post.id}").text
+    assert "rude words here" not in page
+    assert "Original reply is in review after 5 flags." in page
+    assert "a reply that stays" in page
+
+
+def test_flagging_a_comment_says_comment(client, app, pass_id):
+    from tests.conftest import sign_in_as
+
+    post = store.create_post(app.conn, pass_id, "Post", "text", None, [])
+    comment = store.create_comment(app.conn, pass_id, post, "a comment", None)
+    viewer = sign_in_as(client, app, store.create_pass(app.conn))
+    page = viewer.post("/flag", data={"item_id": comment.id}).text
+    assert "5 flags hide a comment." in page
+
+
+def test_maintainer_gets_one_email_when_flags_hide_a_reply(client, app, pass_id, capsys):
+    from tests.conftest import sign_in_as
+
+    post = store.create_post(app.conn, pass_id, "Post", "text", None, [])
+    reply = store.create_comment(app.conn, pass_id, post, "rude words here", None)
+    flaggers = [store.create_pass(app.conn) for _ in range(5)]
+    for flagger in flaggers:
+        sign_in_as(client, app, flagger).post("/flag", data={"item_id": reply.id})
+    # The last flagger takes it back and flags again: still only one email.
+    sign_in_as(client, app, flaggers[-1]).post("/flag", data={"item_id": reply.id})
+    sign_in_as(client, app, flaggers[-1]).post("/flag", data={"item_id": reply.id})
+    out = capsys.readouterr().out
+    assert out.count("[email to maintainer@example.com] MAF review requested for reply") == 1
+    assert f"{app.settings.base_url}/thread/{post.id}#{reply.id}" in out
+    assert "rude words here" not in out
+
+
+def test_hidden_reply_email_matches_the_post_layout():
+    from datetime import UTC, datetime
+
+    from maf.email import hidden_reply_email
+
+    email = hidden_reply_email("m@example.com", "calm-otter-river", "quiet-river-lantern", 5, "https://maforum.net",
+                               now=datetime(2026, 11, 24, 7, 5, tzinfo=UTC))
+    assert email.subject == "MAF review requested for reply calm-otter-river"
+    assert "Review requested for reply: calm-otter-river" in email.body
+    assert "Hidden after 5 flags as of 24/11/26 07:05 UTC" in email.body
+    assert "maf show calm-otter-river" in email.html
+    assert "https://maforum.net/thread/quiet-river-lantern#calm-otter-river" in email.html
+
+
+def test_flags_hiding_a_post_send_no_email(client, app, pass_id, capsys):
+    from tests.conftest import sign_in_as
+
+    post = store.create_post(app.conn, pass_id, "Post", "text", None, [])
+    for _ in range(5):
+        sign_in_as(client, app, store.create_pass(app.conn)).post("/flag", data={"item_id": post.id})
+    assert "[email to" not in capsys.readouterr().out

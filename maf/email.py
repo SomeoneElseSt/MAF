@@ -53,11 +53,29 @@ def moderation_email(to: str, kind: str, item_id: str, count: int, base_url: str
     subject = f"MAF {label.lower()} requested for post {item_id}"
     link = f"{base_url}/thread/{item_id}"
     tally = f"{count} request{'' if count == 1 else 's'} so far as of {(now or datetime.now(UTC)):%d/%m/%y %H:%M} UTC"
+    footer = "Act on it from the server with maf requests."
     return Email(
         to=to,
         subject=subject,
         body=f"{label} requested for post: {item_id}\n{link}\n\n{tally}\n",
-        html=_render("moderation.html", subject=subject, label=label, item_id=item_id, tally=tally, link=link),
+        html=_render("moderation.html", subject=subject, label=label, noun="post", item_id=item_id, tally=tally,
+                     link=link, footer=footer),
+    )
+
+
+def hidden_reply_email(to: str, item_id: str, thread_id: str, flags: int, base_url: str,
+                       now: datetime | None = None) -> Email:
+    """Sent once when flags hide a reply, so the maintainer can read it and decide."""
+    subject = f"MAF review requested for reply {item_id}"
+    link = f"{base_url}/thread/{thread_id}#{item_id}"
+    tally = f"Hidden after {flags} flags as of {(now or datetime.now(UTC)):%d/%m/%y %H:%M} UTC"
+    footer = f"Read it on the server with maf show {item_id}, then maf unhide or maf nuke."
+    return Email(
+        to=to,
+        subject=subject,
+        body=f"Review requested for reply: {item_id}\n{link}\n\n{tally}\n\n{footer}\n",
+        html=_render("moderation.html", subject=subject, label="Review", noun="reply", item_id=item_id, tally=tally,
+                     link=link, footer=footer),
     )
 
 

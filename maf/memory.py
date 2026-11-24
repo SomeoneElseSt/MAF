@@ -43,6 +43,7 @@ class Memory:
     wrong_codes: list[float] = field(default_factory=list)
     code_locks: dict[str, float] = field(default_factory=dict)
     pause_alerted_at: float = float("-inf")
+    hide_alerted: set[str] = field(default_factory=set)
 
     # -- login codes -------------------------------------------------------
 
@@ -103,6 +104,14 @@ class Memory:
             if current - self.pause_alerted_at < SITE_WRONG_CODES_WINDOW_SECONDS:
                 return False
             self.pause_alerted_at = current
+            return True
+
+    def take_hide_alert(self, item_id: str) -> bool:
+        """True the first time an item is hidden, so flagging back and forth sends one email, not many."""
+        with self._lock:
+            if item_id in self.hide_alerted:
+                return False
+            self.hide_alerted.add(item_id)
             return True
 
     def code_guessing_minutes_left(self) -> int:
