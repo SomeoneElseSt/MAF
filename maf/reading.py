@@ -1,15 +1,15 @@
 """Reading a thread: /thread/<id>, its view count and the comment tree."""
 
 from starlette.requests import Request
-from starlette.responses import Response
+from starlette.responses import Response, StreamingResponse
 from starlette.routing import Route
 
-from . import store
+from . import live, store
 from .housetags import etiquette, is_hot, reply_placeholder
 from .web import error_page, page_of, render
 
 
-def item(request: Request) -> Response:
+async def item(request: Request) -> Response:
     page = page_of(request)
     item_id = request.path_params["id"]
     root = store.get_item(page.conn, item_id)
@@ -67,4 +67,19 @@ def _flags(page, items: list[store.Item]) -> dict[str, bool]:
     return {i.id: store.has_flagged(page.conn, page.pass_id, i.id) for i in items}
 
 
-routes = [Route("/thread/{id}", item)]
+async def events(request: Request) -> Response:
+    """Pings an open thread page when someone replies; the page then checks what it may see."""
+    page = page_of(request)
+    thread_id = request.path_params["id"]
+    post = store.get_item(page.conn, thread_id)
+    if page.pass_id is None or post is None or not post.is_post:
+        return Response(status_code=404)
+    queue = page.app.live.subscribe(thread_id)
+    return StreamingResponse(
+        live.stream(page.app.live, thread_id, queue),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+routes = [Route("/thread/{id}", item), Route("/thread/{id}/events", events)]

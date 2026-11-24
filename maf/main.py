@@ -21,7 +21,7 @@ from .web import make_templates, page_of, redirect, render, sort_param
 APP: App = None  # set by create_app
 
 
-def home(request: Request) -> Response:
+async def home(request: Request) -> Response:
     page = page_of(request)
     sort = sort_param(request)
     tag = request.query_params.get("tag", "").strip().lower()
@@ -109,7 +109,7 @@ def _next_url(sort: str, end) -> str | None:
     return f"/?before={later.isoformat()}&sort={sort}"
 
 
-def search(request: Request) -> Response:
+async def search(request: Request) -> Response:
     page = page_of(request)
     query = request.query_params.get("q", "").strip()
     if query.startswith("#") and len(query) > 1:
@@ -139,22 +139,22 @@ def _search_url(query: str, sort: str, page_number: int) -> str:
     return "/search?" + urlencode(params)
 
 
-def tags_page(request: Request) -> Response:
+async def tags_page(request: Request) -> Response:
     page = page_of(request)
     return render(page, "tags.html", title="Hashtags", tag_list=store.tag_counts(page.conn))
 
 
-def about(request: Request) -> Response:
+async def about(request: Request) -> Response:
     page = page_of(request)
     return render(page, "about.html", title="About")
 
 
-def guide(request: Request) -> Response:
+async def guide(request: Request) -> Response:
     page = page_of(request)
     return render(page, "guide.html", title="User Guide")
 
 
-def guide_data(request: Request) -> Response:
+async def guide_data(request: Request) -> Response:
     page = page_of(request)
     tokens = store.list_api_tokens(page.conn, page.pass_id) if page.pass_id else []
     new_token = page.memory.take_new_token(page.pass_id) if page.pass_id else None
@@ -163,14 +163,14 @@ def guide_data(request: Request) -> Response:
                   notice=request.query_params.get("notice"))
 
 
-def logout(request: Request) -> Response:
+async def logout(request: Request) -> Response:
     page = page_of(request)
     response = redirect("/")
     page.app.sessions.clear(response)
     return response
 
 
-def not_found(request: Request, exc) -> Response:
+async def not_found(request: Request, exc) -> Response:
     page = page_of(request)
     return render(page, "error.html", status_code=404, title="Not found",
                   message="That page doesn't exist.")
@@ -260,6 +260,7 @@ def main() -> None:
         host="127.0.0.1",
         port=listen_port(settings.base_url),
         access_log=False,  # no IP addresses in logs
+        timeout_graceful_shutdown=3,  # open live-reply streams would otherwise hold a restart
     )
 
 

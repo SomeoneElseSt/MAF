@@ -150,6 +150,7 @@
 <script src="{{ static('ids.js') }}"></script>
 <script src="{{ static('replies.js') }}"></script>
 <script src="{{ static('private.js') }}"></script>
+{% if viewer %}<script src="{{ static('live.js') }}"></script>{% endif %}
 <script src="{{ static('info.js') }}"></script>
 <script src="{{ static('reactions.js') }}"></script>
 {% endblock %}

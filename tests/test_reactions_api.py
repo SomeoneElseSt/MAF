@@ -157,3 +157,12 @@ def test_tokens_are_capped_at_five_and_the_button_greys_out(signed_in, app):
     page = signed_in.get("/guide/use-this-data").text
     assert page.count('class="token-row"') == 5
     assert "disabled" in page and "Revoke one to create another" in page
+
+
+def test_a_reaction_pings_pages_watching_its_thread(client, app, pass_id):
+    from tests.conftest import sign_in_as
+
+    post = make_post(app, pass_id)
+    watching = app.live.subscribe(post.id)
+    sign_in_as(client, app, pass_id).post("/react", data={"item_id": post.id, "emoji": "👍"}, follow_redirects=False)
+    assert watching.qsize() == 1

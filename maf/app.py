@@ -7,6 +7,7 @@ from . import db
 from .blind import PrivateKey, PublicKey, load_key
 from .email import Emailer
 from .labels import Labeler
+from .live import Notifier
 from .memory import Memory
 from .namefilter import NameFilter
 from .sessions import Sessions
@@ -23,6 +24,7 @@ class App:
     name_filter: NameFilter
     emailer: Emailer
     signing_key: PrivateKey
+    live: Notifier = field(default_factory=Notifier)
     templates: object = None
     _: tuple = field(default_factory=tuple)
 

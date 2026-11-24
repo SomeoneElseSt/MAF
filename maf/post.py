@@ -103,6 +103,7 @@ async def comment(request: Request) -> Response:
     if not _allowed(page, "comment", COMMENTS_PER_MINUTE):
         return redirect(f"/thread/{parent.thread_id}?notice=You're+replying+fast.+Wait+a+minute.")
     store.create_comment(page.conn, page.pass_id, parent, values["text"], None)
+    page.app.live.publish(parent.thread_id)
     return redirect(f"/thread/{parent.thread_id}#comments")
 
 
@@ -124,6 +125,7 @@ def _private_comment(page, parent: store.Item, private_to: str, raw_sealed: str)
     if own_key is None:
         store.set_thread_key(page.conn, page.pass_id, parent.thread_id, sealed["from"])
     store.create_comment(page.conn, page.pass_id, parent, None, private_to, sealed=json.dumps(sealed))
+    page.app.live.publish(parent.thread_id)
     return redirect(f"{thread}#comments")
 
 

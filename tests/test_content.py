@@ -271,3 +271,60 @@ def test_line_breaks_survive_from_the_browser_to_the_page(signed_in, app):
     assert post["text"] == "- First point\n- Second point\n\nNew paragraph"
     page = signed_in.get(f"/thread/{post['id']}").text
     assert "<p>- First point\n- Second point</p>" in page and "<p>New paragraph</p>" in page
+
+
+def test_a_new_reply_pings_pages_watching_its_thread(signed_in, app, pass_id):
+    post = make_post(app, pass_id)
+    watching = app.live.subscribe(post.id)
+    elsewhere = app.live.subscribe("some-other-thread")
+    signed_in.post("/comment", data={"parent_id": post.id, "text": "hello"}, follow_redirects=False)
+    assert watching.qsize() == 1
+    assert elsewhere.qsize() == 0
+    app.live.unsubscribe(post.id, watching)
+    assert app.live.watching(post.id) == 0
+
+
+def test_many_replies_leave_one_ping_waiting(signed_in, app, pass_id):
+    post = make_post(app, pass_id)
+    watching = app.live.subscribe(post.id)
+    for text in ("one", "two", "three"):
+        signed_in.post("/comment", data={"parent_id": post.id, "text": text}, follow_redirects=False)
+    assert watching.qsize() == 1
+
+
+def test_live_events_need_a_real_thread(signed_in, app, pass_id):
+    post = make_post(app, pass_id)
+    comment = store.create_comment(app.conn, pass_id, post, "a comment", None)
+    assert signed_in.get("/thread/nope/events").status_code == 404
+    assert signed_in.get(f"/thread/{comment.id}/events").status_code == 404
+
+
+def test_live_stream_sends_a_ping_as_a_reply_event():
+    import asyncio
+
+    from maf.live import Notifier, stream
+
+    async def run():
+        notifier = Notifier()
+        queue = notifier.subscribe("t")
+        body = stream(notifier, "t", queue)
+        assert (await anext(body)).startswith("retry:")
+        notifier.publish("t")
+        assert await anext(body) == "event: change\ndata: 1\n\n"
+        await body.aclose()
+        assert notifier.watching("t") == 0
+
+    asyncio.run(run())
+
+
+def test_many_people_loading_a_thread_at_once_all_get_it(signed_in, app, pass_id):
+    """Live replies make every open page re-fetch the thread together; one shared database connection must cope."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    post = make_post(app, pass_id, tags=["berlin"])
+    for n in range(10):
+        store.create_comment(app.conn, pass_id, post, f"comment {n}", None)
+    # One event loop for every request, as on the real server (the client otherwise starts one per request).
+    with signed_in, ThreadPoolExecutor(max_workers=16) as pool:
+        statuses = list(pool.map(lambda _: signed_in.get(f"/thread/{post.id}").status_code, range(80)))
+    assert statuses == [200] * 80

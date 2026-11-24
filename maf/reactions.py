@@ -24,6 +24,7 @@ async def react(request: Request) -> Response:
     if not page.memory.allow(f"react:{page.pass_id}", REACTIONS_PER_MINUTE):
         return redirect(f"/thread/{item.id}?notice=Slow+down+a+little.+Try+again+in+a+minute.")
     store.toggle_reaction(page.conn, page.pass_id, item.id, values["emoji"])
+    page.app.live.publish(item.thread_id)
     return redirect(f"/thread/{item.thread_id}#{item.id}")
 
 
