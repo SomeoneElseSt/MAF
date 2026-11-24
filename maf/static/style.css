@@ -177,6 +177,8 @@ textarea::placeholder, input::placeholder { color: var(--meta); opacity: 1; }
 .new-tag { font: 600 13px var(--sans); color: var(--ink); background: var(--tint); border-radius: 3px; padding: 1px 6px; margin-left: 6px; }
 .react.arrived { box-shadow: 0 0 0 1.5px var(--ink); border-radius: 999px; }
 .react.arrived.arrived-fade { box-shadow: 0 0 0 1.5px transparent; transition: box-shadow 2.5s ease; }
+/* While a form is sending, its text boxes fade (the button already greys out and says what it's doing). */
+form[aria-busy="true"] textarea, form[aria-busy="true"] input[type=text], form[aria-busy="true"] input[type=url], form[aria-busy="true"] input[type=email] { opacity: .55; }
 /* Form errors: one plain line each, with room before the form. */
 .form-errors { margin-bottom: 24px; }
 .form-errors ul { list-style: none; margin: 0; padding: 0; }

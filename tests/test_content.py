@@ -344,3 +344,28 @@ def test_front_page_rows_carry_their_time_for_new_labels(signed_in, app, pass_id
     assert f'data-created="{post.created_at}"' in body
     assert "fresh.js" in body
     assert "fresh.js" not in signed_in.get("/search?q=post").text
+
+
+def test_paging_back_stops_at_the_first_post(signed_in, app, pass_id):
+    from datetime import timedelta as days
+
+    make_post(app, pass_id, title="Oldest", days_ago=9)
+    make_post(app, pass_id, title="Newest")
+    today_page = signed_in.get("/").text
+    assert 'aria-label="Earlier 4 days"' in today_page
+    oldest_window = (utc_now().date() - days(days=5)).isoformat()
+    earliest = signed_in.get(f"/?before={oldest_window}").text
+    assert "Oldest" in earliest
+    assert 'aria-label="Earlier 4 days"' not in earliest
+
+
+def test_a_date_before_the_first_post_opens_the_earliest_posts(signed_in, app, pass_id):
+    make_post(app, pass_id, title="Very first post", days_ago=2)
+    body = signed_in.get("/?before=2020-01-01").text
+    assert "Very first post" in body
+    assert 'aria-label="Earlier 4 days"' not in body
+
+
+def test_with_only_recent_posts_there_is_no_going_back(signed_in, app, pass_id):
+    make_post(app, pass_id, title="Just this one")
+    assert 'aria-label="Earlier 4 days"' not in signed_in.get("/").text

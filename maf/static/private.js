@@ -126,6 +126,7 @@
       event.preventDefault();
       const textarea = form.querySelector("textarea");
       if (!textarea.value.trim()) {
+        form.dispatchEvent(new Event("maf:not-sent"));
         textarea.focus();
         return;
       }
@@ -143,6 +144,7 @@
         textarea.removeAttribute("name");
         form.submit();
       } catch {
+        form.dispatchEvent(new Event("maf:not-sent"));
         showError(form, "Couldn't encrypt this reply in this browser, so it wasn't sent.");
       }
     });

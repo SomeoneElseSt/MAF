@@ -62,7 +62,11 @@ def render_home(page, sort, before, after):
                       groups=[], pinned=[], date_range=range_label(*four_day_window(today())),
                       sort_links=HOME_SORT_LINKS, prev_url=None, next_url=None)
 
+    first_day = store.first_post_day(conn)
     window_end = _window_end(conn, sort, before, after)
+    # Nothing to show before the first post: a window ending earlier opens the earliest one instead.
+    if first_day and window_end < first_day:
+        window_end = first_day + timedelta(days=3)
     start, end = four_day_window(window_end)
     pinned: list = []
     exclude_pinned = False
@@ -71,7 +75,8 @@ def render_home(page, sort, before, after):
         exclude_pinned = True
     posts = store.with_comment_counts(conn, store.posts_between(conn, start, end, sort, exclude_pinned=exclude_pinned))
     groups = [(day_label(day), rows) for day, rows in store.day_groups(posts)]
-    prev_url = _page_url(sort, (start - timedelta(days=1)).isoformat())
+    # The ‹ arrow stops at the window holding the first post.
+    prev_url = _page_url(sort, (start - timedelta(days=1)).isoformat()) if first_day and start > first_day else None
     next_url = _next_url(sort, end)
     return render(page, "list.html", kind="home", title="", empty=False,
                   groups=groups, pinned=pinned, date_range=range_label(start, end),

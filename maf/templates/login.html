@@ -24,7 +24,7 @@
   <p class="sr-only" role="status">A code was already sent to this address. Try again in {{ cooldown_seconds }} seconds.</p>
   <button class="button" type="submit" data-wait="{{ cooldown_seconds }}">Wait {{ cooldown_seconds }} seconds</button>
   {% else %}
-  <button class="button" type="submit">Send code</button>
+  <button class="button" type="submit" data-pending="Sending…">Send code</button>
   {% endif %}
 </form>
 

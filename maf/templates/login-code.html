@@ -24,13 +24,13 @@
     <p class="sr-only" role="status">Too many wrong codes. Try again in {{ wait_seconds }} seconds.</p>
     <button class="button" type="submit" data-wait="{{ wait_seconds }}" data-label="Continue">Wait {{ wait_seconds }} seconds</button>
     {% else %}
-    <button class="button" type="submit">Continue</button>
+    <button class="button" type="submit" data-pending="Checking…">Continue</button>
     {% endif %}
     <a class="note" href="/sign-in">Go Back</a>
     {% if email %}
     <span class="dot" aria-hidden="true">·</span>
     {# Resend posts the same address back to /sign-in; it unlocks when the cooldown runs out. #}
-    <button class="note resend" type="submit" form="resend-form" data-seconds="{{ cooldown_seconds|default(0) }}">Send a new code</button>
+    <button class="note resend" type="submit" form="resend-form" data-pending="Sending…" data-seconds="{{ cooldown_seconds|default(0) }}">Send a new code</button>
     {% endif %}
   </div>
 </form>
