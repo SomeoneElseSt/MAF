@@ -5,6 +5,16 @@
   const form = document.querySelector("form[data-blind]");
   if (!form || !window.BlindRSA) return;
 
+  // Back/Forward brings up a stale copy whose code is already used; /sign-in says whether you're signed in.
+  const navigation = performance.getEntriesByType("navigation")[0];
+  if (navigation && navigation.type === "back_forward") {
+    window.location.replace("/sign-in");
+    return;
+  }
+  window.addEventListener("pageshow", event => {
+    if (event.persisted) window.location.replace("/sign-in");
+  });
+
   const TOKEN_BYTES = 32;
   const suite = window.BlindRSA.SHA384.PSS.Randomized();
   const status = form.querySelector(".blind-status");
