@@ -228,8 +228,8 @@ dialog p { margin: 0 0 16px; }
 /* Date range with arrows to step between 4-day pages */
 .range { display: inline-flex; align-items: baseline; gap: 10px; }
 .arrow { color: var(--soft); font-size: 20px; line-height: 1; padding: 0 2px; }
-.arrow:hover { color: var(--ink); text-decoration: none; }
-span.arrow { color: var(--line); }
+a.arrow:hover { color: var(--ink); text-decoration: none; } /* only arrows that lead somewhere react to hover */
+span.arrow { color: var(--line); cursor: default; }
 .list-flat { margin-top: 18px; }
 .reply { margin-top: 4px; }
 .reply .row, .inline-reply .row { margin-top: 12px; }
