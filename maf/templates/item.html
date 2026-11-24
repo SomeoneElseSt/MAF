@@ -16,6 +16,8 @@
     requests        {"unhide": n, "nuke": n} request counts for the post
     notice          a one-line message from the last action
     body_class      "hottakes-thread" for highlighted tags
+    thread_keys     {pass_id: public key} for this thread, used to encrypt private replies
+    my_key          the viewer's registered key ("" if none yet), or None when they haven't written here
   Macros:
     comment(node, depth) renders one comment and its replies.
 #}
@@ -42,23 +44,27 @@
   </span>
 {% endmacro %}
 
+{# The person a reply to this entry would go to privately. #}
+{% macro peer_of(entry) %}{% if entry.private_to %}{{ entry.private_to if entry.pass_id == viewer else entry.pass_id }}{% else %}{{ entry.pass_id }}{% endif %}{% endmacro %}
+
+{# Hidden until private.js knows this browser can encrypt and the recipient has a key. #}
+{% macro private_toggle(name, forced) %}<span class="private-toggle" hidden><span class="dot">·</span> <label>Make only visible to {{ name }} <input type="checkbox" name="private"{% if forced %} checked disabled{% endif %}></label><button class="info" type="button" aria-label="About private replies" aria-expanded="false">i</button></span>{% endmacro %}
+
 {% macro comment(node, depth) %}
 {% set entry = node.item %}
 <li class="comment{% if entry.private_to %} private{% endif %}" id="{{ entry.id }}">
   {{ meta_line(entry) }}
-  <p>{{ entry.text }}</p>
+  {% if entry.sealed %}<p class="sealed" data-sealed="{{ entry.sealed }}">This private reply can only be read on the device that sent or received it.</p>{% else %}<p>{{ entry.text }}</p>{% endif %}
   <div class="actions">
     <a class="reply-toggle" href="#reply-{{ entry.id }}" aria-controls="reply-{{ entry.id }}" aria-expanded="false">Reply</a>
     {% if not entry.private_to %}<form action="/flag" method="post" class="inline-form"><input type="hidden" name="item_id" value="{{ entry.id }}"><button type="submit"{% if flags.get(entry.id) %} class="flagged"{% endif %} aria-pressed="{{ 'true' if flags.get(entry.id) else 'false' }}">{% if flags.get(entry.id) %}Flagged{% else %}Flag{% endif %}</button></form>{% if flags.get(entry.id) %}<span class="flag-note">5 flags hide a post. Urgent? Email <a href="mailto:hello@maforum.net">hello@maforum.net</a>.</span>{% endif %}{% endif %}
     {{ reactions_box(entry) }}
   </div>
-    <form class="inline-reply" id="reply-{{ entry.id }}" action="/comment" method="post" hidden>
+    <form class="inline-reply" id="reply-{{ entry.id }}" action="/comment" method="post" data-peer-key="{{ thread_keys.get(peer_of(entry), '') }}" hidden>
       <input type="hidden" name="parent_id" value="{{ entry.id }}">
       <textarea name="text" aria-label="Write a reply" placeholder="{{ reply_placeholder or 'Write a reply' }}"></textarea>
       <p class="help">Replying as: <button class="id" type="button">{{ my_label }}</button>
-        {% if entry.pass_id != viewer %}
-        <span class="dot">·</span> <span class="private-toggle"><label>Make only visible to {{ label_of[entry.pass_id] }} <input type="checkbox" name="private"{% if entry.private_to %} checked disabled{% endif %}></label><button class="info" type="button" aria-label="About private replies" aria-expanded="false">i</button></span>
-        {% endif %}
+        {% if entry.pass_id != viewer %}{{ private_toggle(label_of[entry.pass_id], entry.private_to) }}{% endif %}
       </p>
       <div class="row"><button class="button" type="submit">Reply</button><a class="button plain cancel" href="#{{ entry.id }}">Cancel</a></div>
     </form>
@@ -89,7 +95,7 @@
 </div>
 {% endif %}
 
-<div{% if post.unlisted %} class="faded"{% endif %}>
+<div{% if post.unlisted %} class="faded"{% endif %} data-thread="{{ post.id }}"{% if my_key is not none %} data-my-key="{{ my_key }}"{% endif %}>
 <article class="post-head">
   <h1>{{ post.title }}</h1>
   <div class="meta">Posted by <button class="id" type="button">{{ label_of[post.pass_id] }}</button> {{ post.created_at|rel }}, {{ post.views }} view{{ '' if post.views == 1 else 's' }}
@@ -105,11 +111,11 @@
 
 {% if not post.unlisted %}
 {% if viewer %}
-<form class="reply" action="/comment" method="post">
+<form class="reply" action="/comment" method="post" data-peer-key="{{ thread_keys.get(post.pass_id, '') }}">
   <input type="hidden" name="parent_id" value="{{ post.id }}">
   <textarea name="text" aria-label="Write a comment" placeholder="Write a comment"></textarea>
   <p class="help">Commenting as: <button class="id" type="button">{{ my_label }}</button>
-    {% if post.pass_id != viewer %}<span class="dot">·</span> <span class="private-toggle"><label>Make only visible to {{ label_of[post.pass_id] }} (OP) <input type="checkbox" name="private"></label><button class="info" type="button" aria-label="About private replies" aria-expanded="false">i</button></span>{% endif %}
+    {% if post.pass_id != viewer %}{{ private_toggle(label_of[post.pass_id] ~ ' (OP)', false) }}{% endif %}
   </p>
   <div class="row"><button class="button" type="submit">Comment</button></div>
 </form>
@@ -128,9 +134,9 @@
 <div class="emoji-picker" role="dialog" aria-label="Add a reaction" data-emoji="{{ picker_emoji|join(' ') }}" hidden></div>
 <div id="private-info" class="info-card" role="dialog" aria-label="About private replies" hidden>
   <p class="info-title">Private replies</p>
-  <p>Only you and the person you're replying to can see them, inside this thread. Everyone else sees the thread as if they weren't there.</p>
-  <p>They belong to the device you posted from, so you'll only see them on that device.</p>
-  <p class="info-fine">Other students can't see or flag them, but they're stored on the server like any other comment.</p>
+  <p>Only you and the person you're replying to can read them, inside this thread. Everyone else sees the thread as if they weren't there.</p>
+  <p>They're encrypted in your browser before they're sent, so MAF's server only stores scrambled text. You can read them only on the device you used in this thread.</p>
+  <p class="info-fine">Other students can't see or flag them. MAF can't check them for names.</p>
 </div>
 <dialog id="id-dialog">
   <p>Names are unique per thread to maintain anonymity.</p>
@@ -138,6 +144,7 @@
 </dialog>
 <script src="{{ static('ids.js') }}"></script>
 <script src="{{ static('replies.js') }}"></script>
+<script src="{{ static('private.js') }}"></script>
 <script src="{{ static('info.js') }}"></script>
 <script src="{{ static('reactions.js') }}"></script>
 {% endblock %}

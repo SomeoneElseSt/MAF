@@ -97,6 +97,7 @@ class Item:
     restored: int = 0
     pinned: int = 0
     private_to: str | None = None
+    sealed: str | None = None
     tags: list[str] = field(default_factory=list)
     comment_count: int = 0
     thread_title: str | None = None
@@ -136,6 +137,7 @@ def _row_to_item(row: sqlite3.Row, tags: list[str] | None = None) -> Item:
         restored=row["restored"],
         pinned=row["pinned"],
         private_to=row["private_to"],
+        sealed=row["sealed"],
         tags=tags or [],
     )
 
@@ -197,17 +199,19 @@ def create_comment(
     conn: sqlite3.Connection,
     pass_id: str,
     parent: Item,
-    text: str,
+    text: str | None,
     private_to: str | None,
     created_at: str | None = None,
+    sealed: str | None = None,
 ) -> Item:
+    """A sealed (encrypted) private reply is stored with no text at all."""
     item_id = unused_item_id(conn)
     created_at = created_at or iso(utc_now())
     with conn:
         conn.execute(
-            "INSERT INTO item (id, parent_id, thread_id, pass_id, text, created_at, private_to) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (item_id, parent.id, parent.thread_id, pass_id, text, created_at, private_to),
+            "INSERT INTO item (id, parent_id, thread_id, pass_id, text, created_at, private_to, sealed) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (item_id, parent.id, parent.thread_id, pass_id, None if sealed else text, created_at, private_to, sealed),
         )
         if private_to is None and parent.private_to is None:
             conn.execute(
@@ -215,6 +219,27 @@ def create_comment(
                 (rowid_of(conn, item_id), *_fts_values(None, text)),
             )
     return get_item(conn, item_id)
+
+
+def thread_keys(conn: sqlite3.Connection, thread_id: str) -> dict[str, str]:
+    """Each participant's public key for this thread, by pass id."""
+    rows = conn.execute("SELECT pass_id, public_key FROM thread_key WHERE thread_id = ?", (thread_id,)).fetchall()
+    return {row["pass_id"]: row["public_key"] for row in rows}
+
+
+def set_thread_key(conn: sqlite3.Connection, pass_id: str, thread_id: str, public_key: str) -> None:
+    conn.execute(
+        "INSERT INTO thread_key (pass_id, thread_id, public_key) VALUES (?, ?, ?) "
+        "ON CONFLICT (pass_id, thread_id) DO UPDATE SET public_key = excluded.public_key",
+        (pass_id, thread_id, public_key),
+    )
+    conn.commit()
+
+
+def is_participant(conn: sqlite3.Connection, pass_id: str, thread_id: str) -> bool:
+    """True if this pass wrote the post or any comment in the thread."""
+    row = conn.execute("SELECT 1 FROM item WHERE thread_id = ? AND pass_id = ? LIMIT 1", (thread_id, pass_id)).fetchone()
+    return row is not None
 
 
 def post_author(conn: sqlite3.Connection, thread_id: str) -> str | None:
@@ -566,6 +591,8 @@ def delete_item(conn: sqlite3.Connection, item_id: str) -> None:
                          (row["rowid"], row["title"] or "", row["text"] or ""))
         conn.execute(f"DELETE FROM item WHERE {scope}", (scope_value,))
         conn.execute("DELETE FROM item_tag WHERE item_id = ?", (item_id,))
+        if item.is_post:
+            conn.execute("DELETE FROM thread_key WHERE thread_id = ?", (item.thread_id,))
 
 
 def reply_count(conn: sqlite3.Connection, item_id: str) -> int:

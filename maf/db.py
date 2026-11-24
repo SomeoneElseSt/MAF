@@ -7,7 +7,7 @@ so it can be extended later without a migration framework.
 import sqlite3
 from pathlib import Path
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS pass (
@@ -88,6 +88,23 @@ CREATE VIRTUAL TABLE IF NOT EXISTS item_fts USING fts5(
 -- deletes must be made with the special 'delete' command.
 """
 
+# Private replies are encrypted in the browser. item.sealed holds the encrypted reply
+# (text stays NULL), and thread_key holds each participant's public key for one thread.
+# Keys are per thread so they can't link a person's threads together.
+SEALED_REPLIES = """
+ALTER TABLE item ADD COLUMN sealed TEXT;
+
+CREATE TABLE IF NOT EXISTS thread_key (
+    pass_id TEXT NOT NULL,
+    thread_id TEXT NOT NULL,
+    public_key TEXT NOT NULL,
+    PRIMARY KEY (pass_id, thread_id)
+);
+"""
+
+# Step n upgrades a file at version n - 1 to version n.
+MIGRATIONS = {1: SCHEMA, 2: SEALED_REPLIES}
+
 
 def connect(path: Path | str) -> sqlite3.Connection:
     """Opens the database with the pragmas the app relies on."""
@@ -99,10 +116,9 @@ def connect(path: Path | str) -> sqlite3.Connection:
 
 
 def migrate(conn: sqlite3.Connection) -> None:
-    """Applies the schema once per file, tracked with user_version."""
+    """Applies each schema step the file hasn't had yet, tracked with user_version."""
     version = conn.execute("PRAGMA user_version").fetchone()[0]
-    if version >= SCHEMA_VERSION:
-        return
-    conn.executescript(SCHEMA)
-    conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
-    conn.commit()
+    for step in range(version + 1, SCHEMA_VERSION + 1):
+        conn.executescript(MIGRATIONS[step])
+        conn.execute(f"PRAGMA user_version = {step}")
+        conn.commit()

@@ -78,9 +78,13 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 ## Private replies
 
 - **UI:** under every comment and reply box, the help line reads `Commenting as: <id> · [ ] Make only visible to <recipient> (i)`. For the top-level box the recipient is the OP, labelled `(OP)`; for a reply it's the parent comment's author. The (i) opens a card: only you and that person can see it, it belongs to the device you posted from, other students can't see or flag it, and it's stored on the server like any comment.
-- **Storage:** `item.private_to` holds the recipient's `pass_id` (NULL for public). The author is `item.pass_id`.
+- **Storage:** `item.private_to` holds the recipient's `pass_id` (NULL for public). The author is `item.pass_id`. The reply is stored only encrypted, in `item.sealed`; `item.text` stays NULL.
+- **Encryption (in the browser, `maf/static/private.js`):** each pass has a separate ECDH P-256 key pair per thread, kept in that browser's IndexedDB with a non-extractable private key. The public half is stored in `thread_key(pass_id, thread_id, public_key)`. Per-thread keys mean a key never links someone's threads. A reply is encrypted with AES-GCM under a key both people derive (ECDH between their two thread keys, then HKDF-SHA256 with the thread id as salt; the thread id is also the AES-GCM associated data). `sealed` is JSON `{v: 1, iv, ct, from, to}` with base64url values; `from`/`to` are the two public keys, so either side can decrypt.
+- **Key registration:** the thread page asks for a key only from people who've already written in that thread (`POST /thread-key`, refused otherwise), so the server never learns which threads someone reads. A first-time private sender's key is saved from the `from` field of their reply.
+- **Server checks** (`maf/sealed.py`): the sealed JSON has exactly those fields, a 12-byte IV and valid public keys; `to` must equal the recipient's registered key and `from` the sender's (if registered). Otherwise nothing is saved. Any plain `text` sent with a private reply is dropped. No JavaScript means no private replies: the toggle stays hidden.
+- **Limit:** the server also serves `private.js`, so a compromised server could ship code that copies replies before encrypting. Encryption protects the stored database and backups. The User Guide says this.
 - **Visibility:** a private item is rendered only for its author's pass and the `private_to` pass, with ` · Private, only you and <other id> (i)` in its metadata. For everyone else it and its descendants are absent. Replies to a private item are forced private to the other party; the checkbox shows ticked and disabled.
-- **Excluded from:** search/FTS, `comment_count`, the API and MCP, the tag menu counts. Private items have no Flag button. The name filter still runs before saving.
+- **Excluded from:** search/FTS, `comment_count`, the API and MCP, the tag menu counts, and the name filter (the server can't read them). Private items have no Flag button.
 - **Can't reply privately to yourself:** the checkbox is hidden when the recipient is your own pass (e.g. the OP replying to the post).
 
 ## Reactions
@@ -143,7 +147,8 @@ No admin roles, codes or buttons. Moderation is community flags plus the maintai
 ```
 pass(id)
 redeemed_token(token_hash PK)
-item(id, parent_id NULL, thread_id, pass_id, title NULL, url NULL, text NULL, created_at, views, flags, hidden, restored, pinned, private_to NULL)  -- id: three words, adjective-thing-thing (e.g. quiet-river-lantern), picked at random and re-picked until unused
+item(id, parent_id NULL, thread_id, pass_id, title NULL, url NULL, text NULL, created_at, views, flags, hidden, restored, pinned, private_to NULL, sealed NULL)  -- id: three words, adjective-thing-thing (e.g. quiet-river-lantern), picked at random and re-picked until unused
+thread_key(pass_id, thread_id, public_key, PK(pass_id, thread_id))  -- per-thread public keys for encrypted private replies
 item_tag(item_id, tag, PK both)  -- index on tag
 item_fts  -- FTS5 virtual table over item(title, text) for public items only, kept in sync with triggers
 flag(pass_id, item_id, PK both)

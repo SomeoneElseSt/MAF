@@ -1,5 +1,6 @@
 """Writing: posts, comments, flags, moderation requests and API tokens."""
 
+import json
 import secrets
 from urllib.parse import urlsplit
 
@@ -10,6 +11,7 @@ from starlette.routing import Route
 from . import store
 from .email import moderation_email
 from .housetags import submit_placeholder
+from .sealed import parse_sealed, valid_public_key
 from .util import sha256_hex
 from .web import form_values, page_of, redirect, render
 
@@ -89,19 +91,57 @@ def _name_warning(page, values, tags) -> Response:
 
 async def comment(request: Request) -> Response:
     page = page_of(request)
-    values = await form_values(request, "parent_id", "text", "private", "confirm_names")
+    values = await form_values(request, "parent_id", "text", "private", "confirm_names", "sealed")
     parent = store.get_item(page.conn, values["parent_id"])
     if page.pass_id is None or parent is None:
         return _login(page)
+    private_to = _private_recipient(page, parent, values["private"] == "on")
+    if private_to is not None:
+        return _private_comment(page, parent, private_to, values["sealed"])
     if not values["text"]:
         return redirect(f"/thread/{parent.thread_id}?notice=Write+something+first.")
     if values["confirm_names"] != "1" and page.app.name_filter.finds_name(values["text"]):
         return redirect(f"/thread/{parent.thread_id}?notice=This+looks+like+it+names+someone.+Edit+it+and+try+again.")
     if not _allowed(page, "comment", COMMENTS_PER_MINUTE):
         return redirect(f"/thread/{parent.thread_id}?notice=You're+replying+fast.+Wait+a+minute.")
-    private_to = _private_recipient(page, parent, values["private"] == "on")
-    store.create_comment(page.conn, page.pass_id, parent, values["text"], private_to)
+    store.create_comment(page.conn, page.pass_id, parent, values["text"], None)
     return redirect(f"/thread/{parent.thread_id}#comments")
+
+
+def _private_comment(page, parent: store.Item, private_to: str, raw_sealed: str) -> Response:
+    """Stores a private reply only in its encrypted form; any plain text sent along is dropped.
+
+    The name filter can't run here: the server never sees the words.
+    """
+    thread = f"/thread/{parent.thread_id}"
+    sealed = parse_sealed(raw_sealed)
+    if sealed is None:
+        return redirect(f"{thread}?notice=Private+replies+need+JavaScript.+Turn+it+on+and+try+again.")
+    keys = store.thread_keys(page.conn, parent.thread_id)
+    own_key = keys.get(page.pass_id)
+    if keys.get(private_to) != sealed["to"] or own_key not in (None, sealed["from"]):
+        return redirect(f"{thread}?notice=Couldn't+send+that+privately.+Reload+the+page+and+try+again.")
+    if not _allowed(page, "comment", COMMENTS_PER_MINUTE):
+        return redirect(f"{thread}?notice=You're+replying+fast.+Wait+a+minute.")
+    if own_key is None:
+        store.set_thread_key(page.conn, page.pass_id, parent.thread_id, sealed["from"])
+    store.create_comment(page.conn, page.pass_id, parent, None, private_to, sealed=json.dumps(sealed))
+    return redirect(f"{thread}#comments")
+
+
+async def thread_key(request: Request) -> Response:
+    """Saves the viewer's public key for a thread they've written in, so others can reply privately."""
+    page = page_of(request)
+    values = await form_values(request, "thread_id", "public_key")
+    if page.pass_id is None:
+        return Response(status_code=401)
+    if not valid_public_key(values["public_key"]):
+        return Response(status_code=400)
+    # Only people who already wrote in the thread, so keys never record which threads someone reads.
+    if not store.is_participant(page.conn, page.pass_id, values["thread_id"]):
+        return Response(status_code=403)
+    store.set_thread_key(page.conn, page.pass_id, values["thread_id"], values["public_key"])
+    return Response(status_code=204)
 
 
 def _private_recipient(page, parent: store.Item, wants_private: bool) -> str | None:
@@ -169,6 +209,7 @@ routes = [
     Route("/submit", submit_page),
     Route("/submit", submit_post, methods=["POST"]),
     Route("/comment", comment, methods=["POST"]),
+    Route("/thread-key", thread_key, methods=["POST"]),
     Route("/flag", flag, methods=["POST"]),
     Route("/moderation-request", moderation_request, methods=["POST"]),
     Route("/tokens", create_token, methods=["POST"]),

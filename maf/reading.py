@@ -29,7 +29,11 @@ def item(request: Request) -> Response:
     labels = {i.pass_id for i in items}
     label_of = {pid: page.labeler_label(thread_id, pid) for pid in labels}
     tags = post.tags
+    keys = store.thread_keys(page.conn, thread_id)
+    participant = bool(page.pass_id) and store.is_participant(page.conn, page.pass_id, thread_id)
     context = {
+        "thread_keys": keys,
+        "my_key": keys.get(page.pass_id, "") if participant else None,
         "title": post.title,
         "post": post,
         "tree": tree,

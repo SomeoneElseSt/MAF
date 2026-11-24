@@ -285,6 +285,9 @@ span.arrow { color: var(--line); }
 /* Private replies: laid out like any comment; the details line says who can see it, with an (i) explaining more. */
 .private-note { color: var(--meta); }
 .private-toggle { display: inline-flex; align-items: center; gap: 4px; font: inherit; color: inherit; vertical-align: -2px; }
+.private-toggle[hidden] { display: none; }
+.sealed { color: var(--meta); font-style: italic; }
+.sealed.open { color: inherit; font-style: normal; }
 .help .dot { margin: 0 4px; }
 .private-toggle label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
 .private-toggle input { accent-color: var(--ink); width: 13px; height: 13px; margin: 0; }
