@@ -5,12 +5,13 @@ the token: the browser blinds it, the server signs the blinded value, and the
 browser unblinds before redeeming. Nothing derived from the email is stored.
 """
 
+import asyncio
 import base64
 import binascii
 import re
 
 from starlette.requests import Request
-from starlette.responses import Response
+from starlette.responses import JSONResponse, Response
 from starlette.routing import Route
 
 from . import store
@@ -23,6 +24,7 @@ EMAIL_PATTERN = re.compile(r"[a-z0-9._+-]+@" + re.escape(ALLOWED_DOMAIN))
 PAUSED_ERROR = "MAF is currently under maintenance. Try again in {minutes} minute{s}."
 CODE_LENGTH = 6
 TOKEN_MIN_BYTES = 32
+SEND_CHECK_WAIT_SECONDS = 10  # the code page waits this long to hear whether its email went out
 
 
 def normalise_email(raw: str) -> str | None:
@@ -89,10 +91,12 @@ async def login_submit(request: Request) -> Response:
                       error="A code was already sent to this address.",
                       cooldown_seconds=max(1, page.memory.cooldown_left(email)),
                       email=values["email"])
-    # The email goes out in the background: the code page shows straight away.
-    page.app.emailer.send_soon(code_email(email, code))
+    # The email goes out in the background: the code page shows straight away and asks /sign-in/sent how it went.
+    sending = page.app.emailer.send_soon(code_email(email, code))
+    sending.add_done_callback(lambda done: done.result() or page.memory.allow_resend(email))
     # Rendered directly rather than redirected, so the address reaches the code form without going into a URL.
-    return render(page, "login-code.html", email=email, cooldown_seconds=page.memory.cooldown_left(email))
+    return render(page, "login-code.html", email=email, cooldown_seconds=page.memory.cooldown_left(email),
+                  send_check=page.memory.track_send(sending))
 
 
 @signed_out_only
@@ -123,6 +127,21 @@ async def code_submit(request: Request) -> Response:
                       cooldown_seconds=page.memory.cooldown_left(email) if email else 0,
                       wait_seconds=page.memory.code_lock_left(email) if email else 0)
     return render(page, "login-blind.html", email=email, code=values["code"])
+
+
+async def sent(request: Request) -> Response:
+    """Whether the code email went out: true, false (refused), or null (unknown or still going after a while)."""
+    page = page_of(request)
+    values = await form_values(request, "check")
+    sending = page.memory.take_send(values["check"])
+    if sending is None:
+        return JSONResponse({"sent": None})
+    try:
+        # shield: giving up on the answer mustn't cancel the email itself.
+        went_out = await asyncio.wait_for(asyncio.shield(asyncio.wrap_future(sending)), SEND_CHECK_WAIT_SECONDS)
+    except TimeoutError:
+        return JSONResponse({"sent": None})
+    return JSONResponse({"sent": went_out})
 
 
 async def key(request: Request) -> Response:
@@ -218,6 +237,7 @@ routes = [
     Route("/sign-in", login_submit, methods=["POST"]),
     Route("/sign-in/code", code_page),
     Route("/sign-in/code", code_submit, methods=["POST"]),
+    Route("/sign-in/sent", sent, methods=["POST"]),
     Route("/sign-in/key", key),
     Route("/sign-in/blind-sign", blind_sign, methods=["POST"]),
     Route("/sign-in/redeem", redeem_page),

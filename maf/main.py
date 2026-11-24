@@ -195,7 +195,7 @@ class WithApp:
 
 
 # Pages a signed-out visitor may open. Everything else needs a pass; the API checks its own bearer tokens.
-PUBLIC_PATHS = {"/sign-in", "/sign-in/code", "/sign-in/key", "/sign-in/blind-sign", "/sign-in/redeem", "/about"}
+PUBLIC_PATHS = {"/sign-in", "/sign-in/code", "/sign-in/sent", "/sign-in/key", "/sign-in/blind-sign", "/sign-in/redeem", "/about"}
 PUBLIC_PREFIXES = ("/static/", "/api/")
 
 

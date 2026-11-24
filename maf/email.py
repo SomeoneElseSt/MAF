@@ -8,7 +8,7 @@ dropped.
 """
 
 import logging
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -115,22 +115,27 @@ class Emailer:
         self._client = None
         self._workers = ThreadPoolExecutor(max_workers=SEND_WORKERS, thread_name_prefix="email")
 
-    def send_soon(self, email: Email) -> None:
+    def send_soon(self, email: Email) -> Future:
         """Sends in the background, so the page answers without waiting on the email provider.
 
+        The returned future becomes True once the email is accepted, False if it was refused.
         Console email (local development) prints straight away.
         """
         if self._settings.console_email:
             self.send(email)
-            return
-        self._workers.submit(self._send_logging_failures, email)
+            done: Future = Future()
+            done.set_result(True)
+            return done
+        return self._workers.submit(self._send_reporting, email)
 
-    def _send_logging_failures(self, email: Email) -> None:
-        # A background send has nobody to show an error to: log the kind of failure, never the recipient.
+    def _send_reporting(self, email: Email) -> bool:
+        # Log the kind of failure, never the recipient.
         try:
             self.send(email)
         except Exception as error:  # noqa: BLE001
             log.error("email not sent: %s", type(error).__name__)
+            return False
+        return True
 
     def send(self, email: Email) -> None:
         if self._settings.console_email:

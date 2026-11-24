@@ -5,6 +5,7 @@
     error   an error message, if the last submit failed
     email   the email, carried forward in a hidden field
     wait_seconds  after 5 wrong codes, seconds until Continue works again (it counts down itself)
+    send_check    token the page uses to ask whether its code email went out (sendcheck.js)
 #}
 {% extends "base.html" %}
 {% block main %}
@@ -35,6 +36,7 @@
   </div>
 </form>
 {% if email %}<form id="resend-form" action="/sign-in" method="post" hidden><input type="hidden" name="email" value="{{ email }}"></form>{% endif %}
+{% if send_check %}<div data-send-check="{{ send_check }}" hidden></div>{% endif %}
 {% endblock %}
 
-{% block scripts %}{% if email %}<script src="{{ static('countdown.js') }}"></script>{% endif %}{% endblock %}
+{% block scripts %}{% if email %}<script src="{{ static('countdown.js') }}"></script>{% endif %}{% if send_check %}<script src="{{ static('sendcheck.js') }}"></script>{% endif %}{% endblock %}

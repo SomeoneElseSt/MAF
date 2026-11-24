@@ -6,6 +6,7 @@ who logged in or what anyone read.
 """
 
 import math
+from concurrent.futures import Future
 import secrets
 import threading
 import time
@@ -44,6 +45,7 @@ class Memory:
     code_locks: dict[str, float] = field(default_factory=dict)
     pause_alerted_at: float = float("-inf")
     hide_alerted: set[str] = field(default_factory=set)
+    sends: dict[str, tuple[Future, float]] = field(default_factory=dict)
 
     # -- login codes -------------------------------------------------------
 
@@ -125,6 +127,26 @@ class Memory:
         self.code_failures.pop(email, None)
 
     # -- just-created API tokens --------------------------------------------
+
+    def track_send(self, sending: Future) -> str:
+        """A random token for one code email being sent. Only the page holding it can ask how it went,
+        so nobody can probe whether some address just asked for a code."""
+        token = secrets.token_urlsafe(16)
+        with self._lock:
+            current = now()
+            self.sends = {t: s for t, s in self.sends.items() if current - s[1] < CODE_TTL_SECONDS}
+            self.sends[token] = (sending, current)
+        return token
+
+    def take_send(self, token: str) -> Future | None:
+        with self._lock:
+            entry = self.sends.pop(token, None)
+        return entry[0] if entry else None
+
+    def allow_resend(self, email: str) -> None:
+        """After a refused email, lift the 30-second wait so the person can try again straight away."""
+        with self._lock:
+            self.cooldowns.pop(email, None)
 
     def hold_new_token(self, pass_id: str, token: str) -> None:
         """Keeps a new token for the one page load that shows it, so it never goes into a URL or a resubmittable form."""

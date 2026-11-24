@@ -371,3 +371,45 @@ def test_sign_in_answers_without_waiting_for_the_email(client, app, monkeypatch)
     assert response.status_code == 200 and "Check your inbox" in response.text
     assert waited < 0.5
     assert sent.wait(5)
+
+
+def _real_provider(app, monkeypatch, send):
+    """Pretend to use a real email provider (not the test console), so sends go to a background worker."""
+    import dataclasses
+
+    monkeypatch.setattr(app.emailer, "_settings", dataclasses.replace(app.settings, email_backend="ses"))
+    monkeypatch.setattr(app.emailer, "send", send)
+
+
+def _send_check(body: str) -> str:
+    import re
+
+    found = re.search(r'data-send-check="([^"]+)"', body)
+    assert found, "the code page should carry a send check"
+    return found.group(1)
+
+
+def test_a_refused_code_email_says_so_and_lifts_the_wait(client, app, monkeypatch):
+    def refuse(email):
+        raise RuntimeError("Azure answered 400")
+
+    _real_provider(app, monkeypatch, refuse)
+    page = client.post("/sign-in", data={"email": "refused@uni.minerva.edu"}).text
+    assert client.post("/sign-in/sent", data={"check": _send_check(page)}).json() == {"sent": False}
+    again = client.post("/sign-in", data={"email": "refused@uni.minerva.edu"})
+    assert again.status_code == 200 and "already sent" not in again.text
+
+
+def test_a_delivered_code_email_says_so(client, app, monkeypatch):
+    _real_provider(app, monkeypatch, lambda email: None)
+    page = client.post("/sign-in", data={"email": "fine@uni.minerva.edu"}).text
+    assert client.post("/sign-in/sent", data={"check": _send_check(page)}).json() == {"sent": True}
+
+
+def test_send_checks_cannot_be_guessed_or_reused(client, app, monkeypatch):
+    _real_provider(app, monkeypatch, lambda email: None)
+    page = client.post("/sign-in", data={"email": "once@uni.minerva.edu"}).text
+    check = _send_check(page)
+    assert client.post("/sign-in/sent", data={"check": "made-up"}).json() == {"sent": None}
+    assert client.post("/sign-in/sent", data={"check": check}).json() == {"sent": True}
+    assert client.post("/sign-in/sent", data={"check": check}).json() == {"sent": None}
