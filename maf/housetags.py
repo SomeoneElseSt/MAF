@@ -70,8 +70,9 @@ HOUSE_TAGS: dict[str, dict] = {
     },
 }
 
-# The tags offered in the Submit page's Hashtags dropdown: every house tag plus common topic tags.
-SUGGESTED_TAGS = sorted([*HOUSE_TAGS, "minerva"])
+# Lead with common tags, then retain the remaining house tags in alphabetical order.
+_PRIORITY_TAGS = ("hottakes", "confessions", "minerva")
+SUGGESTED_TAGS = [*_PRIORITY_TAGS, *(tag for tag in sorted(HOUSE_TAGS) if tag not in _PRIORITY_TAGS)]
 
 DEFAULT_SUBMIT_TEMPLATE = [
     "- What it's about",
