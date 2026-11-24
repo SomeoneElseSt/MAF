@@ -18,7 +18,7 @@ Have a question? Contact hello@maforum.net.
 - **Emoji reactions** on posts and replies.
 - **Main page.** Pin posts, search by text, browse by hashtag with the # icon, and by date with the range switcher.
 - **Drafts.** Unfinished posts and replies are kept in your browser until they're posted.
-- **Live updates.** When someone replies or reacts in a thread you have open, a banner offers to show it. You only hear about what you're allowed to see.
+- **Live updates.** When someone replies or reacts in a thread you have open, or posts while you're on the main page, a banner offers to show it. You only hear about what you're allowed to see. Posts that arrived since your last visit are labelled New.
 - **Light and dark mode**, built for accessibility following the [A11Y Project](https://www.a11yproject.com/checklist/) checklist.
 - **Moderation by flags.** There are no hard rules, but don't name specific students or staff. If five people flag a post, it becomes unlisted and shows an option to request a permanent deletion or restoration, decided case by case. Replies can be flagged the same way and are hidden until reviewed.
 

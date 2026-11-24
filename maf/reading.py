@@ -67,19 +67,31 @@ def _flags(page, items: list[store.Item]) -> dict[str, bool]:
     return {i.id: store.has_flagged(page.conn, page.pass_id, i.id) for i in items}
 
 
-async def events(request: Request) -> Response:
-    """Pings an open thread page when someone replies; the page then checks what it may see."""
-    page = page_of(request)
-    thread_id = request.path_params["id"]
-    post = store.get_item(page.conn, thread_id)
-    if page.pass_id is None or post is None or not post.is_post:
-        return Response(status_code=404)
-    queue = page.app.live.subscribe(thread_id)
+def _event_stream(page, key: str) -> Response:
+    queue = page.app.live.subscribe(key)
     return StreamingResponse(
-        live.stream(page.app.live, thread_id, queue),
+        live.stream(page.app.live, key, queue),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-store"},
     )
 
 
-routes = [Route("/thread/{id}", item), Route("/thread/{id}/events", events)]
+async def events(request: Request) -> Response:
+    """Pings an open thread page when someone replies or reacts; the page then checks what it may see."""
+    page = page_of(request)
+    thread_id = request.path_params["id"]
+    post = store.get_item(page.conn, thread_id)
+    if page.pass_id is None or post is None or not post.is_post:
+        return Response(status_code=404)
+    return _event_stream(page, thread_id)
+
+
+async def home_events(request: Request) -> Response:
+    """Pings the front page when someone posts."""
+    page = page_of(request)
+    if page.pass_id is None:
+        return Response(status_code=404)
+    return _event_stream(page, live.HOME)
+
+
+routes = [Route("/thread/{id}", item), Route("/thread/{id}/events", events), Route("/events", home_events)]

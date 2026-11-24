@@ -8,7 +8,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.routing import Route
 
-from . import store
+from . import live, store
 from .email import hidden_reply_email, moderation_email
 from .housetags import submit_placeholder
 from .sealed import parse_sealed, valid_public_key
@@ -54,6 +54,7 @@ async def submit_post(request: Request) -> Response:
     post = store.create_post(
         page.conn, page.pass_id, values["title"], values["text"] or None, values["url"] or None, tags
     )
+    page.app.live.publish(live.HOME)
     return redirect(f"/thread/{post.id}")
 
 

@@ -1,4 +1,4 @@
-"""Live pings for open thread pages (new replies and reactions), over Server-Sent Events.
+"""Live pings, over Server-Sent Events: thread pages hear about new replies and reactions, the front page about new posts.
 
 A ping carries no content. Each page then fetches the thread as its own viewer, so a private
 reply only ever shows up for the two people in it. Subscribers live in memory in this one process;
@@ -8,6 +8,8 @@ nothing about who is watching is stored or logged.
 import asyncio
 from collections import defaultdict
 
+# The front page listens here; thread ids are three words, so they never collide with it.
+HOME = "home"
 KEEPALIVE_SECONDS = 25  # a comment line this often keeps proxies from closing an idle stream
 RETRY_MILLISECONDS = 3000  # how soon browsers reconnect, e.g. after a release restarts the server
 

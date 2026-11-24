@@ -328,3 +328,19 @@ def test_many_people_loading_a_thread_at_once_all_get_it(signed_in, app, pass_id
     with signed_in, ThreadPoolExecutor(max_workers=16) as pool:
         statuses = list(pool.map(lambda _: signed_in.get(f"/thread/{post.id}").status_code, range(80)))
     assert statuses == [200] * 80
+
+
+def test_a_new_post_pings_the_front_page(signed_in, app):
+    from maf import live
+
+    watching = app.live.subscribe(live.HOME)
+    signed_in.post("/submit", data={"title": "Is the gym open late?"}, follow_redirects=False)
+    assert watching.qsize() == 1
+
+
+def test_front_page_rows_carry_their_time_for_new_labels(signed_in, app, pass_id):
+    post = make_post(app, pass_id)
+    body = signed_in.get("/").text
+    assert f'data-created="{post.created_at}"' in body
+    assert "fresh.js" in body
+    assert "fresh.js" not in signed_in.get("/search?q=post").text

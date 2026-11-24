@@ -21,7 +21,7 @@
 {% extends "base.html" %}
 
 {% macro row(post, fixed=false) %}
-<li{% if fixed %} class="fixed"{% elif is_hot(post.tags) %} class="hot"{% endif %} data-tags="{{ post.tags|join(' ') }}" data-id="{{ post.id }}" data-title="{{ post.title|e }}" data-host="{{ post.url|host }}">
+<li{% if fixed %} class="fixed"{% elif is_hot(post.tags) %} class="hot"{% endif %} data-tags="{{ post.tags|join(' ') }}" data-id="{{ post.id }}" data-title="{{ post.title|e }}" data-host="{{ post.url|host }}" data-created="{{ post.created_at }}">
   {% if post.title %}
   <a class="title" href="/thread/{{ post.id }}">{{ post.title }}</a>{% if post.url %}<span class="host">({{ post.url|host }})</span>{% endif %}
   <div class="meta">{{ metadata(post, post.comment_count) }}{% if post.tags %} <span class="dot">·</span> {% for tag in post.tags %}<a class="tag{% if is_hot([tag]) %} hot-tag{% endif %}" href="/?tag={{ tag }}">#{{ tag }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}</div>
@@ -111,4 +111,5 @@
 {% block scripts %}
 <p id="pin-status" class="sr-only" aria-live="polite"></p>
 <script src="{{ static('pins.js') }}"></script>
+{% if path == "/" %}<script src="{{ static('fresh.js') }}"></script>{% endif %}
 {% endblock %}
