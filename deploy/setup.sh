@@ -112,6 +112,7 @@ LABEL_SECRET=$(random_secret)
 SESSION_SECRET=$(random_secret)
 EMAIL_BACKEND=ses
 MAF_EMAIL_FROM=code@maforum.net
+# SES (email) is in us-west-2 (Oregon); the server itself runs in us-east-1.
 AWS_REGION=us-west-2
 MAF_BASE_URL=https://maforum.net
 # Moderation requests are emailed here. The maintainer must replace this value.

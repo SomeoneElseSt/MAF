@@ -1,6 +1,8 @@
 # Setting up MAF on AWS
 
-You run these yourself, once. Every command uses `--profile rilley --region us-west-2`.
+You run these yourself, once. Every command uses `--profile rilley --region us-east-1`: the server lives in
+us-east-1 (N. Virginia). Email (SES) lives in us-west-2 (Oregon), where the domain is verified and production
+access was requested, so the SES ARNs below say us-west-2 and the server's `AWS_REGION` is us-west-2.
 Replace the two placeholders first:
 
 - `ACCOUNT_ID`: your 12-digit AWS account id.
@@ -18,14 +20,14 @@ export MY_IP=203.0.113.7
 Opens 443 and 80 to the world (80 is only for the HTTPS certificate and redirect) and 22 to you.
 
 ```sh
-VPC_ID=$(aws --profile rilley --region us-west-2 ec2 describe-vpcs --filters Name=is-default,Values=true --query 'Vpcs[0].VpcId' --output text)
+VPC_ID=$(aws --profile rilley --region us-east-1 ec2 describe-vpcs --filters Name=is-default,Values=true --query 'Vpcs[0].VpcId' --output text)
 
-SG_ID=$(aws --profile rilley --region us-west-2 ec2 create-security-group --group-name maf --description "MAF web server" \
+SG_ID=$(aws --profile rilley --region us-east-1 ec2 create-security-group --group-name maf --description "MAF web server" \
   --vpc-id "$VPC_ID" --query GroupId --output text)
 
-aws --profile rilley --region us-west-2 ec2 authorize-security-group-ingress --group-id "$SG_ID" --protocol tcp --port 443 --cidr 0.0.0.0/0
-aws --profile rilley --region us-west-2 ec2 authorize-security-group-ingress --group-id "$SG_ID" --protocol tcp --port 80 --cidr 0.0.0.0/0
-aws --profile rilley --region us-west-2 ec2 authorize-security-group-ingress --group-id "$SG_ID" --protocol tcp --port 22 --cidr "$MY_IP/32"
+aws --profile rilley --region us-east-1 ec2 authorize-security-group-ingress --group-id "$SG_ID" --protocol tcp --port 443 --cidr 0.0.0.0/0
+aws --profile rilley --region us-east-1 ec2 authorize-security-group-ingress --group-id "$SG_ID" --protocol tcp --port 80 --cidr 0.0.0.0/0
+aws --profile rilley --region us-east-1 ec2 authorize-security-group-ingress --group-id "$SG_ID" --protocol tcp --port 22 --cidr "$MY_IP/32"
 ```
 
 ## 2. IAM role for sending email
@@ -55,10 +57,10 @@ cat > ses-policy.json <<EOF
 }
 EOF
 
-aws --profile rilley --region us-west-2 iam create-role --role-name maf-server --assume-role-policy-document file://trust.json
-aws --profile rilley --region us-west-2 iam put-role-policy --role-name maf-server --policy-name send-ses-email --policy-document file://ses-policy.json
-aws --profile rilley --region us-west-2 iam create-instance-profile --instance-profile-name maf-server
-aws --profile rilley --region us-west-2 iam add-role-to-instance-profile --instance-profile-name maf-server --role-name maf-server
+aws --profile rilley --region us-east-1 iam create-role --role-name maf-server --assume-role-policy-document file://trust.json
+aws --profile rilley --region us-east-1 iam put-role-policy --role-name maf-server --policy-name send-ses-email --policy-document file://ses-policy.json
+aws --profile rilley --region us-east-1 iam create-instance-profile --instance-profile-name maf-server
+aws --profile rilley --region us-east-1 iam add-role-to-instance-profile --instance-profile-name maf-server --role-name maf-server
 ```
 
 While SES is still in sandbox mode, SES also checks the recipient. To test before production access
@@ -68,7 +70,7 @@ to `Resource` for now. Once production access is approved, the policy above is e
 ## 3. SSH key pair
 
 ```sh
-aws --profile rilley --region us-west-2 ec2 create-key-pair --key-name maf --key-type ed25519 --query KeyMaterial --output text > ~/.ssh/maf.pem
+aws --profile rilley --region us-east-1 ec2 create-key-pair --key-name maf --key-type ed25519 --query KeyMaterial --output text > ~/.ssh/maf.pem
 chmod 400 ~/.ssh/maf.pem
 ```
 
@@ -78,13 +80,13 @@ Looks up the current Ubuntu 24.04 arm64 image, then starts a `t4g.small` with an
 The `Backup=maf-daily` tag is what the snapshot policy in step 6 looks for.
 
 ```sh
-AMI_ID=$(aws --profile rilley --region us-west-2 ssm get-parameter \
+AMI_ID=$(aws --profile rilley --region us-east-1 ssm get-parameter \
   --name /aws/service/canonical/ubuntu/server/24.04/stable/current/arm64/hvm/ebs-gp3/ami-id \
   --query Parameter.Value --output text)
 
 sleep 15   # the new instance profile needs a few seconds before EC2 can use it
 
-INSTANCE_ID=$(aws --profile rilley --region us-west-2 ec2 run-instances \
+INSTANCE_ID=$(aws --profile rilley --region us-east-1 ec2 run-instances \
   --image-id "$AMI_ID" \
   --instance-type t4g.small \
   --key-name maf \
@@ -95,22 +97,22 @@ INSTANCE_ID=$(aws --profile rilley --region us-west-2 ec2 run-instances \
   --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=maf},{Key=Backup,Value=maf-daily}]' \
   --query 'Instances[0].InstanceId' --output text)
 
-aws --profile rilley --region us-west-2 ec2 wait instance-running --instance-ids "$INSTANCE_ID"
+aws --profile rilley --region us-east-1 ec2 wait instance-running --instance-ids "$INSTANCE_ID"
 ```
 
 ## 5. Elastic IP (a fixed address)
 
 ```sh
-ALLOC_ID=$(aws --profile rilley --region us-west-2 ec2 allocate-address --domain vpc --query AllocationId --output text)
-aws --profile rilley --region us-west-2 ec2 associate-address --instance-id "$INSTANCE_ID" --allocation-id "$ALLOC_ID"
-SERVER_IP=$(aws --profile rilley --region us-west-2 ec2 describe-addresses --allocation-ids "$ALLOC_ID" --query 'Addresses[0].PublicIp' --output text)
+ALLOC_ID=$(aws --profile rilley --region us-east-1 ec2 allocate-address --domain vpc --query AllocationId --output text)
+aws --profile rilley --region us-east-1 ec2 associate-address --instance-id "$INSTANCE_ID" --allocation-id "$ALLOC_ID"
+SERVER_IP=$(aws --profile rilley --region us-east-1 ec2 describe-addresses --allocation-ids "$ALLOC_ID" --query 'Addresses[0].PublicIp' --output text)
 echo "$SERVER_IP"
 ```
 
 ## 6. Daily snapshots, kept 7 days
 
 ```sh
-aws --profile rilley --region us-west-2 dlm create-default-role --resource-type snapshot   # fails harmlessly if the role already exists
+aws --profile rilley --region us-east-1 dlm create-default-role --resource-type snapshot   # fails harmlessly if the role already exists
 
 cat > dlm-policy.json <<'EOF'
 {
@@ -126,7 +128,7 @@ cat > dlm-policy.json <<'EOF'
 }
 EOF
 
-aws --profile rilley --region us-west-2 dlm create-lifecycle-policy \
+aws --profile rilley --region us-east-1 dlm create-lifecycle-policy \
   --description "MAF daily snapshot keep 7" \
   --state ENABLED \
   --execution-role-arn "arn:aws:iam::${ACCOUNT_ID}:role/AWSDataLifecycleManagerDefaultRole" \
