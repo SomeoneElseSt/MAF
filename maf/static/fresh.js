@@ -59,7 +59,9 @@
     if (first) requestAnimationFrame(() => first.scrollIntoView({ block: "center", behavior: calm ? "auto" : "smooth" }));
   }
 
-  if (!window.EventSource) return;
+  // New posts only ever show up on the latest dates or the first page of a hashtag.
+  const latestPage = !params.has("before") && !params.has("after") && !(Number(params.get("page")) > 1);
+  if (!window.EventSource || !latestPage) return;
   let banner = null;
 
   function show() {
@@ -79,7 +81,9 @@
       banner.setAttribute("role", "status");
       banner.innerHTML = '<p><span class="live-count"></span> <button class="live-show" type="button">Show</button>?</p>';
       banner.querySelector(".live-show").addEventListener("click", show);
-      main.prepend(banner);
+      const sortRow = document.querySelector(".listbar");
+      if (sortRow) sortRow.after(banner);
+      else main.prepend(banner);
     }
     banner.querySelector(".live-count").textContent = `${count} new ${count === 1 ? "post" : "posts"}.`;
   }
@@ -88,8 +92,11 @@
     const response = await fetch(window.location.pathname + window.location.search, { headers: { accept: "text/html" } });
     if (!response.ok) return;
     const page = new DOMParser().parseFromString(await response.text(), "text/html");
-    const shown = new Set(postRows(document).map(row => row.dataset.id));
-    const count = postRows(page).filter(row => !shown.has(row.dataset.id)).length;
+    // Only posts newer than the newest one on screen: not ones that are merely missing from it.
+    const rows = postRows(document);
+    const shown = new Set(rows.map(row => row.dataset.id));
+    const newest = rows.reduce((max, row) => (row.dataset.created > max ? row.dataset.created : max), "");
+    const count = postRows(page).filter(row => !shown.has(row.dataset.id) && row.dataset.created > newest).length;
     if (count) showBanner(count);
   }
 
