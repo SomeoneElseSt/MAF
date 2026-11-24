@@ -127,7 +127,7 @@ cat > dlm-policy.json <<'EOF'
 EOF
 
 aws --profile rilley --region us-west-2 dlm create-lifecycle-policy \
-  --description "MAF daily snapshot, keep 7" \
+  --description "MAF daily snapshot keep 7" \
   --state ENABLED \
   --execution-role-arn "arn:aws:iam::${ACCOUNT_ID}:role/AWSDataLifecycleManagerDefaultRole" \
   --policy-details file://dlm-policy.json
