@@ -26,6 +26,9 @@ if ! cmp -s "$UNIT_SRC" "$UNIT_DST"; then
   echo "Updated $UNIT_DST"
 fi
 
+# The "under maintenance" page Caddy shows while the app is down. Installed before Caddy reloads.
+install -m 644 "$APP_DIR/deploy/maintenance.html" /etc/caddy/maintenance.html
+
 if ! cmp -s "$CADDY_SRC" "$CADDY_DST"; then
   caddy validate --config "$CADDY_SRC" --adapter caddyfile
   install -m 644 "$CADDY_SRC" "$CADDY_DST"

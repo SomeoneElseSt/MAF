@@ -141,6 +141,7 @@ install_service_and_proxy() {
   log "Installing the systemd unit and Caddyfile"
   install -m 644 "$APP_DIR/deploy/maf.service" /etc/systemd/system/maf.service
   caddy validate --config "$APP_DIR/deploy/Caddyfile" --adapter caddyfile
+  install -m 644 "$APP_DIR/deploy/maintenance.html" /etc/caddy/maintenance.html
   install -m 644 "$APP_DIR/deploy/Caddyfile" /etc/caddy/Caddyfile
   systemctl daemon-reload
   systemctl enable maf.service caddy.service

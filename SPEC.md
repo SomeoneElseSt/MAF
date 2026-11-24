@@ -24,6 +24,7 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 - Blind signatures (RFC 9474): `blindrsa-ts` in the browser, vendored as a single file rather than loaded from a CDN, plus a Python RFC 9474 library on the server. Confirm the two interoperate before building on them.
 - Domain: `maforum.net` (Namecheap, free DNS). AWS: one EC2 `t4g.small`, SES for email, sending via the instance's IAM role
 - Caddy for HTTPS, with **access logs off**
+- While the app restarts (a release takes about 2 seconds), Caddy holds requests for up to 10 seconds instead of failing. If it's still down after that, Caddy shows a self-contained "under maintenance" page (`deploy/maintenance.html`, status 503) that reloads itself every 5 seconds.
 
 ## Login flow (sign-up and login are the same thing)
 

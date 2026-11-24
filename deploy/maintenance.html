@@ -1,0 +1,36 @@
+<!doctype html>
+<!-- Shown by Caddy while the app is down, for example during a release. Installed to
+     /etc/caddy/maintenance.html by setup.sh and update.sh. Self-contained: the app's
+     /static files aren't reachable while it's down. Reloads itself every few seconds. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="refresh" content="5">
+<title>MAF</title>
+<style>
+  :root {
+    --paper: #ffffff;
+    --ink: #000000;
+    --soft: #555555;
+    --serif: "Iowan Old Style", Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --paper: #000000; --ink: #ffffff; --soft: #aaaaaa; }
+  }
+  html, body { height: 100%; margin: 0; }
+  body {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 0 16px; background: var(--paper); color: var(--ink); font-family: var(--serif); text-align: center;
+  }
+  /* The header logo exactly (.brand: 24px bold serif), blown up. Scaling keeps its letter spacing,
+     which a big font-size would tighten. The margin makes room, since scaling doesn't move the text below. */
+  h1 { margin: 24px 0; font-size: 24px; font-weight: 700; transform: scale(2.5); }
+  p { margin: 12px 0 0; font-size: 19px; line-height: 1.5; color: var(--soft); }
+</style>
+</head>
+<body>
+<h1>MAF</h1>
+<p>The site is under maintenance. Please check back in a moment.</p>
+</body>
+</html>

@@ -40,5 +40,21 @@ maforum.net {
 		header_up -X-Forwarded-For
 		header_up -X-Forwarded-Host
 		header_up -X-Forwarded-Proto
+		# A release restarts the app for a few seconds: hold requests until it's back instead of failing.
+		lb_try_duration 10s
+		lb_try_interval 250ms
+	}
+
+	# Still down after that: a "under maintenance" page that reloads itself, instead of a bare 502.
+	handle_errors 502 503 504 {
+		header Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'"
+		header Cache-Control no-store
+		header Retry-After 5
+		header -Server
+		rewrite * /maintenance.html
+		file_server {
+			status 503
+			root /etc/caddy
+		}
 	}
 }
