@@ -4,6 +4,7 @@ Every secret and path is an environment variable (see docs in NOTES.md). Nothing
 here writes anything to disk.
 """
 
+import importlib.util
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -12,6 +13,10 @@ PRODUCTION = "production"
 # "minerv" as alphabet positions (m13 i9 n14 e5 r18 v22), cut to six digits. Local development only.
 DEV_LOGIN_CODE = "139145"
 EMAIL_BACKENDS = {"ses", "azure", "console"}
+
+
+# The name filter's spaCy model; it must match the model pyproject.toml installs.
+DEFAULT_SPACY_MODEL = "en_core_web_md"
 
 
 class ConfigError(Exception):
@@ -32,7 +37,7 @@ class Settings:
     azure_email_connection: str = ""
     name_filter_threshold: float = 0.85
     name_filter_enabled: bool = True
-    spacy_model: str = "en_core_web_sm"
+    spacy_model: str = DEFAULT_SPACY_MODEL
     base_url: str = "http://localhost:8000"
     static_dir: Path = field(default_factory=lambda: Path(__file__).parent / "static")
     templates_dir: Path = field(default_factory=lambda: Path(__file__).parent / "templates")
@@ -82,7 +87,7 @@ def load_settings(env: dict[str, str] | None = None) -> Settings:
         azure_email_connection=source.get("AZURE_EMAIL_CONNECTION_STRING", ""),
         name_filter_threshold=float(source.get("NAME_FILTER_THRESHOLD", "0.85")),
         name_filter_enabled=_bool("NAME_FILTER_ENABLED", True),
-        spacy_model=source.get("SPACY_MODEL", "en_core_web_sm"),
+        spacy_model=source.get("SPACY_MODEL", DEFAULT_SPACY_MODEL),
         base_url=source.get("MAF_BASE_URL", "http://localhost:8000").rstrip("/"),
     )
     if backend not in EMAIL_BACKENDS:
@@ -95,4 +100,7 @@ def load_settings(env: dict[str, str] | None = None) -> Settings:
     for name, value in (("LABEL_SECRET", settings.label_secret), ("SESSION_SECRET", settings.session_secret)):
         if settings.is_production and (not value or value.startswith(b"dev-")):
             raise ConfigError(f"{name} must be set to a real secret when MAF_ENV=production")
+    # Missing, the model would be downloaded on the first post, which fails on the read-only server.
+    if settings.is_production and settings.name_filter_enabled and importlib.util.find_spec(settings.spacy_model) is None:
+        raise ConfigError(f"spaCy model {settings.spacy_model} isn't installed; it must be in pyproject.toml")
     return settings

@@ -191,3 +191,25 @@ def test_mcp_without_a_token_says_so(api_site, monkeypatch):
         return result.content[0].text
 
     assert "MAF_TOKEN" in run_mcp(monkeypatch, app, "", calls)
+
+
+def test_the_default_spacy_model_is_the_one_the_project_installs():
+    from pathlib import Path
+
+    from maf.settings import DEFAULT_SPACY_MODEL
+
+    pyproject = (Path(__file__).parent.parent / "pyproject.toml").read_text()
+    assert f'"{DEFAULT_SPACY_MODEL.replace("_", "-")}>=' in pyproject
+
+
+def test_production_refuses_to_start_without_the_spacy_model(monkeypatch):
+    import pytest
+
+    from maf.settings import ConfigError, load_settings
+
+    env = {"MAF_ENV": "production", "EMAIL_BACKEND": "ses", "LABEL_SECRET": "x" * 32, "SESSION_SECRET": "y" * 32,
+           "SPACY_MODEL": "en_core_web_not_installed"}
+    for name, value in env.items():
+        monkeypatch.setenv(name, value)
+    with pytest.raises(ConfigError, match="isn't installed"):
+        load_settings()
