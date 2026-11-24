@@ -1,6 +1,6 @@
 """The name filter: Microsoft Presidio PERSON detection before saving.
 
-No allowlist and no stored list of names. The spaCy model is loaded once, lazily,
+No list of student names; only a short list of words that are never people (see NOT_PEOPLE). The spaCy model is loaded once, lazily,
 because it is the slowest part of startup and only submissions need it.
 """
 
@@ -9,6 +9,8 @@ import threading
 from .settings import Settings
 
 PERSON = "PERSON"
+# Words the language model mistakes for people's names but never are on MAF. Lowercase.
+NOT_PEOPLE = {"minerva"}
 
 
 class NameFilter:
@@ -50,4 +52,4 @@ class NameFilter:
                 language="en",
                 score_threshold=self._settings.name_filter_threshold,
             )
-        return bool(results)
+        return any(joined[found.start:found.end].strip().lower() not in NOT_PEOPLE for found in results)

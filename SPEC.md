@@ -103,7 +103,7 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 
 - Run Presidio `PERSON` detection on titles, bodies and comments **before** saving.
 - If it finds a name above the score threshold (configurable), don't save. Re-render the form with the text intact and the warning: *"This looks like it names someone. MAF doesn't allow naming students or staff."* plus two buttons: **Edit post** (back to editing) and **Post anyway** (resubmits with `confirm_names=1`, which skips the check).
-- No allowlist and no stored list of names.
+- No stored list of names. A short list of words the model mistakes for names but never are on MAF (`NOT_PEOPLE` in `maf/namefilter.py`: "Minerva") is skipped.
 - The rule appears on `/submit` and `/guide`.
 
 ## Moderation

@@ -57,6 +57,13 @@ def test_ordinary_text_is_not(filtering_app):
     assert not app.name_filter.finds_name("Should we move the Berlin rotation to fall?")
 
 
+def test_minerva_is_not_a_person(filtering_app):
+    app, _ = filtering_app
+    assert not app.name_filter.finds_name("Does Minerva publish stats on it?")
+    assert not app.name_filter.finds_name("minerva is great")
+    assert app.name_filter.finds_name("Has Minerva told Priya Raman yet?")
+
+
 def test_warning_keeps_the_text_and_offers_post_anyway(filtering_app):
     app, client = filtering_app
     sign_in(client, app)
