@@ -28,6 +28,19 @@
     });
   });
 
+  // Flagging sends quietly and reloads in place: no new history entry, so Back still goes to the
+  // page you came from, and the reload keeps your scroll position.
+  document.addEventListener("submit", async event => {
+    const form = event.target.closest("form[action='/flag']");
+    if (!form) return;
+    event.preventDefault();
+    try {
+      await fetch(form.action, { method: "POST", body: new FormData(form) });
+    } finally {
+      window.location.reload();
+    }
+  });
+
   // The per-thread ID in a reply box opens the same pop-up as IDs elsewhere.
   document.querySelectorAll(".inline-reply .id").forEach(button => {
     button.addEventListener("click", () => document.getElementById("id-dialog")?.showModal());

@@ -4,6 +4,7 @@ import json
 import secrets
 from urllib.parse import urlsplit
 
+from starlette.concurrency import run_in_threadpool
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.routing import Route
@@ -34,7 +35,7 @@ async def submit_page(request: Request) -> Response:
     if page.pass_id is None:
         return _login(page)
     tags: list[str] = []
-    return render(page, "submit.html", tags=tags, placeholder=submit_placeholder(tags),
+    return render(page, "submit.html", placeholder=submit_placeholder(tags),
                   values={}, errors={})
 
 
@@ -47,7 +48,7 @@ async def submit_post(request: Request) -> Response:
     errors = _validate_post(values, too_many)
     if errors:
         return _form_error(page, values, tags, errors)
-    if values["confirm_names"] != "1" and page.app.name_filter.finds_name(values["title"], values["text"]):
+    if values["confirm_names"] != "1" and await run_in_threadpool(page.app.name_filter.finds_name, values["title"], values["text"]):
         return _name_warning(page, values, tags)
     if not _allowed(page, "post", POSTS_PER_MINUTE):
         return _form_error(page, values, tags, {"form": "You're posting fast. Wait a minute and try again."})
@@ -79,12 +80,12 @@ def _valid_url(url: str) -> bool:
 
 
 def _form_error(page, values, tags, errors) -> Response:
-    return render(page, "submit.html", status_code=400, tags=tags,
+    return render(page, "submit.html", status_code=400,
                   placeholder=submit_placeholder(tags), values=values, errors=errors)
 
 
 def _name_warning(page, values, tags) -> Response:
-    return render(page, "submit-warning.html", status_code=400, tags=tags,
+    return render(page, "submit-warning.html", status_code=400,
                   placeholder=submit_placeholder(tags), values=values)
 
 
@@ -99,7 +100,7 @@ async def comment(request: Request) -> Response:
         return _private_comment(page, parent, private_to, values["sealed"])
     if not values["text"]:
         return redirect(f"/thread/{parent.thread_id}?notice=Write+something+first.")
-    if values["confirm_names"] != "1" and page.app.name_filter.finds_name(values["text"]):
+    if values["confirm_names"] != "1" and await run_in_threadpool(page.app.name_filter.finds_name, values["text"]):
         return redirect(f"/thread/{parent.thread_id}?notice=This+looks+like+it+names+someone.+Edit+it+and+try+again.")
     if not _allowed(page, "comment", COMMENTS_PER_MINUTE):
         return redirect(f"/thread/{parent.thread_id}?notice=You're+replying+fast.+Wait+a+minute.")
@@ -168,16 +169,16 @@ async def flag(request: Request) -> Response:
     # Clicking again takes the flag back.
     if item.private_to is None and not store.remove_flag(page.conn, page.pass_id, item.id):
         store.add_flag(page.conn, page.pass_id, item.id)
-        _alert_if_reply_hidden(page, item.id)
+        await _alert_if_reply_hidden(page, item.id)
     return redirect(f"/thread/{item.thread_id}#{item.id}")
 
 
-def _alert_if_reply_hidden(page, item_id: str) -> None:
+async def _alert_if_reply_hidden(page, item_id: str) -> None:
     """Emails the maintainer when flags hide a reply. Hidden posts email when someone asks for a review."""
     item = store.get_item(page.conn, item_id)
     if item is None or item.is_post or not item.unlisted or not page.memory.take_hide_alert(item.id):
         return
-    page.app.emailer.send(hidden_reply_email(page.settings.maintainer_email, item.id, item.thread_id, item.flags,
+    await run_in_threadpool(page.app.emailer.send, hidden_reply_email(page.settings.maintainer_email, item.id, item.thread_id, item.flags,
                                              page.settings.base_url))
 
 
@@ -189,8 +190,8 @@ async def moderation_request(request: Request) -> Response:
         return _login(page)
     if store.add_moderation_request(page.conn, page.pass_id, item.id, values["kind"]):
         count = sum(store.request_counts(page.conn, item.id).values())
-        page.app.emailer.send(
-            moderation_email(page.settings.maintainer_email, values["kind"], item.id, count, page.settings.base_url)
+        await run_in_threadpool(
+            page.app.emailer.send, moderation_email(page.settings.maintainer_email, values["kind"], item.id, count, page.settings.base_url)
         )
     return redirect(f"/thread/{item.id}?notice=Request+sent.+Thank+you.")
 

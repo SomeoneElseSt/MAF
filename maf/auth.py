@@ -9,6 +9,7 @@ import base64
 import binascii
 import re
 
+from starlette.concurrency import run_in_threadpool
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.routing import Route
@@ -38,10 +39,11 @@ def _code_page_waiting(page, email: str) -> Response:
                   cooldown_seconds=page.memory.cooldown_left(email), wait_seconds=page.memory.code_lock_left(email))
 
 
-def _alert_if_paused(page) -> None:
+async def _alert_if_paused(page) -> None:
     """Emails the maintainer the moment wrong codes hit the site-wide cap: someone is probably guessing."""
     if page.memory.take_pause_alert():
-        page.app.emailer.send(sign_in_paused_email(page.settings.maintainer_email, page.memory.code_guessing_minutes_left()))
+        email = sign_in_paused_email(page.settings.maintainer_email, page.memory.code_guessing_minutes_left())
+        await run_in_threadpool(page.app.emailer.send, email)
 
 
 def _paused_error(minutes: int) -> str:
@@ -88,7 +90,8 @@ async def login_submit(request: Request) -> Response:
                       error="A code was already sent to this address.",
                       cooldown_seconds=max(1, page.memory.cooldown_left(email)),
                       email=values["email"])
-    page.app.emailer.send(code_email(email, code))
+    # Sending takes a moment; off the event loop so other pages don't wait for it.
+    await run_in_threadpool(page.app.emailer.send, code_email(email, code))
     # Rendered directly rather than redirected, so the address reaches the code form without going into a URL.
     return render(page, "login-code.html", email=email, cooldown_seconds=page.memory.cooldown_left(email))
 
@@ -114,7 +117,7 @@ async def code_submit(request: Request) -> Response:
         return render(page, "login-code.html", status_code=400, error="Enter the 6-digit code from the email.",
                       email=values["email"], cooldown_seconds=page.memory.cooldown_left(email) if email else 0)
     if email is None or not code_accepted(page, email, values["code"], consume=False):
-        _alert_if_paused(page)
+        await _alert_if_paused(page)
         return render(page, "login-code.html", status_code=400,
                       error="That code didn't match. Check the 6 digits, or ask for a new code.",
                       email=values["email"],
@@ -143,7 +146,7 @@ async def blind_sign(request: Request) -> Response:
     values = await form_values(request, "email", "code", "blinded")
     email = normalise_email(values["email"])
     if email is None or not code_accepted(page, email, values["code"]):
-        _alert_if_paused(page)
+        await _alert_if_paused(page)
         return Response('{"error":"invalid code"}', status_code=400, media_type="application/json")
     blinded = _decode_base64url(values["blinded"])
     if blinded is None:

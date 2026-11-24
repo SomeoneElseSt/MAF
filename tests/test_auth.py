@@ -348,3 +348,26 @@ def test_paused_email_layout():
     assert email.body == ("Sign-ins paused: 30 wrong codes in the last hour\nResumes by 22:45 UTC, as of 23/11/26 22:00 UTC\n\n"
                           "To resume sign-ins early, restart MAF on the server with sudo systemctl restart maf.\n")
     assert ">MAF</p>" in email.html
+
+
+def test_a_slow_sign_in_email_does_not_hold_up_other_pages(client, app, monkeypatch):
+    """Sending runs on a worker thread, so everyone else's pages keep loading meanwhile."""
+    import threading
+    import time
+
+    sending = threading.Event()
+
+    def slow_send(email):
+        sending.set()
+        time.sleep(1.5)
+
+    monkeypatch.setattr(app.emailer, "send", slow_send)
+    with client:
+        signing_in = threading.Thread(target=lambda: client.post("/sign-in", data={"email": "slow@uni.minerva.edu"}))
+        signing_in.start()
+        assert sending.wait(5)
+        started = time.monotonic()
+        assert client.get("/about").status_code == 200
+        waited = time.monotonic() - started
+        signing_in.join()
+    assert waited < 0.5

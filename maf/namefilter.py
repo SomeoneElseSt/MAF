@@ -16,6 +16,7 @@ class NameFilter:
         self._settings = settings
         self._analyzer = None
         self._lock = threading.Lock()
+        self._analyze_lock = threading.Lock()
 
     def _engine(self):
         with self._lock:
@@ -41,10 +42,12 @@ class NameFilter:
         joined = "\n".join(t for t in texts if t)
         if not joined.strip():
             return False
-        results = self._engine().analyze(
-            text=joined,
-            entities=[PERSON],
-            language="en",
-            score_threshold=self._settings.name_filter_threshold,
-        )
+        engine = self._engine()
+        with self._analyze_lock:
+            results = engine.analyze(
+                text=joined,
+                entities=[PERSON],
+                language="en",
+                score_threshold=self._settings.name_filter_threshold,
+            )
         return bool(results)

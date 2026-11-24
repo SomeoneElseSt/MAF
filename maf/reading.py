@@ -9,7 +9,7 @@ from .housetags import etiquette, is_hot, reply_placeholder
 from .web import error_page, page_of, render
 
 
-async def item(request: Request) -> Response:
+def item(request: Request) -> Response:
     page = page_of(request)
     item_id = request.path_params["id"]
     root = store.get_item(page.conn, item_id)

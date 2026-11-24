@@ -1,6 +1,7 @@
 """Application context: everything a request needs, built once at startup."""
 
 import sqlite3
+import threading
 from dataclasses import dataclass, field
 
 from . import db
@@ -17,7 +18,6 @@ from .settings import Settings
 @dataclass
 class App:
     settings: Settings
-    conn: sqlite3.Connection
     memory: Memory
     sessions: Sessions
     labeler: Labeler
@@ -25,8 +25,22 @@ class App:
     emailer: Emailer
     signing_key: PrivateKey
     live: Notifier = field(default_factory=Notifier)
+    _local: threading.local = field(default_factory=threading.local)
     templates: object = None
     _: tuple = field(default_factory=tuple)
+
+    @property
+    def conn(self) -> sqlite3.Connection:
+        """This thread's own database connection.
+
+        Pages run side by side in worker threads, and one SQLite connection can't be shared between
+        threads safely. With WAL, separate connections read and write alongside each other.
+        """
+        conn = getattr(self._local, "conn", None)
+        if conn is None:
+            conn = db.connect(self.settings.database_path)
+            self._local.conn = conn
+        return conn
 
     @property
     def public_key(self) -> PublicKey:
@@ -34,12 +48,9 @@ class App:
 
 
 def build_app(settings: Settings) -> App:
-    conn = db.connect(settings.database_path)
-    db.migrate(conn)
     signing_key = load_signing_key(settings)
-    return App(
+    app = App(
         settings=settings,
-        conn=conn,
         memory=Memory(),
         sessions=Sessions(settings),
         labeler=Labeler(settings.label_secret),
@@ -47,6 +58,8 @@ def build_app(settings: Settings) -> App:
         emailer=Emailer(settings),
         signing_key=signing_key,
     )
+    db.migrate(app.conn)
+    return app
 
 
 def load_signing_key(settings: Settings):
