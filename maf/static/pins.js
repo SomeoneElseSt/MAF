@@ -52,7 +52,7 @@ function rowFromSnapshot(pin) {
   if (pin.tags.some(tag => hotTags.includes(tag))) row.classList.add("hot");
   const title = Object.assign(document.createElement("a"), { className: "title", href: `/thread/${pin.id}`, textContent: pin.title });
   row.append(title);
-  if (pin.host) row.append(Object.assign(document.createElement("span"), { className: "host", textContent: pin.host }));
+  if (pin.host) row.append(Object.assign(document.createElement("span"), { className: "host", textContent: `(${pin.host})` }));
   const meta = Object.assign(document.createElement("div"), { className: "meta", textContent: "Pinned by you" });
   pin.tags.forEach((tag, index) => {
     meta.append(index === 0 ? " · " : ", ");
