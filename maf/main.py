@@ -1,5 +1,6 @@
 """The Starlette application: routes, middleware and startup."""
 
+import threading
 from datetime import timedelta
 from urllib.parse import urlparse
 
@@ -260,8 +261,11 @@ def main() -> None:
     import uvicorn
 
     settings = load_settings()
+    app = create_app(settings)
+    # In the background, so the server answers straight away; a post arriving meanwhile just waits for it.
+    threading.Thread(target=APP.name_filter.warm_up, name="name-check-warm-up", daemon=True).start()
     uvicorn.run(
-        create_app(settings),
+        app,
         host="127.0.0.1",
         port=listen_port(settings.base_url),
         access_log=False,  # no IP addresses in logs

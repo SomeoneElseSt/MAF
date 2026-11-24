@@ -7,6 +7,8 @@ Nothing here logs or stores the recipient address: it is passed to SES and
 dropped.
 """
 
+import logging
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -15,6 +17,9 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from . import azure_email
 from .settings import Settings
+
+SEND_WORKERS = 4  # emails go out alongside page requests, a few at a time
+log = logging.getLogger("maf.email")
 
 # HTML versions live in templates/email/ and match the site's look; every email also keeps a plain-text body.
 _templates = Environment(
@@ -108,6 +113,24 @@ class Emailer:
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
         self._client = None
+        self._workers = ThreadPoolExecutor(max_workers=SEND_WORKERS, thread_name_prefix="email")
+
+    def send_soon(self, email: Email) -> None:
+        """Sends in the background, so the page answers without waiting on the email provider.
+
+        Console email (local development) prints straight away.
+        """
+        if self._settings.console_email:
+            self.send(email)
+            return
+        self._workers.submit(self._send_logging_failures, email)
+
+    def _send_logging_failures(self, email: Email) -> None:
+        # A background send has nobody to show an error to: log the kind of failure, never the recipient.
+        try:
+            self.send(email)
+        except Exception as error:  # noqa: BLE001
+            log.error("email not sent: %s", type(error).__name__)
 
     def send(self, email: Email) -> None:
         if self._settings.console_email:

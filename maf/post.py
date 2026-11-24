@@ -169,16 +169,16 @@ async def flag(request: Request) -> Response:
     # Clicking again takes the flag back.
     if item.private_to is None and not store.remove_flag(page.conn, page.pass_id, item.id):
         store.add_flag(page.conn, page.pass_id, item.id)
-        await _alert_if_reply_hidden(page, item.id)
+        _alert_if_reply_hidden(page, item.id)
     return redirect(f"/thread/{item.thread_id}#{item.id}")
 
 
-async def _alert_if_reply_hidden(page, item_id: str) -> None:
+def _alert_if_reply_hidden(page, item_id: str) -> None:
     """Emails the maintainer when flags hide a reply. Hidden posts email when someone asks for a review."""
     item = store.get_item(page.conn, item_id)
     if item is None or item.is_post or not item.unlisted or not page.memory.take_hide_alert(item.id):
         return
-    await run_in_threadpool(page.app.emailer.send, hidden_reply_email(page.settings.maintainer_email, item.id, item.thread_id, item.flags,
+    page.app.emailer.send_soon(hidden_reply_email(page.settings.maintainer_email, item.id, item.thread_id, item.flags,
                                              page.settings.base_url))
 
 
@@ -190,8 +190,8 @@ async def moderation_request(request: Request) -> Response:
         return _login(page)
     if store.add_moderation_request(page.conn, page.pass_id, item.id, values["kind"]):
         count = sum(store.request_counts(page.conn, item.id).values())
-        await run_in_threadpool(
-            page.app.emailer.send, moderation_email(page.settings.maintainer_email, values["kind"], item.id, count, page.settings.base_url)
+        page.app.emailer.send_soon(
+            moderation_email(page.settings.maintainer_email, values["kind"], item.id, count, page.settings.base_url)
         )
     return redirect(f"/thread/{item.id}?notice=Request+sent.+Thank+you.")
 

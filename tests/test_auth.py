@@ -350,24 +350,24 @@ def test_paused_email_layout():
     assert ">MAF</p>" in email.html
 
 
-def test_a_slow_sign_in_email_does_not_hold_up_other_pages(client, app, monkeypatch):
-    """Sending runs on a worker thread, so everyone else's pages keep loading meanwhile."""
+def test_sign_in_answers_without_waiting_for_the_email(client, app, monkeypatch):
+    """The code email goes out in the background: neither the person signing in nor anyone else waits for it."""
+    import dataclasses
     import threading
     import time
 
-    sending = threading.Event()
+    sent = threading.Event()
 
     def slow_send(email):
-        sending.set()
         time.sleep(1.5)
+        sent.set()
 
+    # A real provider (not the console used in tests), so the email is handed to a background worker.
+    monkeypatch.setattr(app.emailer, "_settings", dataclasses.replace(app.settings, email_backend="ses"))
     monkeypatch.setattr(app.emailer, "send", slow_send)
-    with client:
-        signing_in = threading.Thread(target=lambda: client.post("/sign-in", data={"email": "slow@uni.minerva.edu"}))
-        signing_in.start()
-        assert sending.wait(5)
-        started = time.monotonic()
-        assert client.get("/about").status_code == 200
-        waited = time.monotonic() - started
-        signing_in.join()
+    started = time.monotonic()
+    response = client.post("/sign-in", data={"email": "slow@uni.minerva.edu"})
+    waited = time.monotonic() - started
+    assert response.status_code == 200 and "Check your inbox" in response.text
     assert waited < 0.5
+    assert sent.wait(5)

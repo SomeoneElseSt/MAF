@@ -37,6 +37,11 @@ class NameFilter:
                 )
             return self._analyzer
 
+    def warm_up(self) -> None:
+        """Loads the language model now (a few seconds), so the first post after a restart isn't slow."""
+        if self._settings.name_filter_enabled:
+            self.finds_name("Warming up the name check.")
+
     def finds_name(self, *texts: str | None) -> bool:
         """True if any text contains a PERSON entity above the threshold."""
         if not self._settings.name_filter_enabled:
