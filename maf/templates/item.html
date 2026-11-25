@@ -150,7 +150,8 @@
 {% endmacro %}
 
 {% block main %}
-{% if notice %}<div class="notice"><p>{{ notice }}</p></div>{% endif %}
+{# The name check's notice is skipped when its warning shows in the box: one message, not two. #}
+{% if notice and not (names_form and names_text) %}<div class="notice"><p>{{ notice }}</p></div>{% endif %}
 
 {% if post.unlisted %}
 <div class="notice">
