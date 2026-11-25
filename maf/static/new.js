@@ -58,8 +58,10 @@
       reply => !("mine" in reply.dataset) && reply.dataset.created > since,
     );
     for (const reply of newReplies) {
-      const tag = Object.assign(document.createElement("span"), { className: "new-tag", textContent: "New" });
-      reply.querySelector(":scope > .meta")?.append(tag);
+      const meta = reply.querySelector(":scope > .meta");
+      // live.js may have labelled it already (a reply that arrived while the page was open, then Show).
+      if (!meta || meta.querySelector(".new-tag")) continue;
+      meta.append(Object.assign(document.createElement("span"), { className: "new-tag", textContent: "New" }));
     }
     document.querySelectorAll("button.react[data-latest]").forEach(chip => {
       if (chip.dataset.latest > since) chip.classList.add("react-new");

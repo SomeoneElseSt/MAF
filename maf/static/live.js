@@ -45,10 +45,13 @@
     for (const id of arrived.replies) {
       const meta = document.getElementById(id)?.querySelector(":scope > .meta");
       if (!meta) continue;
-      const tag = document.createElement("span");
-      tag.className = "new-tag";
-      tag.textContent = "New";
-      meta.append(tag);
+      // new.js may have labelled it already (new since your last visit): one label is enough.
+      if (!meta.querySelector(".new-tag")) {
+        const tag = document.createElement("span");
+        tag.className = "new-tag";
+        tag.textContent = "New";
+        meta.append(tag);
+      }
       marked.push(meta);
     }
     for (const { item, emoji } of arrived.reactions) {
