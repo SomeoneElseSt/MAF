@@ -16,6 +16,9 @@
   --danger: #8a0303;
   --hot-wash: color-mix(in srgb, var(--hot) 7%, var(--paper));
   --visited: #6f6f6f;
+  /* New badges: ember orange. In dark mode a shade deeper, so it doesn't glare against black. */
+  --new-fill: #E2805A;
+  --new-ink: #ffffff;
   --serif: "Iowan Old Style", Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --sans: "Gill Sans", "Gill Sans MT", Seravek, "Trebuchet MS", Calibri, sans-serif;
@@ -38,6 +41,8 @@
     --danger: #ff6b6b;
     --hot-wash: color-mix(in srgb, var(--hot) 15%, var(--paper));
     --visited: #909090;
+    --new-fill: #C4663F;
+    --new-ink: #ffffff;
   }
 }
 
@@ -53,6 +58,8 @@
   --hot: #e2805a;
   --danger: #ff6b6b;
   --hot-wash: color-mix(in srgb, var(--hot) 15%, var(--paper));
+  --new-fill: #C4663F;
+  --new-ink: #ffffff;
 }
 
 * { box-sizing: border-box; }
@@ -189,7 +196,7 @@ textarea::placeholder, input::placeholder { color: var(--meta); opacity: 1; }
 .live-show { font: inherit; color: inherit; background: none; border: none; padding: 0; cursor: pointer;
              text-decoration: underline; text-underline-offset: 3px; }
 /* After Show: new replies say "New" until the next reload; a reaction that went up gets a fading ring. */
-.new-tag { font: 600 13px var(--sans); color: var(--paper); background: #E2805A; border-radius: 3px; padding: 1px 6px; margin-left: 6px; }
+.new-tag { font: 600 13px var(--sans); color: var(--new-ink); background: var(--new-fill); border-radius: 3px; padding: 1px 6px; margin-left: 6px; }
 .react.arrived { box-shadow: 0 0 0 1.5px var(--ink); border-radius: 999px; }
 /* Emoji someone else added since your last visit to the post: the same ring, kept on (new.js). */
 .react.react-new { box-shadow: 0 0 0 1.5px var(--ink); border-radius: 999px; }
