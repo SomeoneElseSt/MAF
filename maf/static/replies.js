@@ -84,11 +84,15 @@
   // with the result. A normal form post adds a step to the browser's history, so Back would land on
   // this same thread first and need a second press. The server answers these with where to go.
   async function sendInPlace(form, submitter) {
+    // The pressed button's own value (e.g. Post anyway's confirm_names=1) is added by hand: pending.js
+    // has already greyed the button out by now, and the browser leaves disabled buttons out of a form's data.
+    const body = new FormData(form);
+    if (submitter?.name) body.append(submitter.name, submitter.value);
     let response;
     try {
       response = await fetch(form.action, {
         method: "POST",
-        body: new FormData(form, submitter), // includes the pressed button, e.g. Post anyway
+        body,
         headers: { "X-MAF-In-Place": "1" },
       });
     } catch {
@@ -101,6 +105,7 @@
     // Anything else (the name check's warning, a problem with the text) saved nothing: send it the
     // normal way so that page shows as it always has.
     if (!sentTo) {
+      if (submitter?.name) form.append(Object.assign(document.createElement("input"), { type: "hidden", name: submitter.name, value: submitter.value }));
       HTMLFormElement.prototype.submit.call(form);
       return;
     }
