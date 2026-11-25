@@ -80,7 +80,8 @@ def _reactions(page, items: list[store.Item]) -> dict[str, dict]:
     summary = {}
     for item in items:
         counts, mine = store.reaction_summary(page.conn, item.id, page.pass_id)
-        summary[item.id] = {"counts": counts, "mine": mine}
+        latest = store.latest_reactions(page.conn, item.id, page.pass_id)
+        summary[item.id] = {"counts": counts, "mine": mine, "latest": latest}
     return summary
 
 

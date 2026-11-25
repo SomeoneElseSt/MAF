@@ -814,6 +814,16 @@ def notifications(conn: sqlite3.Connection, pass_id: str) -> list[dict]:
     return found[:NOTIFICATIONS_SHOWN]
 
 
+def latest_reactions(conn: sqlite3.Connection, item_id: str, not_by: str | None) -> dict[str, str]:
+    """When each emoji on an item was last added by someone other than `not_by`, so a returning reader's
+    browser can highlight emoji added since their last visit."""
+    rows = conn.execute(
+        "SELECT emoji, MAX(created_at) AS latest FROM reaction WHERE item_id = ? AND pass_id IS NOT ? GROUP BY emoji",
+        (item_id, not_by),
+    ).fetchall()
+    return {r["emoji"]: r["latest"] for r in rows}
+
+
 def reaction_summary(conn: sqlite3.Connection, item_id: str, viewer_pass: str | None) -> tuple[dict[str, int], set[str]]:
     rows = conn.execute(
         "SELECT emoji, COUNT(*) AS n FROM reaction WHERE item_id = ? GROUP BY emoji", (item_id,)

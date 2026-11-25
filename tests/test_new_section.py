@@ -76,3 +76,17 @@ def test_opening_a_post_tells_the_browser_when(signed_in, app):
 def test_every_page_carries_the_server_time_for_ages_worked_out_in_the_browser(signed_in):
     # Back to a list works each "3 minutes ago" out again from the server's clock, not the old copy's.
     assert '<body class="" data-now="' in signed_in.get("/").text
+
+
+def test_a_post_page_carries_reply_and_emoji_times_for_marking_whats_new(signed_in, app, pass_id):
+    other = store.create_pass(app.conn)
+    post = store.create_post(app.conn, other, "A post", None, None, ["help"])
+    theirs = store.create_comment(app.conn, other, post, "their reply", None)
+    mine = store.create_comment(app.conn, pass_id, post, "my reply", None)
+    store.toggle_reaction(app.conn, other, post.id, "🔥")
+    store.toggle_reaction(app.conn, pass_id, post.id, "🎉")
+    page = signed_in.get(f"/thread/{post.id}").text
+    assert f'id="{theirs.id}" data-created="{theirs.created_at}">' in page
+    assert f'id="{mine.id}" data-created="{mine.created_at}" data-mine>' in page
+    # Emoji others added carry when; your own don't count as news.
+    assert page.count("data-latest=") == 1

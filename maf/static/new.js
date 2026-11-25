@@ -5,6 +5,7 @@
 (function () {
   const SINCE_KEY = "maf.new-since"; // when this browser started counting
   const OPENED_KEY = "maf.opened"; // {post id: when you last opened it}
+  const BEFORE_KEY = "maf.opened-before"; // {post id: the visit before that}, for marking what's new in it
   const OLD_LAST_VISIT_KEY = "maf.comments-seen"; // the earlier "New comments" labels' last visit
   const OLD_SEEN_KEY = "maf.seen";
 
@@ -24,19 +25,50 @@
     }
   }
 
-  function opened() {
+  function readMap(key) {
     try {
-      return JSON.parse(read(OPENED_KEY) || "{}");
+      return JSON.parse(read(key) || "{}");
     } catch {
       return {};
     }
   }
+  const opened = () => readMap(OPENED_KEY);
 
   // A post: you've opened it now. The server's time, so a wrong clock on this device can't hide comments.
   const post = document.querySelector("article.post-head[data-now]");
   if (post) {
-    write(OPENED_KEY, JSON.stringify({ ...opened(), [post.id]: post.dataset.now }));
+    markNewSinceLastVisit(post);
     return;
+  }
+
+  // What came in since your last visit to this post: a "New" label on replies by others, a highlight on emoji
+  // others added, and the page opens at the earliest new reply. A reload or Back keeps the same marks
+  // (the visit they compare with is kept until you open the post again).
+  function markNewSinceLastVisit(post) {
+    const navigation = performance.getEntriesByType("navigation")[0]?.type;
+    const sameVisit = navigation === "reload" || navigation === "back_forward";
+    const before = readMap(BEFORE_KEY);
+    const openedAt = opened();
+    const since = sameVisit ? before[post.id] ?? openedAt[post.id] : openedAt[post.id];
+    if (!sameVisit) write(BEFORE_KEY, JSON.stringify({ ...before, [post.id]: openedAt[post.id] ?? "" }));
+    write(OPENED_KEY, JSON.stringify({ ...openedAt, [post.id]: post.dataset.now }));
+    if (!since) return; // first visit: everything is new, so nothing is marked
+
+    const newReplies = [...document.querySelectorAll("li.comment[data-created]")].filter(
+      reply => !("mine" in reply.dataset) && reply.dataset.created > since,
+    );
+    for (const reply of newReplies) {
+      const tag = Object.assign(document.createElement("span"), { className: "new-tag", textContent: "New" });
+      reply.querySelector(":scope > .meta")?.append(tag);
+    }
+    document.querySelectorAll("button.react[data-latest]").forEach(chip => {
+      if (chip.dataset.latest > since) chip.classList.add("react-new");
+    });
+
+    // Opening the post (not a reload, Back, or a link to a particular reply): start at the earliest new reply.
+    if (sameVisit || location.hash || !newReplies.length) return;
+    const earliest = newReplies.reduce((first, reply) => (reply.dataset.created < first.dataset.created ? reply : first));
+    requestAnimationFrame(() => earliest.scrollIntoView({ block: "start" }));
   }
 
   const newList = document.querySelector(".new-list");
