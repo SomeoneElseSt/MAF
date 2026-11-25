@@ -27,7 +27,7 @@ Have a question? Contact hello@maforum.net.
 - **Name check.** Before a post, reply or edit goes up, a language model running on MAF's own server checks it for people's names and asks you to take them out. Nothing is sent to an outside service.
 - **Moderation by flags.** There are no hard rules, but don't name specific students or staff. If five people flag a post, it becomes unlisted and shows an option to request a permanent deletion or restoration, decided case by case. Replies can be flagged the same way and are hidden until reviewed. A reply that breaks the rule can be removed, leaving only the reason in its place.
 
-Pinned posts and private replies live in your browser. Sign in on a new device and they won't be there, and you'll appear under a new name in threads you've already posted in. This is to maintain anonymity and avoid profiles.
+Pinned posts, what you've opened (for the New section) and private replies live in your browser. Sign in on a new device and they won't be there, and you'll appear under a new name in threads you've already posted in. This is to maintain anonymity and avoid profiles.
 
 ## Auditing privacy
 

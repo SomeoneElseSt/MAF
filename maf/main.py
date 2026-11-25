@@ -16,7 +16,7 @@ from . import auth, post, reactions, reading, store
 from .app import App, build_app
 from .display import day_label, four_day_window, range_label
 from .settings import Settings, load_settings
-from .util import parse_date, today
+from .util import iso, parse_date, today, utc_now
 from .web import make_templates, page_of, redirect, render, sort_param
 
 APP: App = None  # set by create_app
@@ -75,7 +75,7 @@ def render_home(page, sort, before, after):
         pinned = store.with_comment_counts(conn, store.pinned_posts(conn))
         exclude_pinned = True
     posts = store.with_comment_counts(conn, store.posts_between(conn, start, end, sort, exclude_pinned=exclude_pinned))
-    latest = store.latest_comment_times(conn, [post.thread_id for post in pinned + posts])
+    latest = store.latest_comment_times(conn, [post.thread_id for post in pinned + posts], not_by=page.pass_id)
     groups = [(day_label(day), rows) for day, rows in store.day_groups(posts)]
     # The ‹ arrow stops at the window holding the first post.
     prev_url = _page_url(sort, (start - timedelta(days=1)).isoformat()) if first_day and start > first_day else None
@@ -83,7 +83,7 @@ def render_home(page, sort, before, after):
     return render(page, "list.html", kind="home", title="", empty=False,
                   groups=groups, pinned=pinned, latest_comments=latest, date_range=range_label(start, end),
                   prev_url=prev_url, next_url=next_url, sort_links=HOME_SORT_LINKS,
-                  day_param=end.isoformat())
+                  day_param=end.isoformat(), now=iso(utc_now()))
 
 
 def _window_end(conn, sort, before, after):

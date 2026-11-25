@@ -281,17 +281,38 @@ def comment_counts(conn: sqlite3.Connection, thread_ids: list[str]) -> dict[str,
     return {r["thread_id"]: r["n"] for r in rows}
 
 
-def latest_comment_times(conn: sqlite3.Connection, thread_ids: list[str]) -> dict[str, str]:
-    """When each thread last got a comment, by thread id (public comments only, like the counts)."""
+def latest_comment_times(conn: sqlite3.Connection, thread_ids: list[str], not_by: str | None = None) -> dict[str, str]:
+    """When each thread last got a comment, by thread id (public comments only, like the counts).
+    With not_by, that pass's own comments don't count: your own comment isn't news to you."""
     if not thread_ids:
         return {}
     marks = ",".join("?" * len(thread_ids))
     rows = conn.execute(
         f"SELECT thread_id, MAX(created_at) AS latest FROM item WHERE thread_id IN ({marks}) "
-        "AND parent_id IS NOT NULL AND private_to IS NULL AND removed_reason IS NULL GROUP BY thread_id",
-        thread_ids,
+        "AND parent_id IS NOT NULL AND private_to IS NULL AND removed_reason IS NULL AND pass_id IS NOT ? GROUP BY thread_id",
+        [*thread_ids, not_by],
     ).fetchall()
     return {row["thread_id"]: row["latest"] for row in rows}
+
+
+NEW_ACTIVITY_LIMIT = 100
+
+
+def new_activity(conn: sqlite3.Connection, viewer_pass: str, since: str) -> list[Item]:
+    """Listed posts with something new since `since` for this pass: posted by someone else after it, or
+    commented on by someone else after it. Newest activity first. The browser decides which of these the
+    person has already opened (that stays in the browser)."""
+    rows = conn.execute(
+        "SELECT * FROM ("
+        "  SELECT i.*, (SELECT MAX(c.created_at) FROM item c WHERE c.thread_id = i.id AND c.parent_id IS NOT NULL"
+        "    AND c.private_to IS NULL AND c.removed_reason IS NULL AND c.pass_id IS NOT ?) AS latest_other"
+        "  FROM item i WHERE i.parent_id IS NULL AND i.private_to IS NULL AND i.removed_reason IS NULL"
+        "    AND NOT (i.hidden = 1 AND i.restored = 0)"
+        ") WHERE (pass_id IS NOT ? AND created_at > ?) OR latest_other > ? "
+        "ORDER BY MAX(created_at, COALESCE(latest_other, '')) DESC LIMIT ?",
+        (viewer_pass, viewer_pass, since, since, NEW_ACTIVITY_LIMIT),
+    ).fetchall()
+    return [_row_to_item(r) for r in rows]
 
 
 def is_subscribed(conn: sqlite3.Connection, pass_id: str | None, thread_id: str) -> bool:

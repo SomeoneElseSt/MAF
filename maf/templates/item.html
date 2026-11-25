@@ -172,7 +172,7 @@
 {% endif %}
 
 <div{% if post.unlisted %} class="faded"{% endif %} data-thread="{{ post.id }}"{% if my_key is not none %} data-my-key="{{ my_key }}"{% endif %}>
-<article class="post-head" id="{{ post.id }}" data-views="{{ post.views }}" data-comments="{{ comment_count }}">
+<article class="post-head" id="{{ post.id }}" data-views="{{ post.views }}" data-comments="{{ comment_count }}" data-now="{{ now }}">
   <h1>{{ post.title|md_title }}</h1>
   <div class="meta">Posted by <button class="id" type="button">{{ label_of[post.pass_id] }}</button> {{ post.created_at|rel }}{% if post.edited_at %} <span class="edited">(edited)</span>{% endif %}, {{ post.views }} view{{ '' if post.views == 1 else 's' }}
     {% if tags_list %} <span class="dot">·</span> {% for tag in tags_list %}<a class="tag{% if is_hot([tag]) %} hot-tag{% endif %}" href="/?tag={{ tag }}">#{{ tag }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}
@@ -236,6 +236,7 @@
 <script src="{{ static('ids.js') }}"></script>
 <script src="{{ static('replies.js') }}"></script>
 <script src="{{ static('counts.js') }}"></script>
+<script src="{{ static('new.js') }}"></script>
 <script src="{{ static('namecheck.js') }}"></script>
 <script src="{{ static('markdown-it.min.js') }}"></script>
 <script src="{{ static('markdown.js') }}"></script>

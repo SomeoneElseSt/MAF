@@ -9,6 +9,7 @@ from starlette.routing import Route
 
 from . import embed, live, markdown, store
 from .housetags import etiquette, is_hot, reply_placeholder
+from .util import iso, utc_now
 from .web import error_page, page_of, redirect, render
 
 
@@ -49,6 +50,7 @@ def item(request: Request) -> Response:
         "title": markdown.plain(post.title),
         "post": post,
         "comment_count": store.comment_counts(page.conn, [thread_id]).get(thread_id, 0),
+        "now": iso(utc_now()),
         "post_mine": bool(page.pass_id) and post.pass_id == page.pass_id,
         "subscribed": store.is_subscribed(page.conn, page.pass_id, post.id),
         "tree": tree,
@@ -86,6 +88,22 @@ def _flags(page, items: list[store.Item]) -> dict[str, bool]:
     if not page.pass_id:
         return {}
     return {i.id: store.has_flagged(page.conn, page.pass_id, i.id) for i in items}
+
+
+# Timestamps as stored (util.iso), so they compare as text.
+MOMENT = re.compile(r"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ")
+
+
+def new_activity(request: Request) -> Response:
+    """Rows for the front page's New section that aren't on the page: older posts with new comments.
+    The browser sends only when it started counting (no record of what was opened leaves it)."""
+    page = page_of(request)
+    since = request.query_params.get("since", "")
+    if not page.pass_id or not MOMENT.fullmatch(since):
+        return Response(status_code=400)
+    posts = store.with_comment_counts(page.conn, store.new_activity(page.conn, page.pass_id, since))
+    latest = store.latest_comment_times(page.conn, [p.id for p in posts], not_by=page.pass_id)
+    return render(page, "new-rows.html", posts=posts, latest_comments=latest)
 
 
 def _event_stream(page, key: str) -> Response:
@@ -143,6 +161,7 @@ routes = [
     Route("/thread/{id}", item),
     Route("/thread/{id}/events", events),
     Route("/events", home_events),
+    Route("/new-activity", new_activity),
     Route("/notifications", notifications_page),
     Route("/notifications.json", notifications_json),
     Route("/notifications/events", bell_events),

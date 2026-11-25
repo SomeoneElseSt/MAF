@@ -1,0 +1,6 @@
+{#
+  Extra rows for the front page's New section (new.js fetches /new-activity): posts with new activity that
+  aren't on the page. Context: posts, latest_comments {thread_id: newest comment by someone else}.
+#}
+{% from "_rows.html" import row with context %}
+<ol class="list">{% for post in posts %}{{ row(post) }}{% endfor %}</ol>
