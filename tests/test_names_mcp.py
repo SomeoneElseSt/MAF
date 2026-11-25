@@ -279,7 +279,8 @@ def test_comment_with_a_name_sent_in_place_comes_back_to_the_warning(filtering_a
     post = store.create_post(app.conn, pass_id, "Post", "body", None, [])
     response = client.post("/comment", data={"parent_id": post.id, "thread_id": post.id, "text": "Priya Raman told me"},
                            headers={"X-MAF-In-Place": "1"}, follow_redirects=False)
-    assert response.status_code == 200 and response.json()["location"].endswith("&names=comment-form")
+    location = response.json()["location"]
+    assert response.status_code == 200 and "&names=comment-form&text=Priya+Raman+told+me" in location
     assert store.comment_count(app.conn, post.id) == 0
 
 
@@ -289,9 +290,12 @@ def test_a_refused_reply_offers_post_anyway_for_its_box(filtering_app):
     post = store.create_post(app.conn, pass_id, "Post", "body", None, [])
     response = client.post("/comment", data={"parent_id": post.id, "thread_id": post.id, "text": "Priya Raman told me"},
                            follow_redirects=False)
-    assert response.headers["location"].endswith("&names=comment-form")
+    assert "&names=comment-form&text=Priya+Raman+told+me" in response.headers["location"]
     page = client.get(response.headers["location"]).text
-    assert 'form="comment-form" name="confirm_names" value="1">Post anyway</button>' in page
+    # The warning sits inside the box it belongs to, with the refused words and a Post anyway for it.
+    box = page.split('id="comment-form"')[1].split("</form>")[0]
+    assert "name-warning" in box and "Priya Raman told me" in box
+    assert 'name="confirm_names" value="1"' in box
     client.post("/comment", data={"parent_id": post.id, "thread_id": post.id, "text": "Priya Raman told me",
                                   "confirm_names": "1"}, follow_redirects=False)
     assert store.comment_count(app.conn, post.id) == 1
@@ -304,7 +308,10 @@ def test_a_refused_edit_offers_post_anyway_too(filtering_app):
     reply = store.create_comment(app.conn, pass_id, post, "hello", None)
     response = client.post("/edit", data={"item_id": reply.id, "thread_id": post.id, "text": "Priya Raman told me"},
                            follow_redirects=False)
-    assert response.headers["location"].endswith(f"&names=edit-{reply.id}")
+    assert f"&names=edit-{reply.id}&text=Priya+Raman+told+me" in response.headers["location"]
+    page = client.get(response.headers["location"]).text
+    box = page.split(f'id="edit-{reply.id}"')[1].split("</form>")[0]
+    assert "name-warning" in box and "Priya Raman told me" in box
     client.post("/edit", data={"item_id": reply.id, "thread_id": post.id, "text": "Priya Raman told me", "confirm_names": "1"})
     assert store.get_item(app.conn, reply.id).edited_at
 
@@ -323,8 +330,9 @@ def test_a_refused_post_edit_offers_post_anyway_too(filtering_app):
     post = store.create_post(app.conn, pass_id, "Post", "body", None, [])
     response = client.post("/edit", data={"item_id": post.id, "thread_id": post.id, "text": "Priya Raman told me"},
                            follow_redirects=False)
-    assert response.headers["location"].endswith(f"&names=edit-{post.id}")
+    assert f"&names=edit-{post.id}&text=Priya+Raman+told+me" in response.headers["location"]
     page = client.get(response.headers["location"]).text
-    assert f'form="edit-{post.id}" name="confirm_names" value="1">Post anyway</button>' in page
+    box = page.split(f'id="edit-{post.id}"')[1].split("</form>")[0]
+    assert "name-warning" in box and "Priya Raman told me" in box
     client.post("/edit", data={"item_id": post.id, "thread_id": post.id, "text": "Priya Raman told me", "confirm_names": "1"})
     assert store.get_item(app.conn, post.id).edited_at

@@ -13,17 +13,17 @@ def test_subscribe_follows_and_unsubscribes(signed_in, app, pass_id):
     assert store.is_subscribed(app.conn, pass_id, post.id)
     assert store.subscribers(app.conn, post.id) == [pass_id]
     page = signed_in.get(f"/thread/{post.id}").text
-    assert ">Unsubscribe</button>" in page
+    assert 'aria-pressed="true">Subscribed</button>' in page
     signed_in.post("/subscribe", data={"thread_id": post.id})
     assert not store.is_subscribed(app.conn, pass_id, post.id)
-    assert ">Subscribe</button>" in signed_in.get(f"/thread/{post.id}").text
+    assert 'aria-pressed="false">Subscribe</button>' in signed_in.get(f"/thread/{post.id}").text
 
 
 def test_subscribe_button_sits_next_to_comment(signed_in, app, pass_id):
     post = make_post(app, pass_id)
     page = signed_in.get(f"/thread/{post.id}").text
     comment = page.index("data-needs-text>Comment</button>")
-    subscribe = page.index("form=\"subscribe-form\">Subscribe</button>")
+    subscribe = page.index('form="subscribe-form" aria-pressed="false">Subscribe</button>')
     assert 0 < subscribe - comment < 200
 
 

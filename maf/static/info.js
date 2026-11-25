@@ -1,5 +1,10 @@
-// Small (i) buttons open a shared explanation card next to them; clicking elsewhere or pressing Escape closes it.
-const infoCard = document.getElementById("private-info");
+// Small (i) buttons open an explanation card next to them (each has its own text, in an info-card
+// right after it); clicking elsewhere or pressing Escape closes it.
+let infoCard = null;
+
+function cardFor(button) {
+  return button.parentElement?.querySelector(":scope > .info-card") ?? null;
+}
 
 function placeCard(button) {
   const box = button.getBoundingClientRect();
@@ -14,7 +19,8 @@ function placeCard(button) {
 }
 
 function closeCard() {
-  infoCard.hidden = true;
+  if (infoCard) infoCard.hidden = true;
+  infoCard = null;
   document.querySelectorAll(".info[aria-expanded='true']").forEach(button => button.setAttribute("aria-expanded", "false"));
 }
 
@@ -22,15 +28,18 @@ document.addEventListener("click", event => {
   const button = event.target.closest(".info");
   if (button) {
     event.preventDefault();
-    const opening = infoCard.hidden || button.getAttribute("aria-expanded") !== "true";
+    const card = cardFor(button);
+    if (!card) return;
+    const opening = card.hidden || button.getAttribute("aria-expanded") !== "true";
     closeCard();
     if (!opening) return;
+    infoCard = card;
     infoCard.hidden = false;
     placeCard(button);
     button.setAttribute("aria-expanded", "true");
     return;
   }
-  if (!infoCard.hidden && !event.target.closest("#private-info")) closeCard();
+  if (infoCard && !infoCard.hidden && !event.target.closest(".info-card")) closeCard();
 });
 
 document.addEventListener("keydown", event => {

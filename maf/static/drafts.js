@@ -46,7 +46,7 @@
     return parent ? `comment:${parent.value}` : null;
   }
 
-  function openReplyBox(form) {
+  function openBox(form) {
     if (!form.classList.contains("inline-reply")) return;
     form.hidden = false;
     document.querySelector(`[aria-controls="${form.id}"]`)?.setAttribute("aria-expanded", "true");
@@ -65,17 +65,19 @@
         field.value = saved.fields[names[i]];
         field.dispatchEvent(new Event("input", { bubbles: true }));
       });
-      openReplyBox(form);
+      openBox(form);
     }
 
-    // Coming back with Back or Forward, the browser refills boxes with whatever they held when you
-    // left, even text that was sent. A box with no saved draft has nothing unsent, so empty it.
+    // Coming back with Back or Forward, or reloading, the browser refills boxes with whatever they
+    // held when you left, even text that was sent. A box with no saved draft has nothing unsent: it goes
+    // back to what the page sent (empty for a reply, the item's current words for an edit).
     window.addEventListener("pageshow", event => {
-      const returning = event.persisted || performance.getEntriesByType("navigation")[0]?.type === "back_forward";
+      const navigation = performance.getEntriesByType("navigation")[0]?.type;
+      const returning = event.persisted || navigation === "back_forward" || navigation === "reload";
       if (!returning || read(localStorage, STORAGE_KEY, {})[key]) return;
       fields.forEach(field => {
-        if (!field.value) return;
-        field.value = "";
+        if (field.value === field.defaultValue) return;
+        field.value = field.defaultValue;
         field.dispatchEvent(new Event("input", { bubbles: true }));
       });
     });

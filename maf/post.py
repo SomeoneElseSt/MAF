@@ -2,7 +2,7 @@
 
 import json
 import secrets
-from urllib.parse import urlsplit
+from urllib.parse import quote_plus, urlsplit
 
 from starlette.concurrency import run_in_threadpool
 from starlette.requests import Request
@@ -17,7 +17,9 @@ from .util import sha256_hex
 from .web import form_values, gone, page_of, redirect, render
 
 POSTS_PER_MINUTE = 6
-NAMES_NOTICE = "This+looks+like+it+names+someone.+Edit+it+and+try+again."
+# The thread page shows the name-check warning by the box it belongs to, so the reply or edit stays
+# open with its words (drafts.js refills them). This line just says what happened.
+NAMES_NOTICE = "That+wasn't+sent:+it+looks+like+it+names+someone."
 COMMENTS_PER_MINUTE = 12
 TOKEN_BYTES = 32
 MAX_TOKENS_PER_PASS = 5  # the Create token button greys out at this many
@@ -102,9 +104,8 @@ async def comment(request: Request) -> Response:
     if not values["text"]:
         return redirect(f"/thread/{parent.thread_id}?notice=Write+something+first.")
     if values["confirm_names"] != "1" and await run_in_threadpool(page.app.name_filter.finds_name, values["text"]):
-        # The thread page shows "Post anyway" for this reply box (the name check can be wrong).
-        box = "comment-form" if parent.id == parent.thread_id else f"reply-{parent.id}"
-        return redirect(f"/thread/{parent.thread_id}?notice={NAMES_NOTICE}&names={box}")
+        # The thread page shows the warning and "Post anyway" inside this box (the name check can be wrong).
+        return redirect(f"/thread/{parent.thread_id}?notice={NAMES_NOTICE}&names={_names_box(parent)}&text={quote_plus(values['text'])}")
     if not _allowed(page, "comment", COMMENTS_PER_MINUTE):
         return redirect(f"/thread/{parent.thread_id}?notice=You're+replying+fast.+Wait+a+minute.")
     reply = store.create_comment(page.conn, page.pass_id, parent, values["text"], None)
@@ -112,6 +113,11 @@ async def comment(request: Request) -> Response:
     _ring(page, parent.pass_id)
     _ring_subscribers(page, parent.thread_id)
     return redirect(f"/thread/{parent.thread_id}#{reply.id}")  # land on the new reply, not the top
+
+
+def _names_box(parent: store.Item) -> str:
+    """The reply box a refused reply came from: the top one, or the one under the reply it answers."""
+    return "comment-form" if parent.id == parent.thread_id else f"reply-{parent.id}"
 
 
 def _private_comment(page, parent: store.Item, private_to: str, raw_sealed: str) -> Response:
@@ -178,7 +184,8 @@ async def edit(request: Request) -> Response:
     if len(values["text"]) > store.BODY_MAX:
         return redirect(f"{thread}?notice=That's+too+long.+Try+trimming+it.")
     if values["confirm_names"] != "1" and await run_in_threadpool(page.app.name_filter.finds_name, values["text"]):
-        return redirect(f"{thread}?notice={NAMES_NOTICE}&names=edit-{item.id}")
+        # Same as a refused reply: the warning shows in the edit box, with the words.
+        return redirect(f"{thread}?notice={NAMES_NOTICE}&names=edit-{item.id}&text={quote_plus(values['text'])}")
     store.edit_item(page.conn, item.id, values["text"])
     return redirect(f"{thread}#{item.id}")
 

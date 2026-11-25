@@ -17,7 +17,8 @@
     flags           {item_id: already flagged by the viewer}
     requests        {"unhide": n, "nuke": n} request counts for the post
     notice          a one-line message from the last action
-    names_form      after the name check refused a reply, post edit or edit: the box "Post anyway" resends
+    names_form      after the name check refused a reply, post edit or edit: the box the warning shows in
+    names_text      the words that were refused, so "Post anyway" sends exactly them
     body_class      "hottakes-thread" for highlighted tags
     thread_keys     {pass_id: public key} for this thread, used to encrypt private replies
     my_key          the viewer's registered key ("" if none yet), or None when they haven't written here
@@ -31,6 +32,30 @@
     <button class="id" type="button">{{ label_of[entry.pass_id] }}</button>{% if entry.pass_id == op_pass %} (OP){% elif entry.pass_id == viewer %} (you){% endif %}, {{ entry.created_at|rel }}{% if entry.edited_at %} <span class="edited">(edited)</span>{% endif %}
     {% if entry.private_to %} <span class="dot">·</span> <span class="private-note">Private, only you and {{ label_of[entry.private_to] if entry.pass_id == viewer else label_of[entry.pass_id] }}</span> <button class="info" type="button" aria-label="About private replies" aria-expanded="false">i</button>{% endif %}
   </div>
+{% endmacro %}
+
+{% macro name_warning(form) %}
+{# The name check refused what was written in this box: the warning sits under its buttons, inside the
+   box, so the draft stays and nothing jumps to the top of the thread. "Post anyway" sends the same form. #}
+{% if names_form == form %}
+<div class="name-warning" role="alert">
+  <p>This looks like it names someone. MAF doesn't allow naming students or staff.</p>
+  <div class="row">
+    <button class="button plain" type="button" data-edit-warning>Edit</button>
+    <button class="button" type="submit" name="confirm_names" value="1" data-pending="Posting…">Post anyway</button>
+  </div>
+</div>
+{% endif %}
+{% endmacro %}
+
+{% macro reply_fields(entry) %}
+{# A refused reply's words come back even if this browser kept no draft. #}
+<input type="hidden" name="parent_id" value="{{ entry.id }}"><input type="hidden" name="thread_id" value="{{ post.id }}">
+<textarea name="text" aria-label="Write a reply" placeholder="{{ reply_placeholder or 'Write a reply' }}">{% if names_form == 'reply-' ~ entry.id %}{{ names_text }}{% endif %}</textarea>
+<p class="help">Replying as: <button class="id" type="button">{{ my_label }}</button> <span class="dot">·</span> Please don't name students or staff.
+  {% if entry.pass_id != viewer %}{{ private_toggle(label_of[entry.pass_id], entry.private_to) }}{% endif %}
+</p>
+<div class="row"><button class="button" type="submit" data-pending="Replying…" data-needs-text>Reply</button><a class="button plain cancel" href="#{{ entry.id }}">Cancel</a></div>
 {% endmacro %}
 
 {% macro reactions_box(entry) %}
@@ -62,7 +87,12 @@
 {% macro peer_of(entry) %}{% if entry.private_to %}{{ entry.private_to if entry.pass_id == viewer else entry.pass_id }}{% else %}{{ entry.pass_id }}{% endif %}{% endmacro %}
 
 {# Hidden until private.js knows this browser can encrypt and the recipient has a key. #}
-{% macro private_toggle(name, forced) %}<span class="private-toggle" hidden><span class="dot">·</span> <label>Make only visible to {{ name }} <input type="checkbox" name="private"{% if forced %} checked disabled{% endif %}></label><button class="info" type="button" aria-label="About private replies" aria-expanded="false">i</button></span>{% endmacro %}
+{% macro private_toggle(name, forced) %}<span class="private-toggle" hidden><span class="dot">·</span> <label>Make only visible to {{ name }} <input type="checkbox" name="private"{% if forced %} checked disabled{% endif %}></label><button class="info" type="button" aria-label="About private replies" aria-expanded="false">i</button><div class="info-card" role="dialog" aria-label="About private replies" hidden>
+  <p class="info-title">Private replies</p>
+  <p>Only you and the person you're replying to can read them, inside this thread. Everyone else sees the thread as if they weren't there.</p>
+  <p>They're encrypted in your browser before they're sent, so MAF's server only stores scrambled text. You can read them only on the device you used in this thread.</p>
+  <p class="info-fine">Other students can't see or flag them.</p>
+</div></span>{% endmacro %}
 
 {# Your own reply: Delete asks first, inline. Without JS the Delete link opens the same box via :target. #}
 {% macro delete_link(entry) %}<a class="reply-toggle" href="#delete-{{ entry.id }}" aria-controls="delete-{{ entry.id }}" aria-expanded="false">Delete</a>{% endmacro %}
@@ -88,30 +118,28 @@
   {% else %}
   {{ meta_line(entry) }}
   {% if entry.sealed %}<div class="text sealed" data-sealed="{{ entry.sealed }}"><p class="sealed-note">This private reply can only be read on the device that sent or received it.</p></div>{% else %}<div class="text">{{ entry.text|markdown }}</div>{% endif %}
+  {% if mine %}
+  {# Edit swaps the words above for this box, in place. Save swaps back the saved text; Cancel restores it as it was. #}
+  <form class="inline-reply edit-in-place" id="edit-{{ entry.id }}" action="/edit" method="post" data-editable="edit-{{ entry.id }}"{% if entry.private_to %} data-peer-key="{{ thread_keys.get(entry.private_to, '') }}" data-always-private{% endif %}{% if names_form != 'edit-' ~ entry.id %} hidden{% endif %}>
+    <input type="hidden" name="item_id" value="{{ entry.id }}"><input type="hidden" name="thread_id" value="{{ post.id }}">
+    <textarea name="text" aria-label="Edit your reply">{% if names_form == 'edit-' ~ entry.id %}{{ names_text }}{% else %}{{ entry.text or '' }}{% endif %}</textarea>
+    <p class="help">Editing as: <button class="id" type="button">{{ my_label }}</button> <span class="dot">·</span> Please don't name students or staff.</p>
+    <div class="row"><button class="button" type="submit" data-pending="Saving…" data-needs-text>Save</button><button class="button plain cancel" type="button">Cancel</button></div>
+    {{ name_warning('edit-' ~ entry.id) }}
+  </form>
+  {% endif %}
   {{ embed_cards(entry) }}
   <div class="actions">
     <a class="reply-toggle" href="#reply-{{ entry.id }}" aria-controls="reply-{{ entry.id }}" aria-expanded="false">Reply</a>
     {% if not entry.private_to %}<form action="/flag" method="post" class="inline-form"><input type="hidden" name="item_id" value="{{ entry.id }}"><input type="hidden" name="thread_id" value="{{ post.id }}"><button type="submit"{% if flags.get(entry.id) %} class="flagged"{% endif %} aria-pressed="{{ 'true' if flags.get(entry.id) else 'false' }}">{% if flags.get(entry.id) %}Flagged{% else %}Flag{% endif %}</button></form>{% if flags.get(entry.id) %}<span class="flag-note">5 flags hide a comment. Urgent? Email <a href="mailto:hello@maforum.net">hello@maforum.net</a>.</span>{% endif %}{% endif %}
-    {% if mine %}<a class="reply-toggle" href="#edit-{{ entry.id }}" aria-controls="edit-{{ entry.id }}" aria-expanded="false">Edit</a>{{ delete_link(entry) }}{% endif %}
+    {% if mine %}<button class="reply-toggle" type="button" data-edit="edit-{{ entry.id }}" aria-controls="edit-{{ entry.id }}" aria-expanded="false">Edit</button>{{ delete_link(entry) }}{% endif %}
     {{ reactions_box(entry) }}
   </div>
-    <form class="inline-reply" id="reply-{{ entry.id }}" action="/comment" method="post" data-peer-key="{{ thread_keys.get(peer_of(entry), '') }}" hidden>
-      <input type="hidden" name="parent_id" value="{{ entry.id }}"><input type="hidden" name="thread_id" value="{{ post.id }}">
-      <textarea name="text" aria-label="Write a reply" placeholder="{{ reply_placeholder or 'Write a reply' }}"></textarea>
-      <p class="help">Replying as: <button class="id" type="button">{{ my_label }}</button> <span class="dot">·</span> Please don't name students or staff.
-        {% if entry.pass_id != viewer %}{{ private_toggle(label_of[entry.pass_id], entry.private_to) }}{% endif %}
-      </p>
-      <div class="row"><button class="button" type="submit" data-pending="Replying…" data-needs-text>Reply</button><a class="button plain cancel" href="#{{ entry.id }}">Cancel</a></div>
+    <form class="inline-reply" id="reply-{{ entry.id }}" action="/comment" method="post" data-peer-key="{{ thread_keys.get(peer_of(entry), '') }}"{% if names_form != 'reply-' ~ entry.id %} hidden{% endif %}>
+      {{ reply_fields(entry) }}
+      {{ name_warning('reply-' ~ entry.id) }}
     </form>
-  {% if mine %}
-    <form class="inline-reply" id="edit-{{ entry.id }}" action="/edit" method="post"{% if entry.private_to %} data-peer-key="{{ thread_keys.get(entry.private_to, '') }}" data-always-private{% endif %} hidden>
-      <input type="hidden" name="item_id" value="{{ entry.id }}"><input type="hidden" name="thread_id" value="{{ post.id }}">
-      <textarea name="text" aria-label="Edit your reply">{{ entry.text or '' }}</textarea>
-      <p class="help">Editing as: <button class="id" type="button">{{ my_label }}</button> <span class="dot">·</span> Please don't name students or staff.</p>
-      <div class="row"><button class="button" type="submit" data-pending="Saving…" data-needs-text>Save</button><a class="button plain cancel" href="#{{ entry.id }}">Cancel</a></div>
-    </form>
-    {{ delete_box(entry) }}
-  {% endif %}
+  {% if mine %}{{ delete_box(entry) }}{% endif %}
   {% endif %}
   {% if node.children %}
   <ol class="comments">
@@ -122,10 +150,7 @@
 {% endmacro %}
 
 {% block main %}
-{% if notice %}<div class="notice"{% if names_form %} role="alert"{% endif %}><p>{{ notice }}</p>
-{# The name check can be wrong: this sends the same reply box again, past the check. Moderators can still remove it. #}
-{% if names_form %}<div class="row"><a class="button plain" href="#{{ names_form }}">Edit {{ 'post' if names_form == 'edit-' ~ post.id else 'reply' }}</a><button class="button" type="submit" form="{{ names_form }}" name="confirm_names" value="1">Post anyway</button></div>{% endif %}
-</div>{% endif %}
+{% if notice %}<div class="notice"><p>{{ notice }}</p></div>{% endif %}
 
 {% if post.unlisted %}
 <div class="notice">
@@ -144,23 +169,25 @@
 {% endif %}
 
 <div{% if post.unlisted %} class="faded"{% endif %} data-thread="{{ post.id }}"{% if my_key is not none %} data-my-key="{{ my_key }}"{% endif %}>
-<article class="post-head">
+<article class="post-head" id="{{ post.id }}">
   <h1>{{ post.title|md_title }}</h1>
   <div class="meta">Posted by <button class="id" type="button">{{ label_of[post.pass_id] }}</button> {{ post.created_at|rel }}{% if post.edited_at %} <span class="edited">(edited)</span>{% endif %}, {{ post.views }} view{{ '' if post.views == 1 else 's' }}
     {% if tags_list %} <span class="dot">·</span> {% for tag in tags_list %}<a class="tag{% if is_hot([tag]) %} hot-tag{% endif %}" href="/?tag={{ tag }}">#{{ tag }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}
     {% if not post.unlisted %} <span class="sep">|</span>
     <form action="/flag" method="post" class="inline-form"><input type="hidden" name="item_id" value="{{ post.id }}"><input type="hidden" name="thread_id" value="{{ post.id }}"><button class="meta-action{% if flags.get(post.id) %} flagged{% endif %}" type="submit" aria-pressed="{{ 'true' if flags.get(post.id) else 'false' }}">{% if flags.get(post.id) %}Flagged{% else %}Flag Post{% endif %}</button></form>{% if flags.get(post.id) %} <span class="flag-note">5 flags hide a post. Urgent? Email <a href="mailto:hello@maforum.net">hello@maforum.net</a>.</span>{% endif %}
-    {% if post_mine %} <span class="sep">|</span> <a class="reply-toggle meta-action" href="#edit-{{ post.id }}" aria-controls="edit-{{ post.id }}" aria-expanded="false">Edit</a>{% endif %}
+    {% if post_mine %} <span class="sep">|</span> <button class="reply-toggle meta-action" type="button" data-edit="edit-{{ post.id }}" aria-controls="edit-{{ post.id }}" aria-expanded="false">Edit</button>{% endif %}
     {% endif %}
   </div>
   {% if post.url %}<p class="post-link"><a href="{{ post.url }}" rel="nofollow noopener" target="_blank">{{ post.url|host }}<span class="sr-only"> (opens in a new tab)</span></a></p>{% endif %}
   {% if post.text %}<div class="post-body text">{{ post.text|markdown }}</div>{% endif %}
   {% if post_mine and not post.unlisted %}
-  <form class="inline-reply" id="edit-{{ post.id }}" action="/edit" method="post" hidden>
+  {# Same in-place edit as replies: the body above is swapped for this box. #}
+  <form class="inline-reply edit-in-place" id="edit-{{ post.id }}" action="/edit" method="post" data-editable="edit-{{ post.id }}"{% if names_form != 'edit-' ~ post.id %} hidden{% endif %}>
     <input type="hidden" name="item_id" value="{{ post.id }}"><input type="hidden" name="thread_id" value="{{ post.id }}">
-    <textarea name="text" aria-label="Edit your post">{{ post.text or '' }}</textarea>
+    <textarea name="text" aria-label="Edit your post">{% if names_form == 'edit-' ~ post.id %}{{ names_text }}{% else %}{{ post.text or '' }}{% endif %}</textarea>
     <p class="help">Editing as: <button class="id" type="button">{{ my_label }}</button> <span class="dot">·</span> Please don't name students or staff.</p>
-    <div class="row"><button class="button" type="submit" data-pending="Saving…">Save</button><a class="button plain cancel" href="#{{ post.id }}">Cancel</a></div>
+    <div class="row"><button class="button" type="submit" data-pending="Saving…" data-needs-text>Save</button><button class="button plain cancel" type="button">Cancel</button></div>
+    {{ name_warning('edit-' ~ post.id) }}
   </form>
   {% endif %}
   <div class="post-reactions">{{ reactions_box(post) }}</div>
@@ -170,11 +197,16 @@
 {% if viewer %}
 <form class="reply" id="comment-form" action="/comment" method="post" data-peer-key="{{ thread_keys.get(post.pass_id, '') }}">
   <input type="hidden" name="parent_id" value="{{ post.id }}"><input type="hidden" name="thread_id" value="{{ post.id }}">
-  <textarea name="text" aria-label="Write a comment" placeholder="Write a comment"></textarea>
+  <textarea name="text" aria-label="Write a comment" placeholder="Write a comment">{% if names_form == 'comment-form' %}{{ names_text }}{% endif %}</textarea>
   <p class="help">Commenting as: <button class="id" type="button">{{ my_label }}</button> <span class="dot">·</span> Please don't name students or staff.
     {% if post.pass_id != viewer %}{{ private_toggle(label_of[post.pass_id] ~ ' (OP)', false) }}{% endif %}
   </p>
-  <div class="row"><button class="button" type="submit" data-pending="Commenting…" data-needs-text>Comment</button><button class="button plain subscribe" type="submit" form="subscribe-form">{{ 'Unsubscribe' if subscribed else 'Subscribe' }}</button></div>
+  <div class="row"><button class="button" type="submit" data-pending="Commenting…" data-needs-text>Comment</button><button class="button plain subscribe{% if subscribed %} subscribed{% endif %}" type="submit" form="subscribe-form" aria-pressed="{{ 'true' if subscribed else 'false' }}">{{ 'Subscribed' if subscribed else 'Subscribe' }}</button><span class="subscribe-info"><button class="info" type="button" aria-label="About subscribing" aria-expanded="false">i</button><div class="info-card" role="dialog" aria-label="About subscribing" hidden>
+  <p class="info-title">Subscribe</p>
+  <p>Follow this whole post: new replies and reactions on it come to your Feed, under "New activity on a post you subscribed to".</p>
+  <p class="info-fine">Click Subscribed again to stop. It's kept with your pass, not your browser, so it follows you to other devices.</p>
+</div></span></div>
+  {{ name_warning('comment-form') }}
 </form>
 {# Subscribe follows the whole post: its activity then comes to the Feed, and the button says how to stop.
    Its own form, so the comment box's drafts and in-place sending never see it. #}
@@ -194,18 +226,13 @@
 
 {% block scripts %}
 <div class="emoji-picker" role="dialog" aria-label="Add a reaction" data-emoji="{{ picker_emoji|join(' ') }}" hidden></div>
-<div id="private-info" class="info-card" role="dialog" aria-label="About private replies" hidden>
-  <p class="info-title">Private replies</p>
-  <p>Only you and the person you're replying to can read them, inside this thread. Everyone else sees the thread as if they weren't there.</p>
-  <p>They're encrypted in your browser before they're sent, so MAF's server only stores scrambled text. You can read them only on the device you used in this thread.</p>
-  <p class="info-fine">Other students can't see or flag them.</p>
-</div>
 <dialog id="id-dialog">
   <p>Names are unique per thread to maintain anonymity.</p>
   <button class="button" type="button">OK</button>
 </dialog>
 <script src="{{ static('ids.js') }}"></script>
 <script src="{{ static('replies.js') }}"></script>
+<script src="{{ static('namecheck.js') }}"></script>
 <script src="{{ static('markdown-it.min.js') }}"></script>
 <script src="{{ static('markdown.js') }}"></script>
 <script src="{{ static('private.js') }}"></script>

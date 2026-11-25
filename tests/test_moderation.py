@@ -313,8 +313,8 @@ def test_your_own_reply_shows_edit_and_delete_and_others_dont(app, signed_in, pa
     post, mine = _thread_with_reply(app, pass_id)
     other = store.create_comment(app.conn, store.create_pass(app.conn), post, "someone else", None)
     page = signed_in.get(f"/thread/{post.id}").text
-    assert f'href="#edit-{mine.id}"' in page and f'href="#delete-{mine.id}"' in page
-    assert f'href="#edit-{other.id}"' not in page and f'href="#delete-{other.id}"' not in page
+    assert f'data-edit="edit-{mine.id}"' in page and f'href="#delete-{mine.id}"' in page
+    assert f'data-edit="edit-{other.id}"' not in page and f'href="#delete-{other.id}"' not in page
 
 
 def test_an_edit_changes_the_reply_and_marks_it_edited(app, signed_in, pass_id):
@@ -425,8 +425,8 @@ def test_your_own_post_shows_edit_and_others_dont(app, signed_in, pass_id):
     mine = make_post(app, pass_id)
     theirs = make_post(app, store.create_pass(app.conn))
     page = signed_in.get(f"/thread/{mine.id}").text
-    assert f'href="#edit-{mine.id}"' in page
-    assert f'href="#edit-{theirs.id}"' not in signed_in.get(f"/thread/{theirs.id}").text
+    assert f'data-edit="edit-{mine.id}"' in page
+    assert f'data-edit="edit-{theirs.id}"' not in signed_in.get(f"/thread/{theirs.id}").text
 
 
 def test_a_post_edit_changes_its_text_and_keeps_its_title(app, signed_in, pass_id):

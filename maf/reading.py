@@ -63,8 +63,10 @@ def item(request: Request) -> Response:
         "flags": _flags(page, items),
         "requests": store.request_counts(page.conn, post.id),
         "notice": request.query_params.get("notice"),
-        # After the name check refused a reply or edit: which box "Post anyway" sends.
+        # After the name check refused a reply or edit: which box the warning shows in, and the words it
+        # keeps, so "Post anyway" sends exactly them.
         "names_form": _names_form(request.query_params.get("names", "")),
+        "names_text": request.query_params.get("text") or "",
         "body_class": "hottakes-thread" if is_hot(tags) else "",
     }
     return render(page, "item.html", **context)
