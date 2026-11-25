@@ -7,3 +7,5 @@ __pycache__/
 node_modules/
 *.key
 memory/
+*.db-shm
+*.db-wal
