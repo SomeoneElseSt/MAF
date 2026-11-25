@@ -71,7 +71,7 @@ HOUSE_TAGS: dict[str, dict] = {
 }
 
 # Lead with common tags, then retain the remaining house tags in alphabetical order.
-_PRIORITY_TAGS = ("hottakes", "confessions", "minerva")
+_PRIORITY_TAGS = ("hottakes", "confession", "minerva")
 SUGGESTED_TAGS = [*_PRIORITY_TAGS, *(tag for tag in sorted(HOUSE_TAGS) if tag not in _PRIORITY_TAGS)]
 
 DEFAULT_SUBMIT_TEMPLATE = [

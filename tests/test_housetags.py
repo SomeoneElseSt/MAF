@@ -154,9 +154,9 @@ def test_the_hashtag_menu_works_on_the_submit_page(signed_in, app, pass_id):
 
 def test_submit_hashtag_placeholder(signed_in):
     body = signed_in.get("/submit").text
-    assert 'placeholder="#hottakes, #confessions, #minerva"' in body
+    assert 'placeholder="#hottakes, #confession, #minerva"' in body
 
 
 def test_submit_hashtag_suggestions_prioritise_requested_tags(signed_in):
     body = signed_in.get("/submit").text
-    assert 'data-tags="hottakes confessions minerva confession help wondering"' in body
+    assert 'data-tags="hottakes confession minerva help wondering"' in body
