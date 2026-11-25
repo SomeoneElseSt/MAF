@@ -95,8 +95,8 @@
 </div></span>{% endmacro %}
 
 {# Your own reply: Delete asks first, inline. Without JS the Delete link opens the same box via :target. #}
-{# How close flags are to hiding it, e.g. " (2/5)". Not on something a moderator restored: flags no longer hide it. #}
-{% macro flag_count(entry) %}{% if not entry.restored %} ({{ [entry.flags, flags_to_hide]|min }}/{{ flags_to_hide }}){% endif %}{% endmacro %}
+{# How close flags are to hiding it, e.g. " (2/5)". Only once flagged, and not on something a moderator restored: flags no longer hide it. #}
+{% macro flag_count(entry) %}{% if entry.flags and not entry.restored %} ({{ [entry.flags, flags_to_hide]|min }}/{{ flags_to_hide }}){% endif %}{% endmacro %}
 {% macro delete_link(entry) %}<a class="reply-toggle" href="#delete-{{ entry.id }}" aria-controls="delete-{{ entry.id }}" aria-expanded="false">Delete</a>{% endmacro %}
 {% macro delete_box(entry) %}
     <form class="inline-reply delete-confirm" id="delete-{{ entry.id }}" action="/delete-reply" method="post" hidden>

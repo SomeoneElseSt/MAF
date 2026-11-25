@@ -189,7 +189,7 @@ def test_clicking_flag_again_takes_it_back(signed_in, app, pass_id):
     assert 'class="meta-action flagged"' in page and ">Flagged (1/5)<" in page
     signed_in.post("/flag", data={"item_id": post.id})
     assert store.get_item(app.conn, post.id).flags == 0
-    assert ">Flag Post (0/5)<" in signed_in.get(f"/thread/{post.id}").text
+    assert ">Flag Post<" in signed_in.get(f"/thread/{post.id}").text  # no count until someone flags
 
 
 def test_flag_buttons_show_how_close_flags_are_to_hiding(signed_in, app):
