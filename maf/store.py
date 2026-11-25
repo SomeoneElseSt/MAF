@@ -294,6 +294,30 @@ def latest_comment_times(conn: sqlite3.Connection, thread_ids: list[str]) -> dic
     return {row["thread_id"]: row["latest"] for row in rows}
 
 
+def is_subscribed(conn: sqlite3.Connection, pass_id: str | None, thread_id: str) -> bool:
+    if pass_id is None:
+        return False
+    row = conn.execute("SELECT 1 FROM subscription WHERE pass_id = ? AND thread_id = ?", (pass_id, thread_id)).fetchone()
+    return row is not None
+
+
+def set_subscribed(conn: sqlite3.Connection, pass_id: str, thread_id: str, subscribed: bool) -> None:
+    with conn:
+        if subscribed:
+            conn.execute("INSERT OR IGNORE INTO subscription (pass_id, thread_id) VALUES (?, ?)", (pass_id, thread_id))
+        else:
+            conn.execute("DELETE FROM subscription WHERE pass_id = ? AND thread_id = ?", (pass_id, thread_id))
+
+
+def subscribers(conn: sqlite3.Connection, thread_id: str) -> list[str]:
+    """Everyone following this post, the post's author first."""
+    rows = conn.execute(
+        "SELECT s.pass_id FROM subscription s JOIN item i ON i.id = s.thread_id "
+        "WHERE s.thread_id = ? ORDER BY s.pass_id = i.pass_id DESC", (thread_id,)
+    ).fetchall()
+    return [r["pass_id"] for r in rows]
+
+
 def with_comment_counts(conn: sqlite3.Connection, items: list[Item]) -> list[Item]:
     counts = comment_counts(conn, [i.thread_id for i in items])
     for item in items:
@@ -721,9 +745,10 @@ def _snippet(row: sqlite3.Row) -> str:
 
 
 def notifications(conn: sqlite3.Connection, pass_id: str) -> list[dict]:
-    """What's new on your posts and replies, newest first: replies from others, and others' reactions
-    (grouped per post or reply, with each reaction's time so the browser can count the new ones).
-    Replies you can't see, removed or in-review replies, and your own activity never appear."""
+    """What's new on your posts and replies, newest first: replies from others, others' reactions
+    (grouped per post or reply, with each reaction's time so the browser can count the new ones), and
+    everything new on posts you subscribed to. Replies you can't see, removed or in-review replies,
+    and your own activity never appear."""
     replies = conn.execute(
         "SELECT c.id, c.thread_id, c.created_at, t.parent_id IS NULL AS on_post, "
         "t.title AS t_title, t.text AS t_text, t.sealed AS t_sealed "
@@ -742,7 +767,19 @@ def notifications(conn: sqlite3.Connection, pass_id: str) -> list[dict]:
         "GROUP BY t.id ORDER BY latest DESC LIMIT ?",
         (pass_id, pass_id, NOTIFICATIONS_SHOWN),
     ).fetchall()
+    followed = conn.execute(
+        "SELECT c.id, c.thread_id, c.created_at, c.parent_id, t.title AS t_title, t.text AS t_text, t.sealed AS t_sealed "
+        "FROM subscription s JOIN item c ON c.thread_id = s.thread_id JOIN item t ON t.id = c.id "
+        "WHERE s.pass_id = ? AND c.id != c.thread_id AND c.pass_id != ? AND c.removed_reason IS NULL "
+        "AND NOT (c.hidden = 1 AND c.restored = 0) AND (c.private_to IS NULL OR c.private_to = ?) "
+        "ORDER BY c.created_at DESC LIMIT ?",
+        (pass_id, pass_id, pass_id, NOTIFICATIONS_SHOWN),
+    ).fetchall()
     found = [
+        {"kind": "activity", "on": "post" if not f["parent_id"] else "comment", "about": _snippet(f),
+         "url": f"/thread/{f['thread_id']}#{f['id']}", "at": f["created_at"], "times": [f["created_at"]]}
+        for f in followed
+    ] + [
         {"kind": "reply", "on": "post" if r["on_post"] else "comment", "about": _snippet(r),
          "url": f"/thread/{r['thread_id']}#{r['id']}", "at": r["created_at"], "times": [r["created_at"]]}
         for r in replies

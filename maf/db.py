@@ -7,7 +7,7 @@ so it can be extended later without a migration framework.
 import sqlite3
 from pathlib import Path
 
-SCHEMA_VERSION = 6
+SCHEMA_VERSION = 7
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS pass (
@@ -134,7 +134,16 @@ EDITED_AT = """
 ALTER TABLE item ADD COLUMN edited_at TEXT;
 """
 
-MIGRATIONS = {1: SCHEMA, 2: SEALED_REPLIES, 3: REMOVED_REASON, 4: REPLY_EDITS, 5: REACTION_TIMES, 6: EDITED_AT}
+# Someone following a whole post: any activity on it reaches their Feed.
+SUBSCRIPTIONS = """
+CREATE TABLE IF NOT EXISTS subscription (
+    pass_id TEXT NOT NULL,
+    thread_id TEXT NOT NULL REFERENCES item(id) ON DELETE CASCADE,
+    PRIMARY KEY (pass_id, thread_id)
+);
+"""
+
+MIGRATIONS = {1: SCHEMA, 2: SEALED_REPLIES, 3: REMOVED_REASON, 4: REPLY_EDITS, 5: REACTION_TIMES, 6: EDITED_AT, 7: SUBSCRIPTIONS}
 
 
 def connect(path: Path | str) -> sqlite3.Connection:

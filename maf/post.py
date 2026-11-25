@@ -110,6 +110,7 @@ async def comment(request: Request) -> Response:
     reply = store.create_comment(page.conn, page.pass_id, parent, values["text"], None)
     page.app.live.publish(parent.thread_id)
     _ring(page, parent.pass_id)
+    _ring_subscribers(page, parent.thread_id)
     return redirect(f"/thread/{parent.thread_id}#{reply.id}")  # land on the new reply, not the top
 
 
@@ -141,6 +142,12 @@ def _ring(page, owner: str) -> None:
     """Tells the owner's bell something new arrived (nothing is stored; their page re-checks)."""
     if owner != page.pass_id:
         page.app.live.publish(live.bell(owner))
+
+
+def _ring_subscribers(page, thread_id: str) -> None:
+    """Same for everyone following the post, so their Feed picks up the activity."""
+    for pass_id in store.subscribers(page.conn, thread_id):
+        _ring(page, pass_id)
 
 
 def _own_item(page, item: store.Item | None) -> bool:
@@ -187,6 +194,21 @@ def _private_edit(page, item: store.Item, raw_sealed: str) -> Response:
         return redirect(f"{thread}?notice=Couldn't+save+that+privately.+Reload+the+page+and+try+again.")
     store.edit_item(page.conn, item.id, None, sealed=json.dumps(sealed))
     return redirect(f"{thread}#{item.id}")
+
+
+async def subscribe(request: Request) -> Response:
+    """Follow a whole post: its activity then comes to your Feed. Clicking again stops it."""
+    page = page_of(request)
+    values = await form_values(request, "thread_id", "back")
+    post = store.get_item(page.conn, values["thread_id"])
+    if page.pass_id is None or post is None or not post.is_post:
+        return gone(page, values["thread_id"])
+    back = f"/thread/{post.id}" + ("#" + values["back"] if values["back"] else "")
+    if post.unlisted or post.removed_reason:
+        return redirect(back)
+    following = store.is_subscribed(page.conn, page.pass_id, post.id)
+    store.set_subscribed(page.conn, page.pass_id, post.id, not following)
+    return redirect(back)
 
 
 async def delete_reply(request: Request) -> Response:
@@ -297,6 +319,7 @@ routes = [
     Route("/submit", submit_post, methods=["POST"]),
     Route("/comment", comment, methods=["POST"]),
     Route("/edit", edit, methods=["POST"]),
+    Route("/subscribe", subscribe, methods=["POST"]),
     Route("/delete-reply", delete_reply, methods=["POST"]),
     Route("/thread-key", thread_key, methods=["POST"]),
     Route("/flag", flag, methods=["POST"]),

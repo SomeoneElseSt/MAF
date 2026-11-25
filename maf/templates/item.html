@@ -174,7 +174,12 @@
   <p class="help">Commenting as: <button class="id" type="button">{{ my_label }}</button> <span class="dot">·</span> Please don't name students or staff.
     {% if post.pass_id != viewer %}{{ private_toggle(label_of[post.pass_id] ~ ' (OP)', false) }}{% endif %}
   </p>
-  <div class="row"><button class="button" type="submit" data-pending="Commenting…" data-needs-text>Comment</button></div>
+  <div class="row"><button class="button" type="submit" data-pending="Commenting…" data-needs-text>Comment</button><button class="button plain subscribe" type="submit" form="subscribe-form">{{ 'Unsubscribe' if subscribed else 'Subscribe' }}</button></div>
+</form>
+{# Subscribe follows the whole post: its activity then comes to the Feed, and the button says how to stop.
+   Its own form, so the comment box's drafts and in-place sending never see it. #}
+<form id="subscribe-form" action="/subscribe" method="post" hidden>
+  <input type="hidden" name="thread_id" value="{{ post.id }}"><input type="hidden" name="back" value="">
 </form>
 {% else %}
 <p class="small"><a href="/sign-in">Sign in</a> to comment.</p>

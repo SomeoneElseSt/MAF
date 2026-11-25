@@ -156,6 +156,11 @@ def about(request: Request) -> Response:
     return render(page, "about.html", title="About")
 
 
+def privacy(request: Request) -> Response:
+    page = page_of(request)
+    return render(page, "privacy.html", title="Privacy")
+
+
 def guide(request: Request) -> Response:
     page = page_of(request)
     return render(page, "guide.html", title="User Guide")
@@ -227,7 +232,7 @@ class InPlaceRedirects:
 
 
 # Pages a signed-out visitor may open. Everything else needs a pass; the API checks its own bearer tokens.
-PUBLIC_PATHS = {"/sign-in", "/sign-in/code", "/sign-in/sent", "/sign-in/key", "/sign-in/blind-sign", "/sign-in/redeem", "/about"}
+PUBLIC_PATHS = {"/sign-in", "/sign-in/code", "/sign-in/sent", "/sign-in/key", "/sign-in/blind-sign", "/sign-in/redeem", "/about", "/privacy"}
 PUBLIC_PREFIXES = ("/static/", "/api/")
 
 
@@ -264,6 +269,7 @@ def create_app(settings: Settings | None = None) -> Starlette:
         Route("/search", search),
         Route("/tags", tags_page),
         Route("/about", about),
+        Route("/privacy", privacy),
         Route("/guide", guide),
         Route("/guide/use-this-data", guide_data),
         Route("/sign-out", logout, methods=["POST"]),

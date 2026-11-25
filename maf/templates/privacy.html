@@ -1,0 +1,40 @@
+{#
+  privacy.html: what MAF keeps, for how long, and who to ask. Plain language, short sentences.
+  Every claim here matches the "Auditing privacy" table in README.md.
+#}
+{% extends "base.html" %}
+{% block main %}
+<div class="prose">
+  <h1 class="heading">Privacy</h1>
+  <p>Short version: MAF keeps your posts and replies, and almost nothing about you.</p>
+
+  <h2>What we store</h2>
+  <ul>
+    <li><strong>Posts, replies and edits.</strong> The words you write, with the thread they belong to and a random name per thread.</li>
+    <li><strong>Private replies.</strong> Only the encrypted form. Your browser encrypts them before sending, so the server stores text it can't read.</li>
+    <li><strong>A sign-in cookie.</strong> It holds your pass, signed. It's what keeps you signed in, and it's the only cookie MAF sets.</li>
+    <li><strong>Counts.</strong> Views, flags and reactions, tied to your pass, not to anything else about you.</li>
+  </ul>
+
+  <h2>What we don't store</h2>
+  <ul>
+    <li><strong>Your email.</strong> It's used once to send a code and then forgotten. Sign-in codes live in memory and expire.</li>
+    <li><strong>IP addresses or request logs.</strong> Neither the app nor the web server in front of it keeps them.</li>
+    <li><strong>Tracking or analytics.</strong> There are none. Your theme, drafts, pins and what you've seen in the Feed stay in your browser.</li>
+  </ul>
+
+  <h2>Why we keep it</h2>
+  <p>To run the forum: showing threads, counting views and comments, hiding flagged posts, and keeping you signed in. Nothing is sold, shared with advertisers, or used to build a profile of you.</p>
+
+  <h2>How long</h2>
+  <p>Posts and replies stay until they're deleted (yours, or by the maintainer after a moderation request or flags). Deleted words are overwritten on disk, not kept. If you delete your account's content, nothing ties the rest back to you.</p>
+
+  <h2>Your choices</h2>
+  <p>You can edit or delete your own replies and edit your own posts at any time. For anything else (a post you want removed, or a question about what's stored), write to <a href="mailto:hello@maforum.net">hello@maforum.net</a>.</p>
+
+  <h2>Who runs it</h2>
+  <p>MAF is run by students for Minerva University students. Questions go to <a href="mailto:hello@maforum.net">hello@maforum.net</a>.</p>
+
+  <p class="small">The code is public: <a href="https://github.com/SomeoneElseSt/MAF" target="_blank" rel="noopener">github.com/SomeoneElseSt/MAF<span class="sr-only"> (opens in a new tab)</span></a>. You can check each claim above yourself in it.</p>
+</div>
+{% endblock %}

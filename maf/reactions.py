@@ -25,8 +25,10 @@ async def react(request: Request) -> Response:
         return redirect(f"/thread/{item.id}?notice=Slow+down+a+little.+Try+again+in+a+minute.")
     added = store.toggle_reaction(page.conn, page.pass_id, item.id, values["emoji"])
     page.app.live.publish(item.thread_id)
-    if added and item.pass_id != page.pass_id:
-        page.app.live.publish(live.bell(item.pass_id))
+    if added:
+        for pass_id in {item.pass_id, *store.subscribers(page.conn, item.thread_id)}:
+            if pass_id != page.pass_id:
+                page.app.live.publish(live.bell(pass_id))
     return redirect(f"/thread/{item.thread_id}#{item.id}")
 
 

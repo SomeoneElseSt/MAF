@@ -3,6 +3,7 @@
 
   Context:
     items   [{kind, on, about, url, at, times, emoji?}, ...] from store.notifications, newest first
+            kind: "reply" or "reactions" on your own post or reply, or "activity" on a post you subscribed to
 #}
 {% extends "base.html" %}
 {% block main %}
@@ -11,12 +12,12 @@
 <ol class="list list-flat notifications">
   {% for n in items %}
   <li>
-    <a class="title" href="{{ n.url }}">{% if n.kind == "reply" %}New reply to your {{ n.on }}{% else %}{{ n.emoji|join(" ") }} {{ n.times|length }} reaction{{ "" if n.times|length == 1 else "s" }} on your {{ n.on }}{% endif %}</a>
+    <a class="title" href="{{ n.url }}">{% if n.kind == "activity" %}New activity on a post you subscribed to{% elif n.kind == "reply" %}New reply to your {{ n.on }}{% else %}{{ n.emoji|join(" ") }} {{ n.times|length }} reaction{{ "" if n.times|length == 1 else "s" }} on your {{ n.on }}{% endif %}</a>
     <div class="meta">“{{ n.about }}”, {{ n.at|rel }}</div>
   </li>
   {% endfor %}
 </ol>
 {% else %}
-<p class="empty">Replies and reactions to your posts and comments show up here.</p>
+<p class="empty">Replies and reactions to your posts and comments, and activity on posts you subscribe to, show up here.</p>
 {% endif %}
 {% endblock %}

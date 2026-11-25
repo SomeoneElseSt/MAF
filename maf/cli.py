@@ -6,17 +6,36 @@ tool.
 """
 
 import argparse
+import os
 import sqlite3
 import sys
+from pathlib import Path
 
 from . import store
 from .settings import load_settings
+
+# The site's settings file (systemd reads it for the running app). An SSH shell doesn't, so without
+# it the CLI would open an empty database in the current folder and every id would look missing.
+SITE_ENV = Path("/etc/maf/env")
+
+
+def _load_env() -> None:
+    """Fills in settings from the site's env file, never overriding ones already set."""
+    if not SITE_ENV.is_file():
+        return
+    for line in SITE_ENV.read_text().splitlines():
+        name, _, value = line.strip().partition("=")
+        if name and not name.startswith("#") and name not in os.environ:
+            os.environ[name] = value.strip().strip('"').strip("'")
 
 
 def _connect():
     from .db import connect, migrate
 
+    _load_env()
     settings = load_settings()
+    if not settings.database_path.exists():
+        raise SystemExit(f"No database at {settings.database_path}. Set MAF_DATABASE to the site's database.")
     conn = connect(settings.database_path)
     migrate(conn)
     return conn

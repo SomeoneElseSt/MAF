@@ -49,6 +49,7 @@ def item(request: Request) -> Response:
         "title": markdown.plain(post.title),
         "post": post,
         "post_mine": bool(page.pass_id) and post.pass_id == page.pass_id,
+        "subscribed": store.is_subscribed(page.conn, page.pass_id, post.id),
         "tree": tree,
         "label_of": label_of,
         "op_pass": op_pass,

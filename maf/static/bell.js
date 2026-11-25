@@ -50,6 +50,7 @@
   }
 
   function label(item) {
+    if (item.kind === "activity") return "New activity on a post you subscribed to";
     if (item.kind === "reply") return `New reply to your ${item.on}`;
     return `${item.emoji.join(" ")} ${plural(item.times.length, "reaction")} on your ${item.on}`;
   }
