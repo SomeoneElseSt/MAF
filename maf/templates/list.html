@@ -23,7 +23,7 @@
 {% macro row(post, fixed=false) %}
 <li{% if fixed %} class="fixed"{% elif is_hot(post.tags) %} class="hot"{% endif %} data-tags="{{ post.tags|join(' ') }}" data-id="{{ post.id }}" data-title="{{ post.title|plain|e }}" data-host="{{ post.url|host }}" data-created="{{ post.created_at }}"{% if latest_comments and latest_comments.get(post.thread_id) %} data-latest-comment="{{ latest_comments[post.thread_id] }}"{% endif %}>
   {% if post.title %}
-  <a class="title" href="/thread/{{ post.id }}">{{ post.title|md_title }}</a>{% if post.url %}<span class="host">({{ post.url|host }})</span>{% endif %}
+  <a class="title" href="/thread/{{ post.id }}">{{ post.title|md_title }}</a>{% if post.url %}<a class="host" href="{{ post.url }}" rel="nofollow noopener" target="_blank">({{ post.url|host }})<span class="sr-only"> (opens in a new tab)</span></a>{% endif %}
   <div class="meta"><span class="counts">{{ metadata(post, post.comment_count) }}</span>{% if post.tags %} <span class="dot">·</span> {% for tag in post.tags %}<a class="tag{% if is_hot([tag]) %} hot-tag{% endif %}" href="/?tag={{ tag }}">#{{ tag }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}</div>
   {% else %}
   <a class="title" href="/thread/{{ post.thread_id }}#{{ post.id }}">{{ post.text|plain|truncate(80) }}</a>

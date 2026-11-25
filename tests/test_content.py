@@ -163,6 +163,15 @@ def test_home_rows_carry_their_latest_comment_time(client, app, pass_id):
     assert f'data-id="{silent.id}" data-title="No comments" data-host="" data-created="{silent.created_at}">' in body
 
 
+def test_home_rows_link_their_host_in_a_new_tab(client, app, pass_id):
+    make_post(app, pass_id, title="Linked post", url="https://example.com/some/page")
+    make_post(app, pass_id, title="Plain post")
+    body = client.get("/").text
+    assert '<a class="host" href="https://example.com/some/page" rel="nofollow noopener" target="_blank">(example.com)' in body
+    # A post without a link gets no host link at all.
+    assert body.count('class="host"') == 1
+
+
 def test_before_steps_back_four_days(client, app, pass_id):
     make_post(app, pass_id, title="Six days ago", days_ago=6)
     before = (utc_now().date() - timedelta(days=3)).isoformat()
