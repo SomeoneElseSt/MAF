@@ -62,6 +62,7 @@ def item(request: Request) -> Response:
         "reactions": _reactions(page, items),
         "embeds": embeds,
         "flags": _flags(page, items),
+        "flags_to_hide": store.FLAGS_TO_HIDE,
         "requests": store.request_counts(page.conn, post.id),
         "notice": request.query_params.get("notice"),
         # After the name check refused a reply or edit: which box the warning shows in, and the words it

@@ -95,6 +95,8 @@
 </div></span>{% endmacro %}
 
 {# Your own reply: Delete asks first, inline. Without JS the Delete link opens the same box via :target. #}
+{# How close flags are to hiding it, e.g. " (2/5)". Not on something a moderator restored: flags no longer hide it. #}
+{% macro flag_count(entry) %}{% if not entry.restored %} ({{ [entry.flags, flags_to_hide]|min }}/{{ flags_to_hide }}){% endif %}{% endmacro %}
 {% macro delete_link(entry) %}<a class="reply-toggle" href="#delete-{{ entry.id }}" aria-controls="delete-{{ entry.id }}" aria-expanded="false">Delete</a>{% endmacro %}
 {% macro delete_box(entry) %}
     <form class="inline-reply delete-confirm" id="delete-{{ entry.id }}" action="/delete-reply" method="post" hidden>
@@ -131,7 +133,7 @@
   {{ embed_cards(entry) }}
   <div class="actions">
     <a class="reply-toggle" href="#reply-{{ entry.id }}" aria-controls="reply-{{ entry.id }}" aria-expanded="false">Reply</a>
-    {% if not entry.private_to %}<form action="/flag" method="post" class="inline-form"><input type="hidden" name="item_id" value="{{ entry.id }}"><input type="hidden" name="thread_id" value="{{ post.id }}"><button type="submit"{% if flags.get(entry.id) %} class="flagged"{% endif %} aria-pressed="{{ 'true' if flags.get(entry.id) else 'false' }}">{% if flags.get(entry.id) %}Flagged{% else %}Flag{% endif %}</button></form>{% if flags.get(entry.id) %}<span class="flag-note">5 flags hide a comment. Urgent? Email <a href="mailto:hello@maforum.net">hello@maforum.net</a>.</span>{% endif %}{% endif %}
+    {% if not entry.private_to %}<form action="/flag" method="post" class="inline-form"><input type="hidden" name="item_id" value="{{ entry.id }}"><input type="hidden" name="thread_id" value="{{ post.id }}"><button type="submit"{% if flags.get(entry.id) %} class="flagged"{% endif %} aria-pressed="{{ 'true' if flags.get(entry.id) else 'false' }}">{% if flags.get(entry.id) %}Flagged{% else %}Flag{% endif %}{{ flag_count(entry) }}</button></form>{% if flags.get(entry.id) %}<span class="flag-note">5 flags hide a comment. Urgent? Email <a href="mailto:hello@maforum.net">hello@maforum.net</a>.</span>{% endif %}{% endif %}
     {% if mine %}<button class="reply-toggle" type="button" data-edit="edit-{{ entry.id }}" aria-controls="edit-{{ entry.id }}" aria-expanded="false">Edit</button>{{ delete_link(entry) }}{% endif %}
     {{ reactions_box(entry) }}
   </div>
@@ -175,7 +177,7 @@
   <div class="meta">Posted by <button class="id" type="button">{{ label_of[post.pass_id] }}</button> {{ post.created_at|rel }}{% if post.edited_at %} <span class="edited">(edited)</span>{% endif %}, {{ post.views }} view{{ '' if post.views == 1 else 's' }}
     {% if tags_list %} <span class="dot">·</span> {% for tag in tags_list %}<a class="tag{% if is_hot([tag]) %} hot-tag{% endif %}" href="/?tag={{ tag }}">#{{ tag }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}
     {% if not post.unlisted %} <span class="sep">|</span>
-    <form action="/flag" method="post" class="inline-form"><input type="hidden" name="item_id" value="{{ post.id }}"><input type="hidden" name="thread_id" value="{{ post.id }}"><button class="meta-action{% if flags.get(post.id) %} flagged{% endif %}" type="submit" aria-pressed="{{ 'true' if flags.get(post.id) else 'false' }}">{% if flags.get(post.id) %}Flagged{% else %}Flag Post{% endif %}</button></form>{% if flags.get(post.id) %} <span class="flag-note">5 flags hide a post. Urgent? Email <a href="mailto:hello@maforum.net">hello@maforum.net</a>.</span>{% endif %}
+    <form action="/flag" method="post" class="inline-form"><input type="hidden" name="item_id" value="{{ post.id }}"><input type="hidden" name="thread_id" value="{{ post.id }}"><button class="meta-action{% if flags.get(post.id) %} flagged{% endif %}" type="submit" aria-pressed="{{ 'true' if flags.get(post.id) else 'false' }}">{% if flags.get(post.id) %}Flagged{% else %}Flag Post{% endif %}{{ flag_count(post) }}</button></form>{% if flags.get(post.id) %} <span class="flag-note">5 flags hide a post. Urgent? Email <a href="mailto:hello@maforum.net">hello@maforum.net</a>.</span>{% endif %}
     {% if post_mine %} <span class="sep">|</span> <button class="reply-toggle meta-action" type="button" data-edit="edit-{{ post.id }}" aria-controls="edit-{{ post.id }}" aria-expanded="false">Edit</button>{% endif %}
     {% endif %}
   </div>

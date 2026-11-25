@@ -186,10 +186,25 @@ def test_clicking_flag_again_takes_it_back(signed_in, app, pass_id):
     signed_in.post("/flag", data={"item_id": post.id})
     assert store.get_item(app.conn, post.id).flags == 1
     page = signed_in.get(f"/thread/{post.id}").text
-    assert 'class="meta-action flagged"' in page and ">Flagged<" in page
+    assert 'class="meta-action flagged"' in page and ">Flagged (1/5)<" in page
     signed_in.post("/flag", data={"item_id": post.id})
     assert store.get_item(app.conn, post.id).flags == 0
-    assert ">Flag Post<" in signed_in.get(f"/thread/{post.id}").text
+    assert ">Flag Post (0/5)<" in signed_in.get(f"/thread/{post.id}").text
+
+
+def test_flag_buttons_show_how_close_flags_are_to_hiding(signed_in, app):
+    post = make_post(app, store.create_pass(app.conn))
+    for _ in range(2):
+        store.add_flag(app.conn, store.create_pass(app.conn), post.id)
+    assert ">Flag Post (2/5)<" in signed_in.get(f"/thread/{post.id}").text
+    for _ in range(2):
+        store.add_flag(app.conn, store.create_pass(app.conn), post.id)
+    assert ">Flag Post (4/5)<" in signed_in.get(f"/thread/{post.id}").text
+    store.add_flag(app.conn, store.create_pass(app.conn), post.id)
+    assert "Five people flagged this post" in signed_in.get(f"/thread/{post.id}").text  # unlisted: no button
+    store.unhide(app.conn, post.id)
+    page = signed_in.get(f"/thread/{post.id}").text
+    assert ">Flag Post<" in page and "/5)" not in page  # restored: flags no longer hide it
 
 
 def test_a_post_hidden_by_flags_returns_when_one_is_taken_back(app, pass_id):
