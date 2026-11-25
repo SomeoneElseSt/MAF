@@ -13,6 +13,7 @@
     etiquette_banner  (tag, text) banner tuple or None
     reply_placeholder  guided placeholder for inline reply boxes
     reactions       {item_id: {counts: {emoji: n}, mine: {emoji}}}
+    embeds          {item_id: [Embed, ...]} preview cards for MAF thread links in each item
     flags           {item_id: already flagged by the viewer}
     requests        {"unhide": n, "nuke": n} request counts for the post
     notice          a one-line message from the last action
@@ -46,6 +47,17 @@
   </span>
 {% endmacro %}
 
+{% macro embed_cards(entry) %}
+  {% for e in embeds.get(entry.id, []) %}
+  {# A reply that links to another MAF thread shows it as a card: title, first two lines, details. #}
+  <a class="embed" href="/thread/{{ e.id }}">
+    <p class="embed-title">{{ e.title|md_title }}</p>
+    {% if e.preview %}<p class="embed-text">{{ e.preview }}</p>{% endif %}
+    <p class="embed-meta">Posted by {{ e.label }}<span class="dot">·</span>{{ e.created_at|rel }}<span class="dot">·</span>{{ e.views }} view{{ '' if e.views == 1 else 's' }}{% if e.comment_count %}<span class="dot">·</span>{{ e.comment_count }} comment{{ '' if e.comment_count == 1 else 's' }}{% endif %}{% if e.tags %}<span class="dot">·</span>{% for tag in e.tags %}<span class="tag">#{{ tag }}</span>{% if not loop.last %} {% endif %}{% endfor %}{% endif %}</p>
+  </a>
+  {% endfor %}
+{% endmacro %}
+
 {# The person a reply to this entry would go to privately. #}
 {% macro peer_of(entry) %}{% if entry.private_to %}{{ entry.private_to if entry.pass_id == viewer else entry.pass_id }}{% else %}{{ entry.pass_id }}{% endif %}{% endmacro %}
 
@@ -76,6 +88,7 @@
   {% else %}
   {{ meta_line(entry) }}
   {% if entry.sealed %}<div class="text sealed" data-sealed="{{ entry.sealed }}"><p class="sealed-note">This private reply can only be read on the device that sent or received it.</p></div>{% else %}<div class="text">{{ entry.text|markdown }}</div>{% endif %}
+  {{ embed_cards(entry) }}
   <div class="actions">
     <a class="reply-toggle" href="#reply-{{ entry.id }}" aria-controls="reply-{{ entry.id }}" aria-expanded="false">Reply</a>
     {% if not entry.private_to %}<form action="/flag" method="post" class="inline-form"><input type="hidden" name="item_id" value="{{ entry.id }}"><input type="hidden" name="thread_id" value="{{ post.id }}"><button type="submit"{% if flags.get(entry.id) %} class="flagged"{% endif %} aria-pressed="{{ 'true' if flags.get(entry.id) else 'false' }}">{% if flags.get(entry.id) %}Flagged{% else %}Flag{% endif %}</button></form>{% if flags.get(entry.id) %}<span class="flag-note">5 flags hide a comment. Urgent? Email <a href="mailto:hello@maforum.net">hello@maforum.net</a>.</span>{% endif %}{% endif %}

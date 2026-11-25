@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Link preview card · five versions · MAF</title>
+<link rel="stylesheet" href="style.css">
+<script>try { const saved = localStorage.getItem("theme"); if (saved) document.documentElement.dataset.theme = saved; } catch {}</script>
+<style>
+  /* A reply that links to another MAF thread shows a preview card under it. Five takes on that card. */
+  .versions { margin: 8px 0 40px; }
+  .version + .version { margin-top: 44px; padding-top: 28px; border-top: 1px solid var(--line); }
+  .version-label { font: 600 18px var(--serif); margin: 0 0 4px; }
+  .version-note { font: 15px/1.5 var(--sans); color: var(--meta); margin: 0 0 18px; }
+
+  /* The thread post each card previews. */
+  .post-title { font: 600 20px/1.35 var(--serif); margin: 0 0 2px; }
+
+  /* Shared: the card is one link; only the look changes between versions. */
+  .embed { display: block; text-decoration: none; color: inherit; margin: 6px 0 10px; }
+  .embed:hover { text-decoration: none; }
+  .embed-title { font-weight: 600; margin: 0; }
+  .embed-text {
+    margin: 4px 0 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .embed-meta { font: 13px/1.5 var(--sans); color: var(--meta); margin-top: 6px; }
+  .embed-meta .dot { margin: 0 4px; }
+  .embed-meta .tag { color: var(--meta); }
+  .embed-meta .tag:hover { color: var(--ink); }
+  .embed-host { font: 13px var(--sans); color: var(--meta); }
+
+  /* 1 · The plain bordered card: looks like the thread's opening, quietly boxed. */
+  .v1 .embed { border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; }
+  .v1 .embed:hover { border-color: var(--border); }
+  .v1 .embed-title { font: 600 18px/1.35 var(--serif); }
+  .v1 .embed-text { font: 16px/1.5 var(--serif); }
+
+  /* 2 · A compact attachment: reads as a chip, not a page. */
+  .v2 .embed { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; max-width: 420px; }
+  .v2 .embed:hover { border-color: var(--border); }
+  .v2 .embed-title { font: 600 15px/1.4 var(--sans); }
+  .v2 .embed-text { font: 13px/1.45 var(--sans); color: var(--soft); }
+
+  /* 3 · A left rule instead of a box: like a quotation pulled out of the reply. */
+  .v3 .embed { border-left: 3px solid var(--ink); padding: 2px 0 2px 12px; }
+  .v3 .embed:hover .embed-title { text-decoration: underline; text-underline-offset: 3px; }
+  .v3 .embed-title { font: 600 18px/1.35 var(--serif); }
+  .v3 .embed-text { font: 16px/1.5 var(--serif); }
+  .v3 .embed-text { -webkit-line-clamp: 2; }
+
+  /* 4 · A tinted block with a way out: the whole card plus a "Read the post" line. */
+  .v4 .embed { background: var(--tint); border-radius: 6px; padding: 12px 14px; }
+  .v4 .embed:hover .embed-title { text-decoration: underline; text-underline-offset: 3px; }
+  .v4 .embed-title { font: 600 18px/1.35 var(--serif); }
+  .v4 .embed-text { font: 16px/1.5 var(--serif); }
+  .v4 .embed-more { font: 13px var(--sans); color: var(--soft); margin-top: 8px; }
+  .v4 .embed:hover .embed-more { color: var(--ink); }
+
+  /* 5 · A row with a faded excerpt: title and meta first, text trailing off, tags at the end. */
+  .v5 .embed { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 10px 0; }
+  .v5 .embed:hover .embed-title { text-decoration: underline; text-underline-offset: 3px; }
+  .v5 .embed-title { font: 600 18px/1.35 var(--serif); }
+  .v5 .embed-text {
+    display: block; -webkit-line-clamp: none; margin-top: 6px; font: 16px/1.5 var(--serif); max-height: 3em;
+    -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent); mask-image: linear-gradient(to bottom, #000 55%, transparent);
+  }
+  .v5 .embed-foot { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; font: 13px/1.5 var(--sans); color: var(--meta); margin-top: 6px; }
+  .v5 .embed-foot .tag { color: var(--meta); }
+  .v5 .embed-foot .tag:hover { color: var(--ink); }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="page">
+  <header class="top">
+    <a class="brand" href="index.html">MAF</a>
+    <nav><a href="submit.html">Submit</a></nav>
+    <button class="theme-toggle" type="button">Dark</button>
+  </header>
+  <main id="main">
+    <h1>Link preview card: five versions</h1>
+    <p class="version-note">When a reply links to a MAF thread, the reply shows a card for it: the title, the first two lines of the post, and its details. Each version below sits in a real reply so you can judge it in place. Tell me a number and I'll build it.</p>
+
+    <div class="versions">
+
+      <section class="version v1">
+        <p class="version-label">Version 1 · The plain bordered card</p>
+        <p class="version-note">A quiet box with the thread's own look inside: serif title and text, sans details. Closest to "the thread, small".</p>
+        <ol class="comments">
+          <li class="comment">
+            <div class="meta"><button class="id" type="button">quiet-otter</button>, 1 hour ago</div>
+            <p>This thread covers everything you'd want to know before you land:</p>
+            <a class="embed" href="#">
+              <p class="embed-title">Where's the best late-night food in Berlin?</p>
+              <p class="embed-text">Landing next week and I'm usually hungry after 11pm. Döner is fine but I'd love other options. Also curious whether the Vietnamese places around Kottbusser Tor stay open late, and whether the queues at Mustafa's are really as bad as people say on a Friday.</p>
+              <p class="embed-meta">Posted by amber-fox<span class="dot">·</span>Yesterday<span class="dot">·</span>16 views<span class="dot">·</span><span class="tag">#berlin</span> <span class="tag">#help</span></p>
+            </a>
+            <div class="actions"><button class="reply-toggle" type="button">Reply</button><button type="button">Flag</button></div>
+          </li>
+        </ol>
+      </section>
+
+      <section class="version v2">
+        <p class="version-label">Version 2 · The compact attachment</p>
+        <p class="version-note">Smaller and sans-serif, capped at 420px: it reads as something attached to the reply rather than a second thread.</p>
+        <ol class="comments">
+          <li class="comment">
+            <div class="meta"><button class="id" type="button">quiet-otter</button>, 1 hour ago</div>
+            <p>This thread covers everything you'd want to know before you land:</p>
+            <a class="embed" href="#">
+              <p class="embed-title">Where's the best late-night food in Berlin?</p>
+              <p class="embed-text">Landing next week and I'm usually hungry after 11pm. Döner is fine but I'd love other options. Also curious whether the Vietnamese places around Kottbusser Tor stay open late, and whether the queues at Mustafa's are really as bad as people say on a Friday.</p>
+              <p class="embed-meta">amber-fox<span class="dot">·</span>Yesterday<span class="dot">·</span>16 views<span class="dot">·</span><span class="tag">#berlin</span> <span class="tag">#help</span></p>
+            </a>
+            <div class="actions"><button class="reply-toggle" type="button">Reply</button><button type="button">Flag</button></div>
+          </li>
+        </ol>
+      </section>
+
+      <section class="version v3">
+        <p class="version-label">Version 3 · The left rule</p>
+        <p class="version-note">No box at all: a thick left rule like a quotation. The lightest of the five, and it never competes with the reply's own text.</p>
+        <ol class="comments">
+          <li class="comment">
+            <div class="meta"><button class="id" type="button">quiet-otter</button>, 1 hour ago</div>
+            <p>This thread covers everything you'd want to know before you land:</p>
+            <a class="embed" href="#">
+              <p class="embed-title">Where's the best late-night food in Berlin?</p>
+              <p class="embed-text">Landing next week and I'm usually hungry after 11pm. Döner is fine but I'd love other options. Also curious whether the Vietnamese places around Kottbusser Tor stay open late, and whether the queues at Mustafa's are really as bad as people say on a Friday.</p>
+              <p class="embed-meta">Posted by amber-fox<span class="dot">·</span>Yesterday<span class="dot">·</span>16 views<span class="dot">·</span><span class="tag">#berlin</span> <span class="tag">#help</span></p>
+            </a>
+            <div class="actions"><button class="reply-toggle" type="button">Reply</button><button type="button">Flag</button></div>
+          </li>
+        </ol>
+      </section>
+
+      <section class="version v4">
+        <p class="version-label">Version 4 · The tinted block with a way out</p>
+        <p class="version-note">A soft tinted panel, and a "Read the post" line that darkens on hover, so it's obvious the card goes somewhere.</p>
+        <ol class="comments">
+          <li class="comment">
+            <div class="meta"><button class="id" type="button">quiet-otter</button>, 1 hour ago</div>
+            <p>This thread covers everything you'd want to know before you land:</p>
+            <a class="embed" href="#">
+              <p class="embed-title">Where's the best late-night food in Berlin?</p>
+              <p class="embed-text">Landing next week and I'm usually hungry after 11pm. Döner is fine but I'd love other options. Also curious whether the Vietnamese places around Kottbusser Tor stay open late, and whether the queues at Mustafa's are really as bad as people say on a Friday.</p>
+              <p class="embed-meta">Posted by amber-fox<span class="dot">·</span>Yesterday<span class="dot">·</span>16 views<span class="dot">·</span><span class="tag">#berlin</span> <span class="tag">#help</span></p>
+              <p class="embed-more">Read the post →</p>
+            </a>
+            <div class="actions"><button class="reply-toggle" type="button">Reply</button><button type="button">Flag</button></div>
+          </li>
+        </ol>
+      </section>
+
+      <section class="version v5">
+        <p class="version-label">Version 5 · The row with a faded excerpt</p>
+        <p class="version-note">Hairlines above and below, the title first, and the excerpt fades out instead of ending in an ellipsis. The details and hashtags sit on their own line.</p>
+        <ol class="comments">
+          <li class="comment">
+            <div class="meta"><button class="id" type="button">quiet-otter</button>, 1 hour ago</div>
+            <p>This thread covers everything you'd want to know before you land:</p>
+            <a class="embed" href="#">
+              <p class="embed-title">Where's the best late-night food in Berlin?</p>
+              <p class="embed-text">Landing next week and I'm usually hungry after 11pm. Döner is fine but I'd love other options. Also curious whether the Vietnamese places around Kottbusser Tor stay open late, and whether the queues at Mustafa's are really as bad as people say on a Friday.</p>
+              <p class="embed-foot"><span>Posted by amber-fox</span><span>Yesterday</span><span>16 views</span><span><span class="tag">#berlin</span> <span class="tag">#help</span></span></p>
+            </a>
+            <div class="actions"><button class="reply-toggle" type="button">Reply</button><button type="button">Flag</button></div>
+          </li>
+        </ol>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="foot">
+    <a href="about.html">About</a><a href="how.html">User Guide</a><a href="https://github.com/SomeoneElseSt/MAF">Source Code</a>
+  </footer>
+</div>
+<script src="theme.js"></script>
+</body>
+</html>

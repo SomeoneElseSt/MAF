@@ -71,3 +71,15 @@ def words(text: str | None) -> str:
     """The text as it reads on the page, line breaks kept: what the name check reads, so "**Priya Raman**"
     or "P**riya Ram**an" can't slip past it."""
     return html.unescape(_TAG.sub("", _md.render(text or "")))
+
+
+def link_urls(text: str | None) -> list[str]:
+    """Every link's address in the text, in order: markdown links and bare URLs alike."""
+    urls: list[str] = []
+    for token in _md.parse(text or ""):
+        if token.type != "inline":
+            continue
+        for child in token.children or []:
+            if child.type == "link_open" and child.attrs.get("href"):
+                urls.append(child.attrs["href"])
+    return urls

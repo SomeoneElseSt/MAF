@@ -1,12 +1,13 @@
 """Reading a thread: /thread/<id>, its view count and the comment tree."""
 
 import re
+from urllib.parse import urlsplit
 
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response, StreamingResponse
 from starlette.routing import Route
 
-from . import live, markdown, store
+from . import embed, live, markdown, store
 from .housetags import etiquette, is_hot, reply_placeholder
 from .web import error_page, page_of, redirect, render
 
@@ -34,6 +35,8 @@ def item(request: Request) -> Response:
     items = store.thread_items(page.conn, thread_id, page.pass_id)
     post = next((i for i in items if i.id == thread_id), root)
     tree = store.build_tree(items, thread_id)
+    host = urlsplit(page.settings.base_url).netloc
+    embeds = {i.id: embed.embeds_in(page.conn, i.text, page.app.labeler, thread_id, host) for i in items}
     op_pass = post.pass_id
     labels = {i.pass_id for i in items}
     label_of = {pid: page.labeler_label(thread_id, pid) for pid in labels}
@@ -55,6 +58,7 @@ def item(request: Request) -> Response:
         "etiquette_banner": etiquette(tags),
         "reply_placeholder": reply_placeholder(tags) if tags else "",
         "reactions": _reactions(page, items),
+        "embeds": embeds,
         "flags": _flags(page, items),
         "requests": store.request_counts(page.conn, post.id),
         "notice": request.query_params.get("notice"),
