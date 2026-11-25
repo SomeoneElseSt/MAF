@@ -90,3 +90,12 @@ def test_a_post_page_carries_reply_and_emoji_times_for_marking_whats_new(signed_
     assert f'id="{mine.id}" data-created="{mine.created_at}" data-mine>' in page
     # Emoji others added carry when; your own don't count as news.
     assert page.count("data-latest=") == 1
+
+
+def test_a_public_comment_pings_front_pages_so_new_updates_live(signed_in, app):
+    from maf import live
+
+    post = store.create_post(app.conn, store.create_pass(app.conn), "A post", None, None, ["help"])
+    home = app.live.subscribe(live.HOME)
+    signed_in.post("/comment", data={"parent_id": post.id, "thread_id": post.id, "text": "hi"})
+    assert not home.empty()

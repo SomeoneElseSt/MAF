@@ -82,12 +82,18 @@
     if (count) showBanner(count);
   }
 
+  // Something happened (a post or a comment): the banner checks for new posts, and new.js and counts.js
+  // refresh the New section and the counts.
+  const changed = () => {
+    check().catch(() => {});
+    window.dispatchEvent(new Event("maf:activity"));
+  };
   const source = new EventSource("/events");
-  source.addEventListener("change", () => check().catch(() => {}));
+  source.addEventListener("change", changed);
   // After a reconnect (say, the site restarted), catch up on anything posted in between.
   let opened = false;
   source.addEventListener("open", () => {
-    if (opened) check().catch(() => {});
+    if (opened) changed();
     opened = true;
   });
 })();

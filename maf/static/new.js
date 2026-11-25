@@ -171,6 +171,11 @@
     settle();
   }
   refreshNew().catch(() => {});
+  // Live: when someone posts or comments, and when you come back to this tab (anything missed meanwhile).
+  window.addEventListener("maf:activity", () => refreshNew().catch(() => {}));
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") refreshNew().catch(() => {});
+  });
   window.addEventListener("pageshow", event => {
     if (!event.persisted) return;
     dropOpened();

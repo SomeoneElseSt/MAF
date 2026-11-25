@@ -110,6 +110,7 @@ async def comment(request: Request) -> Response:
         return redirect(f"/thread/{parent.thread_id}?notice=You're+replying+fast.+Wait+a+minute.")
     reply = store.create_comment(page.conn, page.pass_id, parent, values["text"], None)
     page.app.live.publish(parent.thread_id)
+    page.app.live.publish(live.HOME)  # front pages refresh their New section and counts
     _ring(page, parent.pass_id)
     _ring_subscribers(page, parent.thread_id)
     return redirect(f"/thread/{parent.thread_id}#{reply.id}")  # land on the new reply, not the top

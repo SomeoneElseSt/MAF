@@ -119,6 +119,12 @@
     rememberShown(document);
   }
 
+  // Live, like the New section: on someone's post or comment, and when you come back to this tab.
+  window.addEventListener("maf:activity", () => refreshCounts().catch(() => {}));
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") refreshCounts().catch(() => {});
+  });
+
   window.addEventListener("pageshow", event => {
     if (!event.persisted && !returning) return;
     if (event.persisted) {
