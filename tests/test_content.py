@@ -270,7 +270,7 @@ def test_line_breaks_survive_from_the_browser_to_the_page(signed_in, app):
     post = app.conn.execute("SELECT id, text FROM item WHERE title = 'Lines'").fetchone()
     assert post["text"] == "- First point\n- Second point\n\nNew paragraph"
     page = signed_in.get(f"/thread/{post['id']}").text
-    assert "<p>- First point\n- Second point</p>" in page and "<p>New paragraph</p>" in page
+    assert "<li>First point</li>\n<li>Second point</li>" in page and "<p>New paragraph</p>" in page
 
 
 def test_a_new_reply_pings_pages_watching_its_thread(signed_in, app, pass_id):

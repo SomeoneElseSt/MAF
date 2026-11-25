@@ -4,7 +4,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response, StreamingResponse
 from starlette.routing import Route
 
-from . import live, store
+from . import live, markdown, store
 from .housetags import etiquette, is_hot, reply_placeholder
 from .web import error_page, page_of, redirect, render
 
@@ -34,7 +34,7 @@ def item(request: Request) -> Response:
     context = {
         "thread_keys": keys,
         "my_key": keys.get(page.pass_id, "") if participant else None,
-        "title": post.title,
+        "title": markdown.plain(post.title),
         "post": post,
         "tree": tree,
         "label_of": label_of,

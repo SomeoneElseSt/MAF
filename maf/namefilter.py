@@ -7,6 +7,7 @@ because it is the slowest part of startup and only submissions need it.
 import re
 import threading
 
+from . import markdown
 from .demonyms import is_demonym
 from .settings import Settings
 
@@ -64,7 +65,9 @@ class NameFilter:
         """True if any text contains a PERSON entity above the threshold."""
         if not self._settings.name_filter_enabled:
             return False
-        joined = without_chat_abbreviations("\n".join(t for t in texts if t))
+        # Both as typed and as shown (markdown symbols gone), so formatting can't hide a name.
+        given = [t for t in texts if t]
+        joined = without_chat_abbreviations("\n\n".join(given + [markdown.words(t) for t in given]))
         if not joined.strip():
             return False
         engine = self._engine()

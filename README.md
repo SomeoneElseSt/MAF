@@ -19,6 +19,7 @@ Have a question? Contact hello@maforum.net.
 - **Emoji reactions** on posts and replies.
 - **Feed.** The Feed button in the header counts new replies and reactions to your posts and replies, and lists them. What you've already seen is remembered in your browser only.
 - **Main page.** Pin posts, search by text, browse by hashtag with the # icon, and by date with the range switcher.
+- **Markdown.** Posts and replies support bold, italics, `__underline__`, strikethrough, links, lists, quotes and code. Titles support bold, italics, underline and strikethrough.
 - **Drafts.** Unfinished posts and replies are kept in your browser until they're posted.
 - **Live updates.** When someone replies or reacts in a thread you have open, or posts while you're on the main page, a banner offers to show it. You only hear about what you're allowed to see. Posts that arrived since your last visit are labelled New.
 - **Light and dark mode**, built for accessibility following the [A11Y Project](https://www.a11yproject.com/checklist/) checklist.

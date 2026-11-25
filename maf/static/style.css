@@ -127,7 +127,7 @@ a:hover { text-decoration: underline; text-decoration-thickness: 1px; text-under
 .post-head { padding: 34px 0 10px; }
 .post-head h1 { font-size: 32px; line-height: 1.2; font-weight: 600; margin: 0 0 8px; }
 .post-body { margin-top: 20px; }
-.post-body p { margin: 0 0 16px; white-space: pre-line; } /* single line breaks stay; blank lines make paragraphs */
+.post-body p { margin: 0 0 16px; }
 
 .id { font: inherit; color: var(--soft); background: none; border: none; padding: 0; cursor: pointer; }
 .id:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
@@ -163,7 +163,6 @@ textarea::placeholder, input::placeholder { color: var(--meta); opacity: 1; }
 .comments .comments { margin-left: 26px; }
 .comment { padding: 18px 0 0; }
 .comment p { margin: 4px 0 6px; }
-.comment > p { white-space: pre-line; } /* the reply's own text keeps its line breaks; the help lines under reply boxes don't */
 
 /* Hidden post notice */
 
@@ -305,15 +304,12 @@ span.arrow { color: var(--line); cursor: default; }
 .comment p.hidden-comment { font: 15px/1.5 var(--sans); color: var(--meta); margin: 2px 0 10px; }
 .private-toggle { display: inline-flex; align-items: center; gap: 4px; font: inherit; color: inherit; vertical-align: -2px; }
 .private-toggle[hidden] { display: none; }
-.comment p.sealed { font: 15px/1.5 var(--sans); color: var(--meta); }
-.comment p.sealed.open { font: inherit; color: inherit; }
+.sealed-note { font: 15px/1.5 var(--sans); color: var(--meta); }
 /* Landing on a reply (after posting, editing or flagging) leaves a little room above it. */
 li.comment { scroll-margin-top: 24px; }
 /* A long link or unbroken word wraps instead of pushing the page wider than the screen. */
-.comment > p, .post-body p, .post-head h1, .post-link, .list .title, .list .host, .notice p { overflow-wrap: anywhere; }
+.text, .post-head h1, .post-link, .list .title, .list .host, .notice p { overflow-wrap: anywhere; }
 /* Edits under your own reply read as plain reply text, "Edit #N:" included. */
-.edit .sealed { font: 15px/1.5 var(--sans); color: var(--meta); }
-.edit .sealed.open { font: inherit; color: inherit; }
 .delete-confirm .help { margin: 0; }
 .help .dot { margin: 0 4px; }
 .private-toggle label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
@@ -496,3 +492,17 @@ button.note:disabled { cursor: default; }
 .bell-menu .tag-scroll { max-height: 440px; padding: 8px 0; }
 .bell-empty { margin: 0; padding: 14px 20px; font: 14px/1.5 var(--sans); color: var(--meta); }
 /* bell.js slides the list left (or right) when centring it would go past the window edge. */
+
+/* Markdown in posts and replies (maf/markdown.py). Kept quiet: it should read like text, not a document. */
+.text ul, .text ol { margin: 4px 0 10px; padding-left: 24px; }
+.text ul { list-style: disc; }
+.text ol { list-style: decimal; }
+.text a { text-decoration: underline; text-underline-offset: 2px; }
+.post-body.text ul, .post-body.text ol { margin: 0 0 16px; }
+.text li + li { margin-top: 2px; }
+.text blockquote { margin: 6px 0 10px; padding-left: 12px; border-left: 3px solid var(--line); color: var(--soft); }
+.text blockquote p { margin: 0; }
+.text code { font: 0.85em var(--mono); background: var(--tint); padding: 1px 4px; border-radius: 3px; }
+.text pre { background: var(--tint); border-radius: 4px; padding: 10px 12px; margin: 6px 0 10px; white-space: pre-wrap; font: 14px/1.5 var(--mono); }
+.text pre code { background: none; padding: 0; font: inherit; }
+.text hr { border: 0; border-top: 1px solid var(--line); margin: 12px 0; }

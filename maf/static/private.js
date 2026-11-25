@@ -94,7 +94,10 @@
     if (!pair) return;
     for (const item of sealedItems) {
       try {
-        item.textContent = await unseal(item.dataset.sealed, pair);
+        const text = await unseal(item.dataset.sealed, pair);
+        // Rendered as markdown like public replies; markdown-it escapes any HTML in the text.
+        if (window.mafMarkdown) item.innerHTML = window.mafMarkdown(text, item.dataset.label);
+        else item.textContent = text;
         item.classList.add("open");
       } catch {
         // Sealed for a key this browser doesn't have: the "only on the device" text stays.

@@ -104,6 +104,7 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 
 - Run Presidio `PERSON` detection on titles, bodies and comments **before** saving.
 - If it finds a name above the score threshold (configurable), don't save. Re-render the form with the text intact and the warning: *"This looks like it names someone. MAF doesn't allow naming students or staff."* plus two buttons: **Edit post** (back to editing) and **Post anyway** (resubmits with `confirm_names=1`, which skips the check).
+- The check reads the text both as typed and with markdown symbols removed (`markdown.words`), so formatting like `**Name**` can't hide a name.
 - No stored list of names. A short list of words the model mistakes for names but never are on MAF (`NOT_PEOPLE` in `maf/namefilter.py`: "Minerva") is skipped, and so are words for nationalities and peoples (`maf/demonyms.py`: "Kazakh", "Kazakhs", "Kazakh's"). A flagged span still counts if any other word in it isn't on these lists, so "the Kazakh student Aigerim Bekova" is caught.
 - Common chat abbreviations (tbf, tbh, ngl, imo, imho, idk, fwiw, btw, iirc, afaik, lol, lmao, smh, fr; `CHAT_ABBREVIATIONS`) are taken out before the model reads the text. Next to a capitalised word they confuse it: "Tbf Minerva" reads as a person, "Tbf Priya Raman" as an organisation.
 - The score threshold doesn't tune spaCy hits: Presidio gives every spaCy PERSON the same 0.85, so the check is effectively "did spaCy label anything a person". `en_core_web_md` missed some non-English names in plain sentences, one reason the site uses `lg`.
@@ -212,3 +213,8 @@ Votes, uploads/images, DMs outside threads, notifications, karma, profiles, edit
 2. SES: domain verified with Easy DKIM (3 CNAMEs in Namecheap), DMARC TXT `_dmarc` = `v=DMARC1; p=none;`, production access requested.
 3. EC2 `t4g.small` with Caddy + a systemd service running the app.
 4. Secrets in env: `LABEL_SECRET`, the RSA signing key, SES credentials, `MAINTAINER_EMAIL`.
+
+
+## Markdown
+
+Posts, replies and edits are stored as typed and rendered as markdown when shown (`maf/markdown.py`, markdown-it), so posts from before markdown render too. Bold, italics, `__underline__` (bold is `**` only), strikethrough, links (new tab, no referrer), lists, quotes and code. Off: raw HTML (shown as text), images (they'd load from other sites) and headings ("# " stays text, next to hashtags). Single line breaks stay. Titles: bold, italics, underline and strikethrough only; the tab title, Feed and search snippets show plain text. Private replies are rendered in the browser after decrypting, with markdown-it's JavaScript original and the same rules (`maf/static/markdown.js`).

@@ -14,6 +14,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 
+from . import markdown
 from .util import day_start, iso, new_item_id, new_pass_id, parse_iso, utc_now
 
 PAGE_SIZE = 30
@@ -707,10 +708,10 @@ SNIPPET_LENGTH = 60
 def _snippet(row: sqlite3.Row) -> str:
     """Your own post's title or the first words of your own reply, to say which one it's about."""
     if row["t_title"]:
-        return row["t_title"]
+        return markdown.plain(row["t_title"])
     if row["t_sealed"]:
         return "your private reply"
-    text = " ".join((row["t_text"] or "").split())
+    text = markdown.plain(row["t_text"])
     return text if len(text) <= SNIPPET_LENGTH else text[:SNIPPET_LENGTH].rstrip() + "…"
 
 

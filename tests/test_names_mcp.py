@@ -263,3 +263,11 @@ def test_nationality_words_match_plurals_and_possessives():
     from maf.demonyms import is_demonym
     assert is_demonym("kazakh") and is_demonym("kazakhs") and is_demonym("kazakh's")
     assert not is_demonym("finn") and not is_demonym("priya")
+
+
+def test_formatting_cannot_hide_a_name(filtering_app):
+    app, _ = filtering_app
+    for text in ("I saw **Priya Raman** at lunch", "I saw *Priya Raman* at lunch",
+                 "I saw ~~Priya Raman~~ at lunch", "I saw P**riya Ram**an", "[Priya Raman](https://x.com) said so"):
+        assert app.name_filter.finds_name(text), text
+    assert not app.name_filter.finds_name("**What is Zavarka?** Sounds like *canned beans*")
