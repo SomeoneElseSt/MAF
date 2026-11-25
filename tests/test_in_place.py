@@ -51,3 +51,12 @@ def test_pages_are_checked_with_the_server_before_back_reuses_them(signed_in, ap
     response = signed_in.get("/")
     assert response.headers["cache-control"] == "no-cache"
     assert '<span class="counts">' in response.text
+
+
+def test_a_post_page_carries_its_counts_for_the_list_to_pick_up(signed_in, app):
+    # Back to the list shows these at once, so the post's count doesn't dip and jump.
+    post_id = _post(signed_in, app)
+    signed_in.post("/comment", data={"parent_id": post_id, "thread_id": post_id, "text": "one"})
+    page = signed_in.get(f"/thread/{post_id}").text
+    assert f'id="{post_id}" data-views="1" data-comments="1"' in page
+    assert "counts.js" in page
