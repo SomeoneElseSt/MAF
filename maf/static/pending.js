@@ -1,11 +1,17 @@
 // A button with data-pending shows that label and greys out once its form is sent, so a slow
 // server step (the name check, sending an email) doesn't look like a hang. While it's busy the form's
 // text boxes fade. Coming back with Back, or a script cancelling the send, resets it.
+// Comment, Reply and Add edit also stay grey until something is typed in their box (data-needs-text).
 (function () {
   document.querySelectorAll("button[data-pending]").forEach(button => {
     const form = button.form;
     if (!form) return;
     const label = button.textContent;
+    const box = button.hasAttribute("data-needs-text") ? form.querySelector("textarea") : null;
+    const empty = () => Boolean(box) && !box.value.trim();
+    const sync = () => {
+      if (!form.hasAttribute("aria-busy")) button.disabled = empty();
+    };
     form.addEventListener("submit", event => {
       if (event.defaultPrevented) return;
       button.textContent = button.dataset.pending;
@@ -14,11 +20,13 @@
     });
     const reset = () => {
       button.textContent = label;
-      button.disabled = false;
       form.removeAttribute("aria-busy");
+      sync();
     };
+    box?.addEventListener("input", sync);
     window.addEventListener("pageshow", reset);
     // Sent by other scripts when they stop a send themselves (e.g. a private reply that couldn't be encrypted).
     form.addEventListener("maf:not-sent", reset);
+    sync();
   });
 })();

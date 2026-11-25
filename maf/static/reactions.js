@@ -21,6 +21,7 @@
     const body = new FormData();
     body.set("item_id", box.dataset.item);
     body.set("emoji", emoji);
+    body.set("thread_id", document.querySelector("[data-thread]")?.dataset.thread ?? "");
     try {
       const response = await fetch("/react", { method: "POST", body });
       const url = new URL(response.url);

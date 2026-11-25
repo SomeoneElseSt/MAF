@@ -307,6 +307,14 @@ span.arrow { color: var(--line); cursor: default; }
 .private-toggle[hidden] { display: none; }
 .comment p.sealed { font: 15px/1.5 var(--sans); color: var(--meta); }
 .comment p.sealed.open { font: inherit; color: inherit; }
+/* Landing on a reply (after posting, editing or flagging) leaves a little room above it. */
+li.comment { scroll-margin-top: 24px; }
+/* A long link or unbroken word wraps instead of pushing the page wider than the screen. */
+.comment > p, .post-body p, .post-head h1, .post-link, .list .title, .list .host, .notice p { overflow-wrap: anywhere; }
+/* Edits under your own reply read as plain reply text, "Edit #N:" included. */
+.edit .sealed { font: 15px/1.5 var(--sans); color: var(--meta); }
+.edit .sealed.open { font: inherit; color: inherit; }
+.delete-confirm .help { margin: 0; }
 .help .dot { margin: 0 4px; }
 .private-toggle label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
 .private-toggle input { accent-color: var(--ink); width: 13px; height: 13px; margin: 0; }

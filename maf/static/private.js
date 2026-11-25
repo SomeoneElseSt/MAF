@@ -117,12 +117,14 @@
     const toggle = form.querySelector(".private-toggle");
     const checkbox = toggle?.querySelector("input[type='checkbox']");
     const peerKey = form.dataset.peerKey;
-    if (!toggle || !checkbox || !peerKey) return;
-    toggle.hidden = false;
+    // Edits to a private reply have no toggle: they're always encrypted, like the reply.
+    const always = form.hasAttribute("data-always-private");
+    if (!peerKey || (!always && (!toggle || !checkbox))) return;
+    if (toggle) toggle.hidden = false;
     // Coming back with Back after a private send: give the box its name again for the next reply.
     window.addEventListener("pageshow", () => form.querySelector("textarea")?.setAttribute("name", "text"));
     form.addEventListener("submit", async event => {
-      if (!checkbox.checked) return;
+      if (!always && !checkbox.checked) return;
       event.preventDefault();
       const textarea = form.querySelector("textarea");
       if (!textarea.value.trim()) {

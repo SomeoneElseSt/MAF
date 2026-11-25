@@ -41,6 +41,7 @@
 
   function draftKey(form) {
     if (form.getAttribute("action") === "/submit") return "submit";
+    if (form.getAttribute("action") === "/edit") return `edit:${form.querySelector("input[name='item_id']").value}`;
     const parent = form.querySelector("input[name='parent_id']");
     return parent ? `comment:${parent.value}` : null;
   }
@@ -88,7 +89,7 @@
     });
   }
 
-  document.querySelectorAll("form[action='/submit'], form[action='/comment']").forEach(form => {
+  document.querySelectorAll("form[action='/submit'], form[action='/comment'], form[action='/edit']").forEach(form => {
     setUp(form);
     form.addEventListener("submit", () => {
       const key = draftKey(form);

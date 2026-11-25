@@ -10,6 +10,7 @@ Privacy notes:
 """
 
 import sqlite3
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 
@@ -23,6 +24,7 @@ TAG_MAX_LENGTH = 24
 TEXT_PREVIEW = 240
 TITLE_MAX = 200
 BODY_MAX = 20_000
+DELETED_BY_AUTHOR = "Deleted by its author."
 
 
 # -- passes and tokens ----------------------------------------------------
@@ -256,7 +258,8 @@ def increment_views(conn: sqlite3.Connection, item_id: str) -> None:
 
 def comment_count(conn: sqlite3.Connection, thread_id: str) -> int:
     row = conn.execute(
-        "SELECT COUNT(*) AS n FROM item WHERE thread_id = ? AND parent_id IS NOT NULL AND private_to IS NULL",
+        "SELECT COUNT(*) AS n FROM item WHERE thread_id = ? AND parent_id IS NOT NULL AND private_to IS NULL "
+        "AND removed_reason IS NULL",  # a deleted or removed reply's note isn't a comment
         (thread_id,),
     ).fetchone()
     return row["n"]
@@ -269,7 +272,7 @@ def comment_counts(conn: sqlite3.Connection, thread_ids: list[str]) -> dict[str,
     marks = ",".join("?" * len(thread_ids))
     rows = conn.execute(
         f"SELECT thread_id, COUNT(*) AS n FROM item WHERE thread_id IN ({marks}) "
-        "AND parent_id IS NOT NULL AND private_to IS NULL GROUP BY thread_id",
+        "AND parent_id IS NOT NULL AND private_to IS NULL AND removed_reason IS NULL GROUP BY thread_id",
         thread_ids,
     ).fetchall()
     return {r["thread_id"]: r["n"] for r in rows}
@@ -564,29 +567,76 @@ def unhide(conn: sqlite3.Connection, item_id: str) -> bool:
     return cur.rowcount > 0
 
 
-def remove_comment(conn: sqlite3.Connection, item_id: str, reason: str) -> bool:
-    """Deletes a comment's words for good and shows `reason` in their place. Replies under it stay.
+@contextmanager
+def _secure_delete(conn: sqlite3.Connection):
+    """Deleted words are overwritten in the database file (and the WAL is folded in), not just unlinked.
+    Older backups still have them."""
+    conn.execute("PRAGMA secure_delete = ON")
+    try:
+        yield
+    finally:
+        conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        conn.execute("PRAGMA secure_delete = OFF")
 
-    The words leave the search index too, and secure_delete plus a checkpoint overwrite the freed
-    pages, so the text isn't left behind in the database file. Older backups still have it.
-    """
+
+def remove_comment(conn: sqlite3.Connection, item_id: str, reason: str) -> bool:
+    """Deletes a comment's words (and its edits) for good and shows `reason` in their place. Replies stay."""
     item = get_item(conn, item_id)
     if item is None or item.is_post:
         return False
     indexed = conn.execute(
         "SELECT rowid, title, text FROM item WHERE id = ? AND rowid IN (SELECT rowid FROM item_fts)", (item_id,)
     ).fetchone()
-    conn.execute("PRAGMA secure_delete = ON")
-    with conn:
+    with _secure_delete(conn), conn:
         if indexed:
             conn.execute("INSERT INTO item_fts (item_fts, rowid, title, text) VALUES ('delete', ?, ?, ?)",
                          (indexed["rowid"], indexed["title"] or "", indexed["text"] or ""))
         conn.execute("UPDATE item SET text = NULL, sealed = NULL, removed_reason = ? WHERE id = ?", (reason, item_id))
+        conn.execute("DELETE FROM item_edit WHERE item_id = ?", (item_id,))
         conn.execute("DELETE FROM reaction WHERE item_id = ?", (item_id,))
         conn.execute("DELETE FROM moderation_request WHERE item_id = ?", (item_id,))
-    conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
-    conn.execute("PRAGMA secure_delete = OFF")
     return True
+
+
+def delete_own_comment(conn: sqlite3.Connection, item_id: str) -> None:
+    """The author deletes their reply: gone entirely, or "Deleted by its author." if others replied to it."""
+    if reply_count(conn, item_id):
+        remove_comment(conn, item_id, DELETED_BY_AUTHOR)
+        return
+    with _secure_delete(conn):
+        delete_item(conn, item_id)
+
+
+# -- edits -----------------------------------------------------------------
+
+
+@dataclass
+class Edit:
+    item_id: str
+    n: int
+    text: str | None
+    sealed: str | None
+    created_at: str
+
+
+def add_edit(conn: sqlite3.Connection, item_id: str, text: str | None, sealed: str | None = None) -> int:
+    """Appends edit #n under a reply. The reply itself never changes."""
+    with conn:
+        n = conn.execute("SELECT COALESCE(MAX(n), 0) + 1 FROM item_edit WHERE item_id = ?", (item_id,)).fetchone()[0]
+        conn.execute("INSERT INTO item_edit (item_id, n, text, sealed, created_at) VALUES (?, ?, ?, ?, ?)",
+                     (item_id, n, text, sealed, iso(utc_now())))
+    return n
+
+
+def thread_edits(conn: sqlite3.Connection, thread_id: str) -> dict[str, list[Edit]]:
+    rows = conn.execute(
+        "SELECT e.* FROM item_edit e JOIN item i ON i.id = e.item_id WHERE i.thread_id = ? ORDER BY e.item_id, e.n",
+        (thread_id,),
+    ).fetchall()
+    edits: dict[str, list[Edit]] = {}
+    for r in rows:
+        edits.setdefault(r["item_id"], []).append(Edit(r["item_id"], r["n"], r["text"], r["sealed"], r["created_at"]))
+    return edits
 
 
 def dismiss_requests(conn: sqlite3.Connection, item_id: str) -> bool:

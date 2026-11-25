@@ -202,3 +202,40 @@ def test_existing_database_gains_sealed_replies_without_losing_data(tmp_path):
     assert conn.execute("PRAGMA user_version").fetchone()[0] == db.SCHEMA_VERSION
     assert conn.execute("SELECT title, sealed FROM item").fetchone()[:] == ("Old", None)
     assert conn.execute("SELECT COUNT(*) FROM thread_key").fetchone()[0] == 0
+
+
+def test_nothing_the_parent_author_does_removes_a_private_reply_under_it(app, starlette_app):
+    """Replays the stress-test steps: A's reply gets a private answer from B, then A opens, edits,
+    flags, reacts, has an edit refused, and finally deletes the reply. B's private answer survives
+    every step, and only B can delete it."""
+    from starlette.testclient import TestClient as Client
+
+    a, b = store.create_pass(app.conn), store.create_pass(app.conn)
+    post = make_post(app, store.create_pass(app.conn))
+    reply = add_comment(app, a, post, "A's reply")
+    key_a, key_b = register_keys(app, post.id, a, b)
+    as_a = sign_in_as(Client(starlette_app), app, a)
+    as_b = sign_in_as(Client(starlette_app), app, b)
+    as_b.post("/comment", data={"parent_id": reply.id, "thread_id": post.id, "private": "on",
+                                "sealed": sealed_json(key_b, key_a)})
+    private = [i for i in store.thread_items(app.conn, post.id, b) if i.private_to == a][0]
+    still_there = lambda: store.get_item(app.conn, private.id) is not None  # noqa: E731
+
+    steps = [
+        ("A opens the thread", lambda: as_a.get(f"/thread/{post.id}")),
+        ("A edits the reply", lambda: as_a.post("/edit", data={"item_id": reply.id, "thread_id": post.id, "text": "more"})),
+        ("B edits the private answer", lambda: as_b.post("/edit", data={"item_id": private.id, "thread_id": post.id,
+                                                                          "sealed": sealed_json(key_b, key_a)})),
+        ("A flags it and back", lambda: (as_a.post("/flag", data={"item_id": reply.id}), as_a.post("/flag", data={"item_id": reply.id}))),
+        ("A reacts to the private answer", lambda: as_a.post("/react", data={"item_id": private.id, "emoji": "👍"})),
+        ("A tries to delete B's answer", lambda: as_a.post("/delete-reply", data={"item_id": private.id, "thread_id": post.id})),
+        ("A tries to edit B's answer", lambda: as_a.post("/edit", data={"item_id": private.id, "thread_id": post.id, "text": "x"})),
+        ("A deletes their own reply", lambda: as_a.post("/delete-reply", data={"item_id": reply.id, "thread_id": post.id})),
+    ]
+    for name, step in steps:
+        step()
+        assert still_there(), f"private answer vanished after: {name}"
+    assert store.get_item(app.conn, reply.id).removed_reason == store.DELETED_BY_AUTHOR
+    assert [e.n for e in store.thread_edits(app.conn, post.id)[private.id]] == [1]
+    as_b.post("/delete-reply", data={"item_id": private.id, "thread_id": post.id})
+    assert not still_there()

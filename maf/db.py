@@ -7,7 +7,7 @@ so it can be extended later without a migration framework.
 import sqlite3
 from pathlib import Path
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS pass (
@@ -108,8 +108,21 @@ REMOVED_REASON = """
 ALTER TABLE item ADD COLUMN removed_reason TEXT;
 """
 
+# A reply's author can add edits under it (append-only: the original never changes).
+# n counts from 1 per reply. A private reply's edits are sealed the same way (text NULL).
+REPLY_EDITS = """
+CREATE TABLE IF NOT EXISTS item_edit (
+    item_id TEXT NOT NULL REFERENCES item(id) ON DELETE CASCADE,
+    n INTEGER NOT NULL,
+    text TEXT,
+    sealed TEXT,
+    created_at TEXT NOT NULL,
+    PRIMARY KEY (item_id, n)
+);
+"""
+
 # Step n upgrades a file at version n - 1 to version n.
-MIGRATIONS = {1: SCHEMA, 2: SEALED_REPLIES, 3: REMOVED_REASON}
+MIGRATIONS = {1: SCHEMA, 2: SEALED_REPLIES, 3: REMOVED_REASON, 4: REPLY_EDITS}
 
 
 def connect(path: Path | str) -> sqlite3.Connection:

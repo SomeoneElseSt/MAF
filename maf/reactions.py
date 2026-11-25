@@ -6,17 +6,17 @@ from starlette.routing import Route
 
 from . import store
 from .emoji import PICKER_EMOJI
-from .web import form_values, page_of, redirect
+from .web import form_values, gone, page_of, redirect
 
 REACTIONS_PER_MINUTE = 60
 
 
 async def react(request: Request) -> Response:
     page = page_of(request)
-    values = await form_values(request, "item_id", "emoji")
+    values = await form_values(request, "item_id", "thread_id", "emoji")
     item = store.get_item(page.conn, values["item_id"])
     if page.pass_id is None or item is None:
-        return redirect("/sign-in")
+        return gone(page, values["thread_id"])
     if values["emoji"] not in PICKER_EMOJI:
         return redirect(f"/thread/{item.id}")
     if item.private_to and page.pass_id not in (item.pass_id, item.private_to):

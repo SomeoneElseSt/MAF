@@ -14,7 +14,7 @@ from .email import hidden_reply_email, moderation_email
 from .housetags import submit_placeholder
 from .sealed import parse_sealed, valid_public_key
 from .util import sha256_hex
-from .web import form_values, page_of, redirect, render
+from .web import form_values, gone, page_of, redirect, render
 
 POSTS_PER_MINUTE = 6
 COMMENTS_PER_MINUTE = 12
@@ -91,10 +91,10 @@ def _name_warning(page, values, tags) -> Response:
 
 async def comment(request: Request) -> Response:
     page = page_of(request)
-    values = await form_values(request, "parent_id", "text", "private", "confirm_names", "sealed")
+    values = await form_values(request, "parent_id", "thread_id", "text", "private", "confirm_names", "sealed")
     parent = store.get_item(page.conn, values["parent_id"])
     if page.pass_id is None or parent is None:
-        return _login(page)
+        return gone(page, values["thread_id"])
     private_to = _private_recipient(page, parent, values["private"] == "on")
     if private_to is not None:
         return _private_comment(page, parent, private_to, values["sealed"])
@@ -104,9 +104,9 @@ async def comment(request: Request) -> Response:
         return redirect(f"/thread/{parent.thread_id}?notice=This+looks+like+it+names+someone.+Edit+it+and+try+again.")
     if not _allowed(page, "comment", COMMENTS_PER_MINUTE):
         return redirect(f"/thread/{parent.thread_id}?notice=You're+replying+fast.+Wait+a+minute.")
-    store.create_comment(page.conn, page.pass_id, parent, values["text"], None)
+    reply = store.create_comment(page.conn, page.pass_id, parent, values["text"], None)
     page.app.live.publish(parent.thread_id)
-    return redirect(f"/thread/{parent.thread_id}#comments")
+    return redirect(f"/thread/{parent.thread_id}#{reply.id}")  # land on the new reply, not the top
 
 
 def _private_comment(page, parent: store.Item, private_to: str, raw_sealed: str) -> Response:
@@ -126,9 +126,67 @@ def _private_comment(page, parent: store.Item, private_to: str, raw_sealed: str)
         return redirect(f"{thread}?notice=You're+replying+fast.+Wait+a+minute.")
     if own_key is None:
         store.set_thread_key(page.conn, page.pass_id, parent.thread_id, sealed["from"])
-    store.create_comment(page.conn, page.pass_id, parent, None, private_to, sealed=json.dumps(sealed))
+    reply = store.create_comment(page.conn, page.pass_id, parent, None, private_to, sealed=json.dumps(sealed))
     page.app.live.publish(parent.thread_id)
-    return redirect(f"{thread}#comments")
+    return redirect(f"{thread}#{reply.id}")
+
+
+def _own_reply(page, item: store.Item | None) -> bool:
+    return item is not None and not item.is_post and page.pass_id is not None and item.pass_id == page.pass_id
+
+
+async def edit(request: Request) -> Response:
+    """Appends "Edit #N" under your own reply. The original stays as it was."""
+    page = page_of(request)
+    values = await form_values(request, "item_id", "thread_id", "text", "sealed")
+    item = store.get_item(page.conn, values["item_id"])
+    if page.pass_id is None or item is None:
+        return gone(page, values["thread_id"])
+    thread = f"/thread/{item.thread_id}"
+    if not _own_reply(page, item) or item.removed_reason or item.unlisted:
+        return redirect(f"{thread}?notice=You+can+only+edit+your+own+replies.")
+    if not _allowed(page, "comment", COMMENTS_PER_MINUTE):
+        return redirect(f"{thread}?notice=You're+editing+fast.+Wait+a+minute.")
+    if item.private_to:
+        return _private_edit(page, item, values["sealed"])
+    if not values["text"]:
+        return redirect(f"{thread}?notice=Write+something+first.")
+    if len(values["text"]) > store.BODY_MAX:
+        return redirect(f"{thread}?notice=That's+too+long.+Try+trimming+it.")
+    if await run_in_threadpool(page.app.name_filter.finds_name, values["text"]):
+        return redirect(f"{thread}?notice=This+looks+like+it+names+someone.+Edit+it+and+try+again.")
+    store.add_edit(page.conn, item.id, values["text"])
+    return redirect(f"{thread}#{item.id}")
+
+
+def _private_edit(page, item: store.Item, raw_sealed: str) -> Response:
+    """A private reply's edits are encrypted to the same two people, like the reply itself."""
+    thread = f"/thread/{item.thread_id}"
+    sealed = parse_sealed(raw_sealed)
+    if sealed is None:
+        return redirect(f"{thread}?notice=Private+replies+need+JavaScript.+Turn+it+on+and+try+again.")
+    keys = store.thread_keys(page.conn, item.thread_id)
+    if keys.get(page.pass_id) != sealed["from"] or keys.get(item.private_to) != sealed["to"]:
+        return redirect(f"{thread}?notice=Couldn't+save+that+privately.+Reload+the+page+and+try+again.")
+    store.add_edit(page.conn, item.id, None, sealed=json.dumps(sealed))
+    return redirect(f"{thread}#{item.id}")
+
+
+async def delete_reply(request: Request) -> Response:
+    """Deletes your own reply for good; if others replied to it, "Deleted by its author." stays in its place."""
+    page = page_of(request)
+    values = await form_values(request, "item_id", "thread_id")
+    item = store.get_item(page.conn, values["item_id"])
+    if page.pass_id is None or item is None:
+        return gone(page, values["thread_id"])
+    if not _own_reply(page, item):
+        return redirect(f"/thread/{item.thread_id}?notice=You+can+only+delete+your+own+replies.")
+    store.delete_own_comment(page.conn, item.id)
+    # Stay where it was: on its "Deleted by its author." note, else on the reply it answered.
+    if store.get_item(page.conn, item.id) is not None:
+        return redirect(f"/thread/{item.thread_id}#{item.id}")
+    anchor = f"#{item.parent_id}" if item.parent_id != item.thread_id else ""
+    return redirect(f"/thread/{item.thread_id}{anchor}")
 
 
 async def thread_key(request: Request) -> Response:
@@ -162,10 +220,10 @@ def _private_recipient(page, parent: store.Item, wants_private: bool) -> str | N
 
 async def flag(request: Request) -> Response:
     page = page_of(request)
-    values = await form_values(request, "item_id")
+    values = await form_values(request, "item_id", "thread_id")
     item = store.get_item(page.conn, values["item_id"])
     if page.pass_id is None or item is None:
-        return _login(page)
+        return gone(page, values["thread_id"])
     # Clicking again takes the flag back.
     if item.private_to is None and not store.remove_flag(page.conn, page.pass_id, item.id):
         store.add_flag(page.conn, page.pass_id, item.id)
@@ -184,10 +242,10 @@ def _alert_if_reply_hidden(page, item_id: str) -> None:
 
 async def moderation_request(request: Request) -> Response:
     page = page_of(request)
-    values = await form_values(request, "item_id", "kind")
+    values = await form_values(request, "item_id", "thread_id", "kind")
     item = store.get_item(page.conn, values["item_id"])
     if page.pass_id is None or item is None or values["kind"] not in {"unhide", "nuke"}:
-        return _login(page)
+        return gone(page, values["thread_id"])
     if store.add_moderation_request(page.conn, page.pass_id, item.id, values["kind"]):
         count = sum(store.request_counts(page.conn, item.id).values())
         page.app.emailer.send_soon(
@@ -221,6 +279,8 @@ routes = [
     Route("/submit", submit_page),
     Route("/submit", submit_post, methods=["POST"]),
     Route("/comment", comment, methods=["POST"]),
+    Route("/edit", edit, methods=["POST"]),
+    Route("/delete-reply", delete_reply, methods=["POST"]),
     Route("/thread-key", thread_key, methods=["POST"]),
     Route("/flag", flag, methods=["POST"]),
     Route("/moderation-request", moderation_request, methods=["POST"]),

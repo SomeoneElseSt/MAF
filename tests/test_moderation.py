@@ -299,3 +299,114 @@ def test_cli_remove_refuses_posts(monkeypatch, settings, app, pass_id, capsys):
     post = make_post(app, pass_id)
     code, out = run_cli(monkeypatch, settings, capsys, "remove", post.id, "--yes")
     assert code != 0 and "posts can only be nuked" in out
+
+
+# -- editing and deleting your own replies ------------------------------------
+
+
+def _thread_with_reply(app, author):
+    post = make_post(app, store.create_pass(app.conn))
+    return post, store.create_comment(app.conn, author, post, "first words", None)
+
+
+def test_your_own_reply_shows_edit_and_delete_and_others_dont(app, signed_in, pass_id):
+    post, mine = _thread_with_reply(app, pass_id)
+    other = store.create_comment(app.conn, store.create_pass(app.conn), post, "someone else", None)
+    page = signed_in.get(f"/thread/{post.id}").text
+    assert f'href="#edit-{mine.id}"' in page and f'href="#delete-{mine.id}"' in page
+    assert f'href="#edit-{other.id}"' not in page and f'href="#delete-{other.id}"' not in page
+
+
+def test_edits_are_appended_and_numbered(app, signed_in, pass_id):
+    post, mine = _thread_with_reply(app, pass_id)
+    signed_in.post("/edit", data={"item_id": mine.id, "text": "one more thing"})
+    signed_in.post("/edit", data={"item_id": mine.id, "text": "and another"})
+    assert store.get_item(app.conn, mine.id).text == "first words"
+    page = signed_in.get(f"/thread/{post.id}").text
+    assert "Edit #1: one more thing" in page and "Edit #2: and another" in page
+
+
+def test_you_cannot_edit_or_delete_someone_elses_reply(app, signed_in):
+    post, theirs = _thread_with_reply(app, store.create_pass(app.conn))
+    response = signed_in.post("/edit", data={"item_id": theirs.id, "text": "hijack"}, follow_redirects=False)
+    assert "only+edit+your+own" in response.headers["location"]
+    signed_in.post("/delete-reply", data={"item_id": theirs.id})
+    assert store.get_item(app.conn, theirs.id).text == "first words"
+    assert store.thread_edits(app.conn, post.thread_id) == {}
+
+
+def test_deleting_a_reply_with_no_replies_removes_it_entirely(app, signed_in, pass_id):
+    post, mine = _thread_with_reply(app, pass_id)
+    store.add_edit(app.conn, mine.id, "an edit")
+    signed_in.post("/delete-reply", data={"item_id": mine.id})
+    assert store.get_item(app.conn, mine.id) is None
+    assert app.conn.execute("SELECT COUNT(*) AS n FROM item_edit").fetchone()["n"] == 0
+
+
+def test_deleting_a_reply_with_replies_leaves_a_note_and_keeps_them(app, signed_in, pass_id):
+    post, mine = _thread_with_reply(app, pass_id)
+    store.add_edit(app.conn, mine.id, "an edit")
+    store.create_comment(app.conn, store.create_pass(app.conn), mine, "a reply to it", None)
+    signed_in.post("/delete-reply", data={"item_id": mine.id})
+    deleted = store.get_item(app.conn, mine.id)
+    assert deleted.text is None and deleted.removed_reason == store.DELETED_BY_AUTHOR
+    page = signed_in.get(f"/thread/{post.id}").text
+    assert "Deleted by its author." in page and "a reply to it" in page and "an edit" not in page
+
+
+def test_reply_buttons_wait_for_text_and_boxes_carry_the_naming_rule(app, signed_in, pass_id):
+    post, _ = _thread_with_reply(app, pass_id)
+    page = signed_in.get(f"/thread/{post.id}").text
+    assert 'data-needs-text>Comment</button>' in page and 'data-needs-text>Reply</button>' in page
+    assert 'data-needs-text>Add edit</button>' in page
+    assert page.count("Please don't name students or staff.") >= 3
+
+
+def test_acting_on_a_reply_deleted_meanwhile_goes_back_to_the_thread(app, signed_in, pass_id):
+    post, gone_reply = _thread_with_reply(app, store.create_pass(app.conn))
+    store.delete_item(app.conn, gone_reply.id)
+    attempts = [
+        ("/comment", {"parent_id": gone_reply.id, "text": "hello"}),
+        ("/edit", {"item_id": gone_reply.id, "text": "more"}),
+        ("/delete-reply", {"item_id": gone_reply.id}),
+        ("/flag", {"item_id": gone_reply.id}),
+        ("/react", {"item_id": gone_reply.id, "emoji": "👍"}),
+    ]
+    for path, data in attempts:
+        response = signed_in.post(path, data={**data, "thread_id": post.id}, follow_redirects=False)
+        assert response.headers["location"] == f"/thread/{post.id}?notice=That+reply+was+deleted.", path
+
+
+def test_acting_on_a_deleted_post_goes_home(app, signed_in, pass_id):
+    post, reply = _thread_with_reply(app, pass_id)
+    store.delete_item(app.conn, post.id)
+    response = signed_in.post("/comment", data={"parent_id": reply.id, "thread_id": post.id, "text": "x"},
+                              follow_redirects=False)
+    assert response.headers["location"] == "/"
+
+
+def test_after_replying_you_land_on_your_reply(app, signed_in, pass_id):
+    post, reply = _thread_with_reply(app, store.create_pass(app.conn))
+    for parent in (post, reply):
+        response = signed_in.post("/comment", data={"parent_id": parent.id, "thread_id": post.id, "text": "mine"},
+                                  follow_redirects=False)
+        new_id = response.headers["location"].split("#")[1]
+        assert store.get_item(app.conn, new_id).text == "mine"
+
+
+def test_pinned_posts_show_their_comment_count(app, signed_in, pass_id):
+    post, _ = _thread_with_reply(app, pass_id)
+    store.set_pinned(app.conn, post.id, True)
+    page = signed_in.get("/").text
+    pinned = page.split('class="list pinned-list"')[1].split("</ol>")[0]
+    assert "1 comment" in pinned
+
+
+def test_deleted_and_removed_replies_dont_count_as_comments(app, pass_id):
+    post, reply = _thread_with_reply(app, pass_id)
+    other = store.create_comment(app.conn, pass_id, post, "another", None)
+    store.create_comment(app.conn, store.create_pass(app.conn), reply, "an answer", None)
+    store.delete_own_comment(app.conn, reply.id)  # has an answer, so it stays as a note
+    store.remove_comment(app.conn, other.id, "Removed because it named someone.")
+    assert store.comment_count(app.conn, post.id) == 1
+    assert store.comment_counts(app.conn, [post.id]) == {post.id: 1}

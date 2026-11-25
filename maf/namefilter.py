@@ -4,6 +4,7 @@ No list of student names; only a short list of words that are never people (see 
 because it is the slowest part of startup and only submissions need it.
 """
 
+import re
 import threading
 
 from .settings import Settings
@@ -11,6 +12,21 @@ from .settings import Settings
 PERSON = "PERSON"
 # Words the language model mistakes for people's names but never are on MAF. Lowercase.
 NOT_PEOPLE = {"minerva"}
+# Chat abbreviations confuse the model about the words around them: "Tbf Minerva" reads like "Jane Smith",
+# and "Tbf Priya Raman" like an organisation. They're taken out before the model reads the text.
+CHAT_ABBREVIATIONS = ("tbf", "tbh", "ngl", "imo", "imho", "idk", "fwiw", "btw", "iirc", "afaik", "lol", "lmao", "smh", "fr")
+_CHAT = re.compile(rf"\b(?:{'|'.join(CHAT_ABBREVIATIONS)})\b,?", re.IGNORECASE)
+_WORD = re.compile(r"[a-z]+")
+
+
+def without_chat_abbreviations(text: str) -> str:
+    return _CHAT.sub(" ", text)
+
+
+def _is_person(span: str) -> bool:
+    """A flagged span counts unless every word in it is on the never-a-person list."""
+    words = _WORD.findall(span.lower())
+    return not words or any(word not in NOT_PEOPLE for word in words)
 
 
 class NameFilter:
@@ -46,7 +62,7 @@ class NameFilter:
         """True if any text contains a PERSON entity above the threshold."""
         if not self._settings.name_filter_enabled:
             return False
-        joined = "\n".join(t for t in texts if t)
+        joined = without_chat_abbreviations("\n".join(t for t in texts if t))
         if not joined.strip():
             return False
         engine = self._engine()
@@ -57,4 +73,4 @@ class NameFilter:
                 language="en",
                 score_threshold=self._settings.name_filter_threshold,
             )
-        return any(joined[found.start:found.end].strip().lower() not in NOT_PEOPLE for found in results)
+        return any(_is_person(joined[found.start:found.end]) for found in results)

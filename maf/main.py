@@ -72,7 +72,7 @@ def render_home(page, sort, before, after):
     pinned: list = []
     exclude_pinned = False
     if sort == "new" and before is None:
-        pinned = store.pinned_posts(conn)
+        pinned = store.with_comment_counts(conn, store.pinned_posts(conn))
         exclude_pinned = True
     posts = store.with_comment_counts(conn, store.posts_between(conn, start, end, sort, exclude_pinned=exclude_pinned))
     groups = [(day_label(day), rows) for day, rows in store.day_groups(posts)]

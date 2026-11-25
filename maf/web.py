@@ -134,6 +134,17 @@ def redirect(url: str, status_code: int = 303) -> RedirectResponse:
     return RedirectResponse(url, status_code=status_code)
 
 
+def gone(page, thread_id: str) -> Response:
+    """The reply (or post) was deleted while someone had the page open: back to the thread with a
+    note, not to sign-in. Forms send thread_id because the site sends no Referer."""
+    if page.pass_id is None:
+        return redirect("/sign-in")
+    thread = store.get_item(page.conn, thread_id) if thread_id else None
+    if thread is None or not thread.is_post:
+        return redirect("/")  # the whole post is gone
+    return redirect(f"/thread/{thread.id}?notice=That+reply+was+deleted.")
+
+
 def sort_param(request: Request) -> str:
     value = request.query_params.get("sort", DEFAULT_SORT)
     return value if value in SORT_KEYS else DEFAULT_SORT

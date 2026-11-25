@@ -64,6 +64,23 @@ def test_minerva_is_not_a_person(filtering_app):
     assert app.name_filter.finds_name("Has Minerva told Priya Raman yet?")
 
 
+def test_chat_abbreviations_next_to_minerva_are_not_a_person(filtering_app):
+    app, _ = filtering_app
+    for text in ("Tbf Minerva is easier than most.", "tbf Minerva is easier than most.",
+                 "Ngl Minerva is hard.", "Imo Minerva works."):
+        assert not app.name_filter.finds_name(text), text
+    # The abbreviation no longer hides a real name either ("Tbf Priya Raman" used to read as an organisation).
+    assert app.name_filter.finds_name("Tbf Priya Raman said it first.")
+    assert app.name_filter.finds_name("lol Jake Peralta is wild")
+
+
+def test_chat_abbreviations_are_taken_out_as_whole_words_only():
+    from maf.namefilter import without_chat_abbreviations
+
+    assert without_chat_abbreviations("Tbf, Minerva is fine").split() == ["Minerva", "is", "fine"]
+    assert without_chat_abbreviations("Fred lolled at the frame") == "Fred lolled at the frame"
+
+
 def test_warning_keeps_the_text_and_offers_post_anyway(filtering_app):
     app, client = filtering_app
     sign_in(client, app)
