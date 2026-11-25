@@ -271,3 +271,47 @@ def test_formatting_cannot_hide_a_name(filtering_app):
                  "I saw ~~Priya Raman~~ at lunch", "I saw P**riya Ram**an", "[Priya Raman](https://x.com) said so"):
         assert app.name_filter.finds_name(text), text
     assert not app.name_filter.finds_name("**What is Zavarka?** Sounds like *canned beans*")
+
+
+def test_comment_with_a_name_sent_in_place_comes_back_to_the_warning(filtering_app):
+    app, client = filtering_app
+    pass_id = sign_in(client, app)
+    post = store.create_post(app.conn, pass_id, "Post", "body", None, [])
+    response = client.post("/comment", data={"parent_id": post.id, "thread_id": post.id, "text": "Priya Raman told me"},
+                           headers={"X-MAF-In-Place": "1"}, follow_redirects=False)
+    assert response.status_code == 200 and response.json()["location"].endswith("&names=comment-form")
+    assert store.comment_count(app.conn, post.id) == 0
+
+
+def test_a_refused_reply_offers_post_anyway_for_its_box(filtering_app):
+    app, client = filtering_app
+    pass_id = sign_in(client, app)
+    post = store.create_post(app.conn, pass_id, "Post", "body", None, [])
+    response = client.post("/comment", data={"parent_id": post.id, "thread_id": post.id, "text": "Priya Raman told me"},
+                           follow_redirects=False)
+    assert response.headers["location"].endswith("&names=comment-form")
+    page = client.get(response.headers["location"]).text
+    assert 'form="comment-form" name="confirm_names" value="1">Post anyway</button>' in page
+    client.post("/comment", data={"parent_id": post.id, "thread_id": post.id, "text": "Priya Raman told me",
+                                  "confirm_names": "1"}, follow_redirects=False)
+    assert store.comment_count(app.conn, post.id) == 1
+
+
+def test_a_refused_edit_offers_post_anyway_too(filtering_app):
+    app, client = filtering_app
+    pass_id = sign_in(client, app)
+    post = store.create_post(app.conn, pass_id, "Post", "body", None, [])
+    reply = store.create_comment(app.conn, pass_id, post, "hello", None)
+    response = client.post("/edit", data={"item_id": reply.id, "thread_id": post.id, "text": "Priya Raman told me"},
+                           follow_redirects=False)
+    assert response.headers["location"].endswith(f"&names=edit-{reply.id}")
+    client.post("/edit", data={"item_id": reply.id, "thread_id": post.id, "text": "Priya Raman told me", "confirm_names": "1"})
+    assert len(store.thread_edits(app.conn, post.id)) == 1
+
+
+def test_post_anyway_only_points_at_a_reply_box(filtering_app):
+    app, client = filtering_app
+    pass_id = sign_in(client, app)
+    post = store.create_post(app.conn, pass_id, "Post", "body", None, [])
+    page = client.get(f'/thread/{post.id}?notice=x&names="><script>').text
+    assert "Post anyway" not in page

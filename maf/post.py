@@ -17,6 +17,7 @@ from .util import sha256_hex
 from .web import form_values, gone, page_of, redirect, render
 
 POSTS_PER_MINUTE = 6
+NAMES_NOTICE = "This+looks+like+it+names+someone.+Edit+it+and+try+again."
 COMMENTS_PER_MINUTE = 12
 TOKEN_BYTES = 32
 MAX_TOKENS_PER_PASS = 5  # the Create token button greys out at this many
@@ -101,7 +102,9 @@ async def comment(request: Request) -> Response:
     if not values["text"]:
         return redirect(f"/thread/{parent.thread_id}?notice=Write+something+first.")
     if values["confirm_names"] != "1" and await run_in_threadpool(page.app.name_filter.finds_name, values["text"]):
-        return redirect(f"/thread/{parent.thread_id}?notice=This+looks+like+it+names+someone.+Edit+it+and+try+again.")
+        # The thread page shows "Post anyway" for this reply box (the name check can be wrong).
+        box = "comment-form" if parent.id == parent.thread_id else f"reply-{parent.id}"
+        return redirect(f"/thread/{parent.thread_id}?notice={NAMES_NOTICE}&names={box}")
     if not _allowed(page, "comment", COMMENTS_PER_MINUTE):
         return redirect(f"/thread/{parent.thread_id}?notice=You're+replying+fast.+Wait+a+minute.")
     reply = store.create_comment(page.conn, page.pass_id, parent, values["text"], None)
@@ -147,7 +150,7 @@ def _own_reply(page, item: store.Item | None) -> bool:
 async def edit(request: Request) -> Response:
     """Appends "Edit #N" under your own reply. The original stays as it was."""
     page = page_of(request)
-    values = await form_values(request, "item_id", "thread_id", "text", "sealed")
+    values = await form_values(request, "item_id", "thread_id", "text", "sealed", "confirm_names")
     item = store.get_item(page.conn, values["item_id"])
     if page.pass_id is None or item is None:
         return gone(page, values["thread_id"])
@@ -162,8 +165,8 @@ async def edit(request: Request) -> Response:
         return redirect(f"{thread}?notice=Write+something+first.")
     if len(values["text"]) > store.BODY_MAX:
         return redirect(f"{thread}?notice=That's+too+long.+Try+trimming+it.")
-    if await run_in_threadpool(page.app.name_filter.finds_name, values["text"]):
-        return redirect(f"{thread}?notice=This+looks+like+it+names+someone.+Edit+it+and+try+again.")
+    if values["confirm_names"] != "1" and await run_in_threadpool(page.app.name_filter.finds_name, values["text"]):
+        return redirect(f"{thread}?notice={NAMES_NOTICE}&names=edit-{item.id}")
     store.add_edit(page.conn, item.id, values["text"])
     return redirect(f"{thread}#{item.id}")
 

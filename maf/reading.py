@@ -1,5 +1,7 @@
 """Reading a thread: /thread/<id>, its view count and the comment tree."""
 
+import re
+
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response, StreamingResponse
 from starlette.routing import Route
@@ -7,6 +9,13 @@ from starlette.routing import Route
 from . import live, markdown, store
 from .housetags import etiquette, is_hot, reply_placeholder
 from .web import error_page, page_of, redirect, render
+
+
+NAMES_FORM = re.compile(r"(comment-form|reply-[a-z]+(?:-[a-z]+)*|edit-[a-z]+(?:-[a-z]+)*)")
+
+
+def _names_form(value: str) -> str | None:
+    return value if NAMES_FORM.fullmatch(value) else None
 
 
 def item(request: Request) -> Response:
@@ -49,6 +58,8 @@ def item(request: Request) -> Response:
         "flags": _flags(page, items),
         "requests": store.request_counts(page.conn, post.id),
         "notice": request.query_params.get("notice"),
+        # After the name check refused a reply or edit: which box "Post anyway" sends.
+        "names_form": _names_form(request.query_params.get("names", "")),
         "body_class": "hottakes-thread" if is_hot(tags) else "",
     }
     return render(page, "item.html", **context)

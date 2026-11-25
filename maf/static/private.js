@@ -147,7 +147,9 @@
         field.value = sealed;
         // The words themselves never leave the browser: only the sealed copy is sent.
         textarea.removeAttribute("name");
-        form.submit();
+        // In the background like public replies (replies.js), so Back isn't doubled.
+        if (window.mafSendInPlace) window.mafSendInPlace(form);
+        else form.submit();
       } catch {
         form.dispatchEvent(new Event("maf:not-sent"));
         showError(form, "Couldn't encrypt this reply in this browser, so it wasn't sent.");

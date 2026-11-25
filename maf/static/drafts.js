@@ -95,5 +95,14 @@
       const key = draftKey(form);
       if (key) write(sessionStorage, SENT_KEY, { key, at: Date.now() });
     });
+    // Sent in the background and saved (replies.js): the page reloads rather than arriving fresh,
+    // so the check above can't tell it went through. Drop the draft now.
+    form.addEventListener("maf:sent", () => {
+      const key = draftKey(form);
+      if (!key) return;
+      const saved = read(localStorage, STORAGE_KEY, {});
+      delete saved[key];
+      write(localStorage, STORAGE_KEY, saved);
+    });
   });
 })();

@@ -15,6 +15,7 @@
     flags           {item_id: already flagged by the viewer}
     requests        {"unhide": n, "nuke": n} request counts for the post
     notice          a one-line message from the last action
+    names_form      after the name check refused a reply or edit: the box "Post anyway" resends
     body_class      "hottakes-thread" for highlighted tags
     thread_keys     {pass_id: public key} for this thread, used to encrypt private replies
     my_key          the viewer's registered key ("" if none yet), or None when they haven't written here
@@ -112,7 +113,10 @@
 {% endmacro %}
 
 {% block main %}
-{% if notice %}<div class="notice"><p>{{ notice }}</p></div>{% endif %}
+{% if notice %}<div class="notice"{% if names_form %} role="alert"{% endif %}><p>{{ notice }}</p>
+{# The name check can be wrong: this sends the same reply box again, past the check. Moderators can still remove it. #}
+{% if names_form %}<div class="row"><a class="button plain" href="#{{ names_form }}">Edit reply</a><button class="button" type="submit" form="{{ names_form }}" name="confirm_names" value="1">Post anyway</button></div>{% endif %}
+</div>{% endif %}
 
 {% if post.unlisted %}
 <div class="notice">
@@ -146,7 +150,7 @@
 
 {% if not post.unlisted %}
 {% if viewer %}
-<form class="reply" action="/comment" method="post" data-peer-key="{{ thread_keys.get(post.pass_id, '') }}">
+<form class="reply" id="comment-form" action="/comment" method="post" data-peer-key="{{ thread_keys.get(post.pass_id, '') }}">
   <input type="hidden" name="parent_id" value="{{ post.id }}"><input type="hidden" name="thread_id" value="{{ post.id }}">
   <textarea name="text" aria-label="Write a comment" placeholder="Write a comment"></textarea>
   <p class="help">Commenting as: <button class="id" type="button">{{ my_label }}</button> <span class="dot">·</span> Please don't name students or staff.

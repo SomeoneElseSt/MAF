@@ -8,7 +8,7 @@ from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.requests import Request
-from starlette.responses import RedirectResponse, Response
+from starlette.responses import JSONResponse, RedirectResponse, Response
 from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 
@@ -194,6 +194,37 @@ class WithApp:
         await self._app(scope, receive, send)
 
 
+IN_PLACE_HEADER = b"x-maf-in-place"
+
+
+class InPlaceRedirects:
+    """Forms on the thread page send in the background (replies.js) so posting doesn't add a step to the
+    browser's history (Back would land on the same thread first). For those requests a redirect comes
+    back as 200 {"location": ...}, which the page follows by replacing itself. Normal form posts are untouched."""
+
+    def __init__(self, asgi_app) -> None:
+        self._app = asgi_app
+
+    async def __call__(self, scope, receive, send) -> None:
+        if scope["type"] != "http" or IN_PLACE_HEADER not in dict(scope["headers"]):
+            await self._app(scope, receive, send)
+            return
+        redirected = False
+
+        async def send_in_place(message) -> None:
+            nonlocal redirected
+            if message["type"] == "http.response.start" and 300 <= message["status"] < 400:
+                redirected = True
+                location = dict(message["headers"]).get(b"location", b"/").decode()
+                await JSONResponse({"location": location})(scope, receive, send)
+                return
+            if redirected:
+                return
+            await send(message)
+
+        await self._app(scope, receive, send_in_place)
+
+
 # Pages a signed-out visitor may open. Everything else needs a pass; the API checks its own bearer tokens.
 PUBLIC_PATHS = {"/sign-in", "/sign-in/code", "/sign-in/sent", "/sign-in/key", "/sign-in/blind-sign", "/sign-in/redeem", "/about"}
 PUBLIC_PREFIXES = ("/static/", "/api/")
@@ -244,7 +275,7 @@ def create_app(settings: Settings | None = None) -> Starlette:
         Mount("/static", StaticFiles(directory=str(settings.static_dir)), name="static"),
     ]
     starlette = Starlette(routes=routes, exception_handlers={404: not_found},
-                          middleware=[Middleware(GZipMiddleware, minimum_size=500), Middleware(WithApp), Middleware(RequireSignIn)])
+                          middleware=[Middleware(GZipMiddleware, minimum_size=500), Middleware(WithApp), Middleware(InPlaceRedirects), Middleware(RequireSignIn)])
     starlette.state.maf = app
     return starlette
 
