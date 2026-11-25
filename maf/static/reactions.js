@@ -42,6 +42,7 @@
   function closePicker() {
     if (picker.hidden) return;
     picker.hidden = true;
+    document.querySelector("main").style.paddingBottom = "";
     pickerFor?.querySelector(".react-add")?.setAttribute("aria-expanded", "false");
     pickerFor?.querySelector(".react-add")?.focus({ preventScroll: true });
     pickerFor = null;
@@ -68,7 +69,20 @@
     const left = Math.min(anchor.left, column.right - 20 - picker.offsetWidth);
     picker.style.left = `${Math.max(column.left + 20, left) + window.scrollX}px`;
     picker.style.top = `${anchor.bottom + window.scrollY + 6}px`;
-    picker.querySelector("button")?.focus();
+    picker.querySelector("button")?.focus({ preventScroll: true });
+    makeRoom();
+  }
+
+  // The picker is positioned in the page flow, so near the bottom it would hang over the footer.
+  // Give main that much extra room at the end instead, and take it back when the picker closes.
+  function makeRoom() {
+    const main = document.querySelector("main");
+    const footer = document.querySelector(".foot");
+    // The footer sits right under main, so measured now its top is where main ends: how far the
+    // picker reaches past it is how much room main needs for the footer to move down.
+    const overlap = footer ? picker.getBoundingClientRect().bottom - footer.getBoundingClientRect().top : 0;
+    const room = Math.max(0, Math.ceil(overlap) + 12);
+    main.style.paddingBottom = room ? `${room}px` : "";
   }
 
   // Delegated, so chips that were just swapped in keep working.
@@ -87,5 +101,13 @@
     }
     if (!event.target.closest(".emoji-picker")) closePicker();
   });
-  document.addEventListener("keydown", event => { if (event.key === "Escape") closePicker(); });
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape") closePicker();
+    // The grid is rows of emoji: moving down from its last row would scroll to the footer instead.
+    else if (!picker.hidden && event.key === "ArrowDown") {
+      const buttons = [...picker.querySelectorAll("button")];
+      const index = buttons.indexOf(event.target);
+      if (index >= 0 && index + 8 >= buttons.length) event.preventDefault();
+    }
+  });
 })();
