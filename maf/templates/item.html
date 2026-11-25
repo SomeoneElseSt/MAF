@@ -3,6 +3,7 @@
 
   Context:
     post            the root store.Item (post)
+    post_mine       True when the viewer wrote the post
     tree            [{item, children}, ...] nested comment nodes
     label_of        {pass_id: per-thread label}
     op_pass         the post author's pass id
@@ -15,7 +16,7 @@
     flags           {item_id: already flagged by the viewer}
     requests        {"unhide": n, "nuke": n} request counts for the post
     notice          a one-line message from the last action
-    names_form      after the name check refused a reply or edit: the box "Post anyway" resends
+    names_form      after the name check refused a reply, post edit or edit: the box "Post anyway" resends
     body_class      "hottakes-thread" for highlighted tags
     thread_keys     {pass_id: public key} for this thread, used to encrypt private replies
     my_key          the viewer's registered key ("" if none yet), or None when they haven't written here
@@ -115,7 +116,7 @@
 {% block main %}
 {% if notice %}<div class="notice"{% if names_form %} role="alert"{% endif %}><p>{{ notice }}</p>
 {# The name check can be wrong: this sends the same reply box again, past the check. Moderators can still remove it. #}
-{% if names_form %}<div class="row"><a class="button plain" href="#{{ names_form }}">Edit reply</a><button class="button" type="submit" form="{{ names_form }}" name="confirm_names" value="1">Post anyway</button></div>{% endif %}
+{% if names_form %}<div class="row"><a class="button plain" href="#{{ names_form }}">Edit {{ 'post' if names_form == 'edit-' ~ post.id else 'reply' }}</a><button class="button" type="submit" form="{{ names_form }}" name="confirm_names" value="1">Post anyway</button></div>{% endif %}
 </div>{% endif %}
 
 {% if post.unlisted %}
@@ -141,10 +142,24 @@
     {% if tags_list %} <span class="dot">·</span> {% for tag in tags_list %}<a class="tag{% if is_hot([tag]) %} hot-tag{% endif %}" href="/?tag={{ tag }}">#{{ tag }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}
     {% if not post.unlisted %} <span class="sep">|</span>
     <form action="/flag" method="post" class="inline-form"><input type="hidden" name="item_id" value="{{ post.id }}"><input type="hidden" name="thread_id" value="{{ post.id }}"><button class="meta-action{% if flags.get(post.id) %} flagged{% endif %}" type="submit" aria-pressed="{{ 'true' if flags.get(post.id) else 'false' }}">{% if flags.get(post.id) %}Flagged{% else %}Flag Post{% endif %}</button></form>{% if flags.get(post.id) %} <span class="flag-note">5 flags hide a post. Urgent? Email <a href="mailto:hello@maforum.net">hello@maforum.net</a>.</span>{% endif %}
+    {% if post_mine %} <span class="sep">|</span> <a class="reply-toggle meta-action" href="#edit-{{ post.id }}" aria-controls="edit-{{ post.id }}" aria-expanded="false">Edit</a>{% endif %}
     {% endif %}
   </div>
   {% if post.url %}<p class="post-link"><a href="{{ post.url }}" rel="nofollow noopener" target="_blank">{{ post.url|host }}<span class="sr-only"> (opens in a new tab)</span></a></p>{% endif %}
   {% if post.text %}<div class="post-body text">{{ post.text|markdown }}</div>{% endif %}
+  {# Edits are append-only: the post never changes, each edit is added under it. #}
+  {% set post_edits = edits.get(post.id, []) %}
+  {% for e in post_edits %}
+  {% if e.sealed %}<div class="text edit sealed" data-sealed="{{ e.sealed }}" data-label="Edit #{{ e.n }}:"><p>Edit #{{ e.n }}: <span class="sealed-note">This private edit can only be read on the device that sent it.</span></p></div>{% else %}<div class="text edit">{{ e.text|markdown("Edit #%d:" % e.n) }}</div>{% endif %}
+  {% endfor %}
+  {% if post_mine and not post.unlisted %}
+  <form class="inline-reply" id="edit-{{ post.id }}" action="/edit" method="post" hidden>
+    <input type="hidden" name="item_id" value="{{ post.id }}"><input type="hidden" name="thread_id" value="{{ post.id }}">
+    <textarea name="text" aria-label="Edit #{{ post_edits|length + 1 }}" placeholder="Edit #{{ post_edits|length + 1 }}: add to your post. What you wrote stays as it is."></textarea>
+    <p class="help">Editing as: <button class="id" type="button">{{ my_label }}</button> <span class="dot">·</span> Please don't name students or staff.</p>
+    <div class="row"><button class="button" type="submit" data-pending="Saving…" data-needs-text>Add edit</button><a class="button plain cancel" href="#{{ post.id }}">Cancel</a></div>
+  </form>
+  {% endif %}
   <div class="post-reactions">{{ reactions_box(post) }}</div>
 </article>
 

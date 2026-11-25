@@ -410,3 +410,79 @@ def test_deleted_and_removed_replies_dont_count_as_comments(app, pass_id):
     store.remove_comment(app.conn, other.id, "Removed because it named someone.")
     assert store.comment_count(app.conn, post.id) == 1
     assert store.comment_counts(app.conn, [post.id]) == {post.id: 1}
+
+
+# -- editing your own posts --------------------------------------------------
+
+
+def test_your_own_post_shows_edit_and_others_dont(app, signed_in, pass_id):
+    mine = make_post(app, pass_id)
+    theirs = make_post(app, store.create_pass(app.conn))
+    page = signed_in.get(f"/thread/{mine.id}").text
+    assert f'href="#edit-{mine.id}"' in page
+    assert f'href="#edit-{theirs.id}"' not in signed_in.get(f"/thread/{theirs.id}").text
+
+
+def test_post_edits_are_appended_and_numbered(app, signed_in, pass_id):
+    post = make_post(app, pass_id, title="My title")
+    signed_in.post("/edit", data={"item_id": post.id, "text": "one more thing"})
+    signed_in.post("/edit", data={"item_id": post.id, "text": "and another"})
+    unchanged = store.get_item(app.conn, post.id)
+    assert unchanged.title == "My title" and unchanged.text == "text"
+    page = signed_in.get(f"/thread/{post.id}").text
+    assert "Edit #1: one more thing" in page and "Edit #2: and another" in page
+    assert "My title" in page and "<p>text</p>" in page
+
+
+def test_a_post_edit_can_be_markdown(app, signed_in, pass_id):
+    post = make_post(app, pass_id)
+    signed_in.post("/edit", data={"item_id": post.id, "text": "**strong words**"})
+    page = signed_in.get(f"/thread/{post.id}").text
+    assert "Edit #1:" in page and "<strong>strong words</strong>" in page
+
+
+def test_you_cannot_edit_someone_elses_post(app, signed_in):
+    post = make_post(app, store.create_pass(app.conn))
+    response = signed_in.post("/edit", data={"item_id": post.id, "text": "hijack"}, follow_redirects=False)
+    assert "only+edit+your+own+posts" in response.headers["location"]
+    assert store.thread_edits(app.conn, post.thread_id) == {}
+
+
+def test_an_empty_post_edit_is_refused(app, signed_in, pass_id):
+    post = make_post(app, pass_id)
+    response = signed_in.post("/edit", data={"item_id": post.id, "text": ""}, follow_redirects=False)
+    assert "Write+something+first" in response.headers["location"]
+    assert store.thread_edits(app.conn, post.thread_id) == {}
+
+
+def test_you_cannot_edit_an_unlisted_post(app, signed_in, pass_id):
+    post = make_post(app, pass_id)
+    flag_by(app, post.id, 5)
+    response = signed_in.post("/edit", data={"item_id": post.id, "text": "more"}, follow_redirects=False)
+    assert "only+edit+your+own+posts" in response.headers["location"]
+    assert store.thread_edits(app.conn, post.thread_id) == {}
+
+
+def test_a_post_edit_lands_on_the_post(app, signed_in, pass_id):
+    post = make_post(app, pass_id)
+    response = signed_in.post("/edit", data={"item_id": post.id, "text": "more"}, follow_redirects=False)
+    assert response.headers["location"] == f"/thread/{post.id}#{post.id}"
+
+
+def test_nuking_a_post_deletes_its_replies_edits_too(app, pass_id):
+    post = make_post(app, pass_id)
+    reply = store.create_comment(app.conn, pass_id, post, "a reply", None)
+    store.add_edit(app.conn, post.id, "post edit")
+    store.add_edit(app.conn, reply.id, "reply edit")
+    store.delete_item(app.conn, post.id)
+    assert store.get_item(app.conn, post.id) is None and store.get_item(app.conn, reply.id) is None
+    assert app.conn.execute("SELECT COUNT(*) AS n FROM item_edit").fetchone()["n"] == 0
+
+
+def test_cli_nuke_deleting_one_reply_keeps_the_posts_edit(monkeypatch, settings, app, pass_id, capsys):
+    post = make_post(app, pass_id)
+    reply = store.create_comment(app.conn, pass_id, post, "a reply", None)
+    store.add_edit(app.conn, post.id, "post edit")
+    store.add_edit(app.conn, reply.id, "reply edit")
+    run_cli(monkeypatch, settings, capsys, "nuke", reply.id)
+    assert list(store.thread_edits(app.conn, post.id)) == [post.id]

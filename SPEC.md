@@ -123,6 +123,7 @@ No admin roles, codes or buttons. Moderation is community flags plus the maintai
 
 - **Flag:** any pass, once per item. Clicking again unflags (the button shows a blood-red "Flagged" with the note "5 flags hide a post. Urgent? Email hello@maforum.net."). Unflagging below 5 unhides the item. At 5 flags from distinct passes the item is `hidden`: excluded from `/`, from search and from comment trees, unless `restored = 1`.
 - **Editing and deleting your own replies:** your own replies show Edit and Delete after Reply and Flag; nobody else's do. Edits are append-only: the reply never changes, and each edit shows under it as "Edit #N: <words>" (plain reply text, label included). Edits go through the name check; a private reply's edits are encrypted to the same two people (no toggle). No limit on edits; not editable while in review or after removal. Delete asks inline ("Delete this reply? This can't be undone." Delete / Cancel). A reply nobody answered is deleted entirely; one with replies becomes "Deleted by its author." (meta style) and its replies stay. Either way its words and edits are deleted for good (secure_delete). Your own in-review reply still shows Delete. No live banner for edits or deletions. Edits aren't in search.
+- **Editing your own posts:** the same, append-only, for your own post. Its meta line shows Edit next to Flag Post, opening a box under the post body. Edits show under the post as "Edit #N: <words>" (unstyled like the post text, label included), the same name check applies (with "Post anyway" pointing at `edit-<post id>`), and the title, link, text and hashtags never change. Not editable while unlisted or removed. Nuking a post deletes its edits too.
 - **Acting on something deleted meanwhile:** replying to, editing, deleting, flagging or reacting to a reply that was deleted while the page was open goes back to its thread with "That reply was deleted." (not to sign-in); if the whole post is gone, to the front page. Forms carry `thread_id` for this, since the site sends no Referer.
 - **Landing after an action:** posting a reply lands on that reply (with a little room above); deleting lands on its "Deleted by its author." note, or on the reply it answered. Comment counts (front page, pinned, tags) leave out deleted and removed replies. Long unbroken words and links wrap instead of widening the page.
 - **Reply boxes:** Comment, Reply and Add edit stay greyed out until something is typed. Every box's "as" line carries the rule inline: "Commenting as: X · Please don't name students or staff. · Make only visible to …" (Replying as / Editing as likewise).
@@ -205,7 +206,7 @@ Target: everything on the [A11Y Project checklist](https://www.a11yproject.com/c
 
 ## Out of scope for v1
 
-Votes, uploads/images, DMs outside threads, notifications, karma, profiles, editing, mobile app.
+Votes, uploads/images, DMs outside threads, notifications, karma, profiles, editing posts' original words, mobile app.
 
 ## Deploy
 

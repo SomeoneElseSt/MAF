@@ -143,20 +143,25 @@ def _ring(page, owner: str) -> None:
         page.app.live.publish(live.bell(owner))
 
 
+def _own_item(page, item: store.Item | None) -> bool:
+    return item is not None and page.pass_id is not None and item.pass_id == page.pass_id
+
+
 def _own_reply(page, item: store.Item | None) -> bool:
-    return item is not None and not item.is_post and page.pass_id is not None and item.pass_id == page.pass_id
+    return _own_item(page, item) and not item.is_post
 
 
 async def edit(request: Request) -> Response:
-    """Appends "Edit #N" under your own reply. The original stays as it was."""
+    """Appends "Edit #N" under your own post or reply. The original stays as it was."""
     page = page_of(request)
     values = await form_values(request, "item_id", "thread_id", "text", "sealed", "confirm_names")
     item = store.get_item(page.conn, values["item_id"])
     if page.pass_id is None or item is None:
         return gone(page, values["thread_id"])
     thread = f"/thread/{item.thread_id}"
-    if not _own_reply(page, item) or item.removed_reason or item.unlisted:
-        return redirect(f"{thread}?notice=You+can+only+edit+your+own+replies.")
+    if not _own_item(page, item) or item.removed_reason or item.unlisted:
+        what = "posts" if item.is_post else "replies"
+        return redirect(f"{thread}?notice=You+can+only+edit+your+own+{what}.")
     if not _allowed(page, "comment", COMMENTS_PER_MINUTE):
         return redirect(f"{thread}?notice=You're+editing+fast.+Wait+a+minute.")
     if item.private_to:
