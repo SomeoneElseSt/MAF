@@ -1,16 +1,12 @@
 # MAF
 
-An anonymous forum for Minerva University students, live at [maforum.net](https://maforum.net).
+An anonymous forum for one organization: a university, a company, a club. Only people with an email at your domain can sign in, and nobody, including whoever runs it, can tell who wrote what.
 
-Only `@uni.minerva.edu` accounts may sign in.
-
-Inside, you can make posts, share links, and discuss anonymously.
-
-Have a question? Contact hello@maforum.net.
+It started as the Minerva Anonymous Forum, live at [maforum.net](https://maforum.net) for Minerva University students. Everything here works for any organization with its own email domain. [Quick setup](#quick-setup) gets your own copy running.
 
 ## Features
 
-- **No profiles or accounts.** You sign in with your Minerva email, but MAF never stores or logs it.
+- **No profiles or accounts.** You sign in with your organization email, but MAF never stores or logs it.
 - **A new name in every thread.** Every post and reply appears under a pseudonym unique to that thread, so replies in different threads can't be linked to each other.
 - **Posts.** A post can be as simple as a title, such as an open question. Optionally, add a link, up to three hashtags, and text.
 - **Hashtags with templates.** #hottakes, #help, #wondering and #confession suggest a template for posting and replying. They're not enforced. #hottakes is highlighted on the main page.
@@ -25,7 +21,7 @@ Have a question? Contact hello@maforum.net.
 - **Live updates.** When someone replies or reacts in a thread you have open, or posts while you're on the main page, a banner offers to show it. You only hear about what you're allowed to see. Posts that arrived since your last visit are labelled New.
 - **Light and dark mode**, built for accessibility following the [A11Y Project](https://www.a11yproject.com/checklist/) checklist.
 - **Name check.** Before a post, reply or edit goes up, a language model running on MAF's own server checks it for people's names and asks you to take them out. Nothing is sent to an outside service.
-- **Moderation by flags.** There are no hard rules, but don't name specific students or staff. If five people flag a post, it becomes unlisted and shows an option to request a permanent deletion or restoration, decided case by case. Replies can be flagged the same way and are hidden until reviewed. A reply that breaks the rule can be removed, leaving only the reason in its place.
+- **Moderation by flags.** There are no hard rules, but don't name specific people (on maforum.net: students or staff). If five people flag a post, it becomes unlisted and shows an option to request a permanent deletion or restoration, decided case by case. Replies can be flagged the same way and are hidden until reviewed. A reply that breaks the rule can be removed, leaving only the reason in its place.
 
 Pinned posts, what you've opened (for the New section) and private replies live in your browser. Sign in on a new device and they won't be there, and you'll appear under a new name in threads you've already posted in. This is to maintain anonymity and avoid profiles.
 
@@ -48,16 +44,57 @@ You can check every privacy claim in this repo. Where to look:
 
 The full design, including what each party can and can't see, is in [SPEC.md](SPEC.md) and [PLAN.md](PLAN.md).
 
-One limit: MAF's server also sends the page's code to your browser, so you're trusting that maforum.net runs the code in this repo. Releases are tagged (`v1.0.x`) so you can match what's deployed.
+One limit: the server also sends the page's code to your browser, so people are trusting that your site runs the code in this repo. Releases are tagged (`v1.0.x`) so anyone can match what's deployed.
 
-## Running it locally
+## Quick setup
+
+### 1. Try it on your computer (2 minutes)
+
+You need [uv](https://docs.astral.sh/uv/). Then:
 
 ```sh
+git clone https://github.com/SomeoneElseSt/MAF.git && cd MAF
 uv sync --all-extras
 EMAIL_BACKEND=console MAF_BASE_URL=http://localhost:8000 uv run python -m maf.main
 ```
 
-Sign in with any `@uni.minerva.edu` address. The code is printed in the terminal (in development, `139145` also works; it never works in production). Run the tests with `uv run pytest`. Deployment is described in [deploy/aws.md](deploy/aws.md).
+Open http://localhost:8000 and sign in with any `@uni.minerva.edu` address (until you change it in step 2). The code is printed in the terminal; in development `139145` also works (never in production). Run the tests with `uv run pytest`.
+
+### 2. Make it yours
+
+Fork the repo, then change these. This lists every place: `grep -rni "minerva\|maforum" maf deploy`
+
+| What | Where |
+|---|---|
+| Who may sign in | `ALLOWED_DOMAIN` in `maf/auth.py`, e.g. `"yourschool.edu"` |
+| Your organization's name and wording | `maf/templates/about.html`, `privacy.html`, `login.html`, `base.html` (page title and link previews) |
+| Contact address | `hello@maforum.net` in the templates; `MAINTAINER_EMAIL` (moderation emails) in `deploy/setup.sh` |
+| Your domain and fork | `deploy/Caddyfile`; in `deploy/setup.sh`, `REPO_URL` (your fork) and the addresses it writes to the server's settings |
+| Hashtags with templates and highlights (optional) | `maf/housetags.py` |
+| Words the name check should never treat as names, like your organization's name (optional) | `NOT_PEOPLE` in `maf/namefilter.py` |
+
+### 3. Put it online
+
+- **A server:** any Ubuntu 24.04 machine with 2 GB of memory (the name check's language model needs about 1 GB). maforum.net runs on a small AWS EC2 instance.
+- **A domain** with an A record pointing at the server.
+- **An email provider** for sign-in codes: Azure Communication Services or AWS SES. Verify your domain with it and set up SPF, DKIM and DMARC so codes don't land in spam.
+
+Then, on the server:
+
+```sh
+curl -O https://raw.githubusercontent.com/YOU/MAF/main/deploy/setup.sh   # from your fork
+sudo bash setup.sh         # installs everything, creates /etc/maf/env with fresh secrets
+sudo nano /etc/maf/env     # check MAF_BASE_URL, MAF_EMAIL_FROM, MAINTAINER_EMAIL and the email provider
+sudo systemctl restart maf
+```
+
+For the email provider, either keep `EMAIL_BACKEND=ses` (with `AWS_REGION` and an IAM role allowed to send, as in `deploy/aws.md`) or set `EMAIL_BACKEND=azure` and `AZURE_EMAIL_CONNECTION_STRING`.
+
+HTTPS certificates are automatic. To ship updates later, `deploy/release.sh` runs the tests, tags a version and deploys it; point it at your server with `MAF_SERVER`, `MAF_SSH_KEY` and `MAF_SITE`. The full AWS walkthrough maforum.net used is in [deploy/aws.md](deploy/aws.md).
+
+### Moderating
+
+There are no admin pages. You moderate with the `maf` command on the server: `maf requests` and `maf hidden` list what needs a look, then `maf unhide`, `maf remove` or `maf nuke`. See the Moderation section of [SPEC.md](SPEC.md).
 
 ## Contributing
 
@@ -65,4 +102,4 @@ Open a [GitHub issue](https://github.com/SomeoneElseSt/MAF/issues) describing th
 
 ---
 
-Not affiliated with Minerva University in any official way. MAF is run and maintained as an open student initiative. Licensed under [AGPL-3.0](LICENSE).
+maforum.net isn't affiliated with Minerva University in any official way; it's run and maintained as an open student initiative. Licensed under [AGPL-3.0](LICENSE).
