@@ -16,7 +16,7 @@ EMAIL_BACKENDS = {"ses", "azure", "console"}
 
 
 # The name filter's spaCy model; it must match the model pyproject.toml installs.
-DEFAULT_SPACY_MODEL = "en_core_web_md"
+DEFAULT_SPACY_MODEL = "en_core_web_lg"
 
 
 class ConfigError(Exception):

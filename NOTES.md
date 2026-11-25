@@ -19,7 +19,7 @@ Status of the v1 build against [SPEC.md](SPEC.md), on branch `build`.
   `#tag` filtering, FTS5 search (queries never logged), the hidden- and private-item exclusions.
 - **House tags**: `HOUSE_TAGS` config drives the submit and reply placeholders, the etiquette
   banner and the #hottakes highlight.
-- **Name filter**: Presidio with `en_core_web_md` (measured at about 2 ms per submission), with
+- **Name filter**: Presidio with `en_core_web_lg` (about 1 ms per submission; md made too many mistakes), with
   the Edit post / Post anyway warning.
 - **Moderation**: the `maf` CLI (`requests`, `hidden`, `show`, `unhide`, `nuke`, `dismiss`,
   `pin`, `unpin`) over SSH.

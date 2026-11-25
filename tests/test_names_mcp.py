@@ -15,9 +15,9 @@ def presidio_ready():
     import spacy
 
     try:
-        spacy.load("en_core_web_md")
+        spacy.load("en_core_web_lg")
     except OSError:
-        pytest.skip("spaCy model en_core_web_md is not installed")
+        pytest.skip("spaCy model en_core_web_lg is not installed")
 
 
 @pytest.fixture
@@ -33,7 +33,7 @@ def filtering_app(tmp_path, presidio_ready):
         session_secret=b"s",
         email_backend="console",
         name_filter_enabled=True,
-        spacy_model="en_core_web_md",
+        spacy_model="en_core_web_lg",
     )
     starlette = create_app(settings)
     return starlette.state.maf, TestClient(starlette)
@@ -237,3 +237,10 @@ def test_production_refuses_to_start_without_the_spacy_model(monkeypatch):
         monkeypatch.setenv(name, value)
     with pytest.raises(ConfigError, match="isn't installed"):
         load_settings()
+
+
+def test_what_is_questions_about_things_are_not_people(filtering_app):
+    app, _ = filtering_app
+    assert not app.name_filter.finds_name("What is Zavarka? Sounds like canned beans")
+    assert not app.name_filter.finds_name("What is Kombucha?")
+    assert app.name_filter.finds_name("I saw Priya Raman at lunch.")

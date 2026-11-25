@@ -26,6 +26,21 @@ install_packages() {
     debian-keyring debian-archive-keyring apt-transport-https
 }
 
+# The name check's language model needs ~1 GB of the server's 2 GB; swap keeps a busy moment from
+# running out of memory.
+add_swap() {
+  if swapon --show | grep -q /swapfile; then
+    log "Swap already on"
+    return
+  fi
+  log "Adding 1 GB of swap"
+  fallocate -l 1G /swapfile
+  chmod 600 /swapfile
+  mkswap /swapfile
+  swapon /swapfile
+  grep -q '^/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
+}
+
 install_caddy() {
   if command -v caddy >/dev/null 2>&1; then
     log "Caddy already installed"
@@ -181,6 +196,7 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 install_packages
+add_swap
 install_caddy
 install_uv
 create_service_user

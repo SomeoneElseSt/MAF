@@ -20,7 +20,7 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 - Python 3.12, managed with **uv**
 - Starlette (or FastAPI) + Jinja2 for server-rendered HTML, plus one CSS file (port `mockups/style.css`). Client-side JS is small vanilla files only: the blind-signature step at login, the theme toggle, the hashtag menu, inline reply boxes, the (i) info card, the ID pop-up and the submit placeholder. Every page must still work without JS, except login.
 - SQLite as a single file
-- Name filter: **Presidio** with a spaCy model, running in-process on the same server. Start with `en_core_web_md`, benchmark it, and drop to `sm` if it's too slow.
+- Name filter: **Presidio** with a spaCy model, running in-process on the same server. Uses `en_core_web_lg` (about 1 ms per submission). `md` was tried first and blocked things like "What is Kombucha?" while missing "I saw Priya Raman at lunch".
 - Blind signatures (RFC 9474): `blindrsa-ts` in the browser, vendored as a single file rather than loaded from a CDN, plus a Python RFC 9474 library on the server. Confirm the two interoperate before building on them.
 - Domain: `maforum.net` (Namecheap, free DNS). AWS: one EC2 `t4g.small`, SES for email, sending via the instance's IAM role
 - Caddy for HTTPS, with **access logs off**
@@ -106,7 +106,7 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 - If it finds a name above the score threshold (configurable), don't save. Re-render the form with the text intact and the warning: *"This looks like it names someone. MAF doesn't allow naming students or staff."* plus two buttons: **Edit post** (back to editing) and **Post anyway** (resubmits with `confirm_names=1`, which skips the check).
 - No stored list of names. A short list of words the model mistakes for names but never are on MAF (`NOT_PEOPLE` in `maf/namefilter.py`: "Minerva") is skipped.
 - Common chat abbreviations (tbf, tbh, ngl, imo, imho, idk, fwiw, btw, iirc, afaik, lol, lmao, smh, fr; `CHAT_ABBREVIATIONS`) are taken out before the model reads the text. Next to a capitalised word they confuse it: "Tbf Minerva" reads as a person, "Tbf Priya Raman" as an organisation.
-- The score threshold doesn't tune spaCy hits: Presidio gives every spaCy PERSON the same 0.85, so the check is effectively "did spaCy label anything a person". `en_core_web_md` misses some non-English names in plain sentences ("I saw Priya Raman at lunch").
+- The score threshold doesn't tune spaCy hits: Presidio gives every spaCy PERSON the same 0.85, so the check is effectively "did spaCy label anything a person". `en_core_web_md` missed some non-English names in plain sentences, one reason the site uses `lg`.
 - The rule appears on `/submit` and `/guide`.
 
 ## Moderation
