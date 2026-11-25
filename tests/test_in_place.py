@@ -28,3 +28,18 @@ def test_a_post_edit_sent_in_place_lands_on_the_post(signed_in, app):
                               headers={"X-MAF-In-Place": "1"}, follow_redirects=False)
     assert response.status_code == 200
     assert response.json() == {"location": f"/thread/{post_id}#{post_id}"}
+
+
+def test_subscribing_sent_in_place_lands_back_on_the_thread(signed_in, app):
+    post_id = _post(signed_in, app)
+    response = signed_in.post("/subscribe", data={"thread_id": post_id, "back": ""},
+                              headers={"X-MAF-In-Place": "1"}, follow_redirects=False)
+    assert response.status_code == 200
+    assert response.json() == {"location": f"/thread/{post_id}"}
+    assert app.conn.execute("SELECT COUNT(*) FROM subscription").fetchone()[0] == 1
+
+
+def test_every_post_form_on_the_thread_page_is_sent_in_place():
+    from pathlib import Path
+    script = (Path(__file__).parent.parent / "maf" / "static" / "replies.js").read_text()
+    assert "form[method='post' i]:not([data-full-page])" in script

@@ -80,7 +80,7 @@
     });
   });
 
-  // Commenting, editing, deleting and flagging send in the background, then the page replaces itself
+  // Forms on the thread page (commenting, subscribing, flagging…) send in the background, then the page replaces itself
   // with the result. A normal form post adds a step to the browser's history, so Back would land on
   // this same thread first and need a second press. The server answers these with where to go.
   async function sendInPlace(form, submitter) {
@@ -181,8 +181,12 @@
   if (document.readyState === "complete") landOnReply();
   else window.addEventListener("load", () => requestAnimationFrame(landOnReply), { once: true });
 
-  const IN_PLACE = "form[action='/comment'], form[action='/edit'], form[action='/delete-reply'], form[action='/flag']";
-  document.addEventListener("submit", event => {
+  // Every form on this page that posts goes in place, so a new button can't bring the double Back
+  // back. A form that must load a new page the normal way opts out with data-full-page.
+  // On window, not document: scripts that send their own forms (reactions, private replies) run
+  // first and cancel the event, and those are left alone.
+  const IN_PLACE = "form[method='post' i]:not([data-full-page])";
+  window.addEventListener("submit", event => {
     const form = event.target.closest(IN_PLACE);
     if (!form || event.defaultPrevented) return;
     event.preventDefault();
