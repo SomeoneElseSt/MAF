@@ -152,7 +152,7 @@ def _own_reply(page, item: store.Item | None) -> bool:
 
 
 async def edit(request: Request) -> Response:
-    """Appends "Edit #N" under your own post or reply. The original stays as it was."""
+    """Changes your own post or reply to the words you send. The thread notes it was edited."""
     page = page_of(request)
     values = await form_values(request, "item_id", "thread_id", "text", "sealed", "confirm_names")
     item = store.get_item(page.conn, values["item_id"])
@@ -172,7 +172,7 @@ async def edit(request: Request) -> Response:
         return redirect(f"{thread}?notice=That's+too+long.+Try+trimming+it.")
     if values["confirm_names"] != "1" and await run_in_threadpool(page.app.name_filter.finds_name, values["text"]):
         return redirect(f"{thread}?notice={NAMES_NOTICE}&names=edit-{item.id}")
-    store.add_edit(page.conn, item.id, values["text"])
+    store.edit_item(page.conn, item.id, values["text"])
     return redirect(f"{thread}#{item.id}")
 
 
@@ -185,7 +185,7 @@ def _private_edit(page, item: store.Item, raw_sealed: str) -> Response:
     keys = store.thread_keys(page.conn, item.thread_id)
     if keys.get(page.pass_id) != sealed["from"] or keys.get(item.private_to) != sealed["to"]:
         return redirect(f"{thread}?notice=Couldn't+save+that+privately.+Reload+the+page+and+try+again.")
-    store.add_edit(page.conn, item.id, None, sealed=json.dumps(sealed))
+    store.edit_item(page.conn, item.id, None, sealed=json.dumps(sealed))
     return redirect(f"{thread}#{item.id}")
 
 

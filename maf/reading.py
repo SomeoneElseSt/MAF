@@ -55,7 +55,6 @@ def item(request: Request) -> Response:
         "etiquette_banner": etiquette(tags),
         "reply_placeholder": reply_placeholder(tags) if tags else "",
         "reactions": _reactions(page, items),
-        "edits": store.thread_edits(page.conn, thread_id),
         "flags": _flags(page, items),
         "requests": store.request_counts(page.conn, post.id),
         "notice": request.query_params.get("notice"),

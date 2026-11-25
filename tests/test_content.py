@@ -154,6 +154,15 @@ def test_home_shows_four_days_grouped_by_day(client, app, pass_id):
     assert "Today" in body
 
 
+def test_home_rows_carry_their_latest_comment_time(client, app, pass_id):
+    post = make_post(app, pass_id, title="Has a comment")
+    silent = make_post(app, pass_id, title="No comments")
+    comment = make_comment(app, store.create_pass(app.conn), post, "a reply")
+    body = client.get("/").text
+    assert f'data-latest-comment="{comment.created_at}"' in body
+    assert f'data-id="{silent.id}" data-title="No comments" data-host="" data-created="{silent.created_at}">' in body
+
+
 def test_before_steps_back_four_days(client, app, pass_id):
     make_post(app, pass_id, title="Six days ago", days_ago=6)
     before = (utc_now().date() - timedelta(days=3)).isoformat()

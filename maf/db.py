@@ -7,7 +7,7 @@ so it can be extended later without a migration framework.
 import sqlite3
 from pathlib import Path
 
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 6
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS pass (
@@ -128,7 +128,13 @@ ALTER TABLE reaction ADD COLUMN created_at TEXT;
 """
 
 # Step n upgrades a file at version n - 1 to version n.
-MIGRATIONS = {1: SCHEMA, 2: SEALED_REPLIES, 3: REMOVED_REASON, 4: REPLY_EDITS, 5: REACTION_TIMES}
+# 6: edits change the item itself now, so each item notes when it was last edited. The old
+# append-only item_edit table is left as it is (nothing reads it any more, no rows are dropped).
+EDITED_AT = """
+ALTER TABLE item ADD COLUMN edited_at TEXT;
+"""
+
+MIGRATIONS = {1: SCHEMA, 2: SEALED_REPLIES, 3: REMOVED_REASON, 4: REPLY_EDITS, 5: REACTION_TIMES, 6: EDITED_AT}
 
 
 def connect(path: Path | str) -> sqlite3.Connection:

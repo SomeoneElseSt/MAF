@@ -102,6 +102,7 @@ class Item:
     private_to: str | None = None
     sealed: str | None = None
     removed_reason: str | None = None
+    edited_at: str | None = None
     tags: list[str] = field(default_factory=list)
     comment_count: int = 0
     thread_title: str | None = None
@@ -143,6 +144,7 @@ def _row_to_item(row: sqlite3.Row, tags: list[str] | None = None) -> Item:
         private_to=row["private_to"],
         sealed=row["sealed"],
         removed_reason=row["removed_reason"],
+        edited_at=row["edited_at"],
         tags=tags or [],
     )
 
@@ -277,6 +279,19 @@ def comment_counts(conn: sqlite3.Connection, thread_ids: list[str]) -> dict[str,
         thread_ids,
     ).fetchall()
     return {r["thread_id"]: r["n"] for r in rows}
+
+
+def latest_comment_times(conn: sqlite3.Connection, thread_ids: list[str]) -> dict[str, str]:
+    """When each thread last got a comment, by thread id (public comments only, like the counts)."""
+    if not thread_ids:
+        return {}
+    marks = ",".join("?" * len(thread_ids))
+    rows = conn.execute(
+        f"SELECT thread_id, MAX(created_at) AS latest FROM item WHERE thread_id IN ({marks}) "
+        "AND parent_id IS NOT NULL AND private_to IS NULL AND removed_reason IS NULL GROUP BY thread_id",
+        thread_ids,
+    ).fetchall()
+    return {row["thread_id"]: row["latest"] for row in rows}
 
 
 def with_comment_counts(conn: sqlite3.Connection, items: list[Item]) -> list[Item]:
@@ -581,7 +596,7 @@ def _secure_delete(conn: sqlite3.Connection):
 
 
 def remove_comment(conn: sqlite3.Connection, item_id: str, reason: str) -> bool:
-    """Deletes a comment's words (and its edits) for good and shows `reason` in their place. Replies stay."""
+    """Deletes a comment's words for good and shows `reason` in their place. Replies stay."""
     item = get_item(conn, item_id)
     if item is None or item.is_post:
         return False
@@ -593,7 +608,6 @@ def remove_comment(conn: sqlite3.Connection, item_id: str, reason: str) -> bool:
             conn.execute("INSERT INTO item_fts (item_fts, rowid, title, text) VALUES ('delete', ?, ?, ?)",
                          (indexed["rowid"], indexed["title"] or "", indexed["text"] or ""))
         conn.execute("UPDATE item SET text = NULL, sealed = NULL, removed_reason = ? WHERE id = ?", (reason, item_id))
-        conn.execute("DELETE FROM item_edit WHERE item_id = ?", (item_id,))
         conn.execute("DELETE FROM reaction WHERE item_id = ?", (item_id,))
         conn.execute("DELETE FROM moderation_request WHERE item_id = ?", (item_id,))
     return True
@@ -611,33 +625,23 @@ def delete_own_comment(conn: sqlite3.Connection, item_id: str) -> None:
 # -- edits -----------------------------------------------------------------
 
 
-@dataclass
-class Edit:
-    item_id: str
-    n: int
-    text: str | None
-    sealed: str | None
-    created_at: str
-
-
-def add_edit(conn: sqlite3.Connection, item_id: str, text: str | None, sealed: str | None = None) -> int:
-    """Appends edit #n under a post or reply. The item itself never changes."""
-    with conn:
-        n = conn.execute("SELECT COALESCE(MAX(n), 0) + 1 FROM item_edit WHERE item_id = ?", (item_id,)).fetchone()[0]
-        conn.execute("INSERT INTO item_edit (item_id, n, text, sealed, created_at) VALUES (?, ?, ?, ?, ?)",
-                     (item_id, n, text, sealed, iso(utc_now())))
-    return n
-
-
-def thread_edits(conn: sqlite3.Connection, thread_id: str) -> dict[str, list[Edit]]:
-    rows = conn.execute(
-        "SELECT e.* FROM item_edit e JOIN item i ON i.id = e.item_id WHERE i.thread_id = ? ORDER BY e.item_id, e.n",
-        (thread_id,),
-    ).fetchall()
-    edits: dict[str, list[Edit]] = {}
-    for r in rows:
-        edits.setdefault(r["item_id"], []).append(Edit(r["item_id"], r["n"], r["text"], r["sealed"], r["created_at"]))
-    return edits
+def edit_item(conn: sqlite3.Connection, item_id: str, text: str | None, sealed: str | None = None) -> None:
+    """Replaces an item's words with the edited ones and notes when. The search index follows."""
+    item = get_item(conn, item_id)
+    if item is None:
+        return
+    indexed = conn.execute(
+        "SELECT rowid FROM item WHERE id = ? AND rowid IN (SELECT rowid FROM item_fts)", (item_id,)
+    ).fetchone()
+    with _secure_delete(conn), conn:
+        if indexed:
+            conn.execute("INSERT INTO item_fts (item_fts, rowid, title, text) VALUES ('delete', ?, ?, ?)",
+                         (indexed["rowid"], *_fts_values(item.title, item.text)))
+        conn.execute("UPDATE item SET text = ?, sealed = ?, edited_at = ? WHERE id = ?",
+                     (text, sealed, iso(utc_now()), item_id))
+        if indexed and not item.private_to and text is not None:
+            conn.execute("INSERT INTO item_fts (rowid, title, text) VALUES (?, ?, ?)",
+                         (indexed["rowid"], *_fts_values(item.title, text)))
 
 
 def dismiss_requests(conn: sqlite3.Connection, item_id: str) -> bool:
@@ -667,8 +671,7 @@ def delete_item(conn: sqlite3.Connection, item_id: str) -> None:
         for row in indexed:
             conn.execute("INSERT INTO item_fts (item_fts, rowid, title, text) VALUES ('delete', ?, ?, ?)",
                          (row["rowid"], row["title"] or "", row["text"] or ""))
-        # A post's edits sit on the post and on every reply in its thread, so they go with it.
-        conn.execute(f"DELETE FROM item_edit WHERE item_id IN (SELECT id FROM item WHERE {scope})", (scope_value,))
+        # A post's replies go with it, and each reply's words go for good (secure_delete is still on).
         conn.execute(f"DELETE FROM item WHERE {scope}", (scope_value,))
         conn.execute("DELETE FROM item_tag WHERE item_id = ?", (item_id,))
         if item.is_post:

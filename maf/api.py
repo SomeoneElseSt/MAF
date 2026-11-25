@@ -65,6 +65,7 @@ def _post_json(post: store.Item) -> dict:
         "url": post.url,
         "text_preview": post.text_preview,
         "created_at": post.created_at,
+        "edited_at": post.edited_at,
         "comment_count": post.comment_count,
         "views": post.views,
         "tags": post.tags,
@@ -109,14 +110,13 @@ async def item(request: Request) -> Response:
     items = [i for i in store.thread_items(conn, thread_id, None) if not i.unlisted]
     post = next(i for i in items if i.id == thread_id)
     labels = app.labeler
-    edits = store.thread_edits(conn, thread_id)
-    nodes = _tree(store.build_tree(items, thread_id), thread_id, labels, post.pass_id, edits)
+    nodes = _tree(store.build_tree(items, thread_id), thread_id, labels, post.pass_id)
     post.comment_count = store.comment_count(conn, thread_id)
     return _json({**_post_json(post), "author_id": labels.label(post.pass_id, thread_id), "op": True,
                   "comments": nodes})
 
 
-def _tree(nodes, thread_id: str, labels, op_pass: str, edits: dict) -> list[dict]:
+def _tree(nodes, thread_id: str, labels, op_pass: str) -> list[dict]:
     out = []
     for node in nodes:
         item: store.Item = node["item"]
@@ -124,11 +124,11 @@ def _tree(nodes, thread_id: str, labels, op_pass: str, edits: dict) -> list[dict
             "id": item.id,
             "text": item.text,
             "removed": item.removed_reason,
-            "edits": [{"n": e.n, "text": e.text, "created_at": e.created_at} for e in edits.get(item.id, [])],
             "created_at": item.created_at,
+            "edited_at": item.edited_at,
             "author_id": labels.label(item.pass_id, thread_id),
             "op": item.pass_id == op_pass,
-            "comments": _tree(node["children"], thread_id, labels, op_pass, edits),
+            "comments": _tree(node["children"], thread_id, labels, op_pass),
         })
     return out
 

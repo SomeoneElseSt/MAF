@@ -27,7 +27,7 @@
 
 {% macro meta_line(entry) %}
   <div class="meta">
-    <button class="id" type="button">{{ label_of[entry.pass_id] }}</button>{% if entry.pass_id == op_pass %} (OP){% elif entry.pass_id == viewer %} (you){% endif %}, {{ entry.created_at|rel }}
+    <button class="id" type="button">{{ label_of[entry.pass_id] }}</button>{% if entry.pass_id == op_pass %} (OP){% elif entry.pass_id == viewer %} (you){% endif %}, {{ entry.created_at|rel }}{% if entry.edited_at %} <span class="edited">(edited)</span>{% endif %}
     {% if entry.private_to %} <span class="dot">·</span> <span class="private-note">Private, only you and {{ label_of[entry.private_to] if entry.pass_id == viewer else label_of[entry.pass_id] }}</span> <button class="info" type="button" aria-label="About private replies" aria-expanded="false">i</button>{% endif %}
   </div>
 {% endmacro %}
@@ -65,7 +65,6 @@
 {% macro comment(node, depth) %}
 {% set entry = node.item %}
 {% set mine = viewer and entry.pass_id == viewer %}
-{% set entry_edits = edits.get(entry.id, []) %}
 <li class="comment{% if entry.private_to %} private{% endif %}" id="{{ entry.id }}">
   {% if entry.removed_reason %}
   {# Words removed by the maintainer (maf remove) or deleted by the author; the reason shows instead. Replies stay. #}
@@ -77,10 +76,6 @@
   {% else %}
   {{ meta_line(entry) }}
   {% if entry.sealed %}<div class="text sealed" data-sealed="{{ entry.sealed }}"><p class="sealed-note">This private reply can only be read on the device that sent or received it.</p></div>{% else %}<div class="text">{{ entry.text|markdown }}</div>{% endif %}
-  {# Edits are append-only: the reply never changes, each edit is added under it. #}
-  {% for e in entry_edits %}
-  {% if e.sealed %}<div class="text edit sealed" data-sealed="{{ e.sealed }}" data-label="Edit #{{ e.n }}:"><p>Edit #{{ e.n }}: <span class="sealed-note">This private edit can only be read on the device that sent or received it.</span></p></div>{% else %}<div class="text edit">{{ e.text|markdown("Edit #%d:" % e.n) }}</div>{% endif %}
-  {% endfor %}
   <div class="actions">
     <a class="reply-toggle" href="#reply-{{ entry.id }}" aria-controls="reply-{{ entry.id }}" aria-expanded="false">Reply</a>
     {% if not entry.private_to %}<form action="/flag" method="post" class="inline-form"><input type="hidden" name="item_id" value="{{ entry.id }}"><input type="hidden" name="thread_id" value="{{ post.id }}"><button type="submit"{% if flags.get(entry.id) %} class="flagged"{% endif %} aria-pressed="{{ 'true' if flags.get(entry.id) else 'false' }}">{% if flags.get(entry.id) %}Flagged{% else %}Flag{% endif %}</button></form>{% if flags.get(entry.id) %}<span class="flag-note">5 flags hide a comment. Urgent? Email <a href="mailto:hello@maforum.net">hello@maforum.net</a>.</span>{% endif %}{% endif %}
@@ -98,9 +93,9 @@
   {% if mine %}
     <form class="inline-reply" id="edit-{{ entry.id }}" action="/edit" method="post"{% if entry.private_to %} data-peer-key="{{ thread_keys.get(entry.private_to, '') }}" data-always-private{% endif %} hidden>
       <input type="hidden" name="item_id" value="{{ entry.id }}"><input type="hidden" name="thread_id" value="{{ post.id }}">
-      <textarea name="text" aria-label="Edit #{{ entry_edits|length + 1 }}" placeholder="Edit #{{ entry_edits|length + 1 }}: add to your reply. What you wrote stays as it is."></textarea>
+      <textarea name="text" aria-label="Edit your reply">{{ entry.text or '' }}</textarea>
       <p class="help">Editing as: <button class="id" type="button">{{ my_label }}</button> <span class="dot">·</span> Please don't name students or staff.</p>
-      <div class="row"><button class="button" type="submit" data-pending="Saving…" data-needs-text>Add edit</button><a class="button plain cancel" href="#{{ entry.id }}">Cancel</a></div>
+      <div class="row"><button class="button" type="submit" data-pending="Saving…" data-needs-text>Save</button><a class="button plain cancel" href="#{{ entry.id }}">Cancel</a></div>
     </form>
     {{ delete_box(entry) }}
   {% endif %}
@@ -138,7 +133,7 @@
 <div{% if post.unlisted %} class="faded"{% endif %} data-thread="{{ post.id }}"{% if my_key is not none %} data-my-key="{{ my_key }}"{% endif %}>
 <article class="post-head">
   <h1>{{ post.title|md_title }}</h1>
-  <div class="meta">Posted by <button class="id" type="button">{{ label_of[post.pass_id] }}</button> {{ post.created_at|rel }}, {{ post.views }} view{{ '' if post.views == 1 else 's' }}
+  <div class="meta">Posted by <button class="id" type="button">{{ label_of[post.pass_id] }}</button> {{ post.created_at|rel }}{% if post.edited_at %} <span class="edited">(edited)</span>{% endif %}, {{ post.views }} view{{ '' if post.views == 1 else 's' }}
     {% if tags_list %} <span class="dot">·</span> {% for tag in tags_list %}<a class="tag{% if is_hot([tag]) %} hot-tag{% endif %}" href="/?tag={{ tag }}">#{{ tag }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}
     {% if not post.unlisted %} <span class="sep">|</span>
     <form action="/flag" method="post" class="inline-form"><input type="hidden" name="item_id" value="{{ post.id }}"><input type="hidden" name="thread_id" value="{{ post.id }}"><button class="meta-action{% if flags.get(post.id) %} flagged{% endif %}" type="submit" aria-pressed="{{ 'true' if flags.get(post.id) else 'false' }}">{% if flags.get(post.id) %}Flagged{% else %}Flag Post{% endif %}</button></form>{% if flags.get(post.id) %} <span class="flag-note">5 flags hide a post. Urgent? Email <a href="mailto:hello@maforum.net">hello@maforum.net</a>.</span>{% endif %}
@@ -147,17 +142,12 @@
   </div>
   {% if post.url %}<p class="post-link"><a href="{{ post.url }}" rel="nofollow noopener" target="_blank">{{ post.url|host }}<span class="sr-only"> (opens in a new tab)</span></a></p>{% endif %}
   {% if post.text %}<div class="post-body text">{{ post.text|markdown }}</div>{% endif %}
-  {# Edits are append-only: the post never changes, each edit is added under it. #}
-  {% set post_edits = edits.get(post.id, []) %}
-  {% for e in post_edits %}
-  {% if e.sealed %}<div class="text edit sealed" data-sealed="{{ e.sealed }}" data-label="Edit #{{ e.n }}:"><p>Edit #{{ e.n }}: <span class="sealed-note">This private edit can only be read on the device that sent it.</span></p></div>{% else %}<div class="text edit">{{ e.text|markdown("Edit #%d:" % e.n) }}</div>{% endif %}
-  {% endfor %}
   {% if post_mine and not post.unlisted %}
   <form class="inline-reply" id="edit-{{ post.id }}" action="/edit" method="post" hidden>
     <input type="hidden" name="item_id" value="{{ post.id }}"><input type="hidden" name="thread_id" value="{{ post.id }}">
-    <textarea name="text" aria-label="Edit #{{ post_edits|length + 1 }}" placeholder="Edit #{{ post_edits|length + 1 }}: add to your post. What you wrote stays as it is."></textarea>
+    <textarea name="text" aria-label="Edit your post">{{ post.text or '' }}</textarea>
     <p class="help">Editing as: <button class="id" type="button">{{ my_label }}</button> <span class="dot">·</span> Please don't name students or staff.</p>
-    <div class="row"><button class="button" type="submit" data-pending="Saving…" data-needs-text>Add edit</button><a class="button plain cancel" href="#{{ post.id }}">Cancel</a></div>
+    <div class="row"><button class="button" type="submit" data-pending="Saving…">Save</button><a class="button plain cancel" href="#{{ post.id }}">Cancel</a></div>
   </form>
   {% endif %}
   <div class="post-reactions">{{ reactions_box(post) }}</div>

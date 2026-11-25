@@ -306,7 +306,7 @@ def test_a_refused_edit_offers_post_anyway_too(filtering_app):
                            follow_redirects=False)
     assert response.headers["location"].endswith(f"&names=edit-{reply.id}")
     client.post("/edit", data={"item_id": reply.id, "thread_id": post.id, "text": "Priya Raman told me", "confirm_names": "1"})
-    assert len(store.thread_edits(app.conn, post.id)) == 1
+    assert store.get_item(app.conn, reply.id).edited_at
 
 
 def test_post_anyway_only_points_at_a_reply_box(filtering_app):
@@ -327,4 +327,4 @@ def test_a_refused_post_edit_offers_post_anyway_too(filtering_app):
     page = client.get(response.headers["location"]).text
     assert f'form="edit-{post.id}" name="confirm_names" value="1">Post anyway</button>' in page
     client.post("/edit", data={"item_id": post.id, "thread_id": post.id, "text": "Priya Raman told me", "confirm_names": "1"})
-    assert len(store.thread_edits(app.conn, post.id)[post.id]) == 1
+    assert store.get_item(app.conn, post.id).edited_at

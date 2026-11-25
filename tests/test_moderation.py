@@ -317,13 +317,21 @@ def test_your_own_reply_shows_edit_and_delete_and_others_dont(app, signed_in, pa
     assert f'href="#edit-{other.id}"' not in page and f'href="#delete-{other.id}"' not in page
 
 
-def test_edits_are_appended_and_numbered(app, signed_in, pass_id):
+def test_an_edit_changes_the_reply_and_marks_it_edited(app, signed_in, pass_id):
     post, mine = _thread_with_reply(app, pass_id)
-    signed_in.post("/edit", data={"item_id": mine.id, "text": "one more thing"})
-    signed_in.post("/edit", data={"item_id": mine.id, "text": "and another"})
-    assert store.get_item(app.conn, mine.id).text == "first words"
+    response = signed_in.post("/edit", data={"item_id": mine.id, "text": "one more thing"}, follow_redirects=False)
+    assert response.headers["location"] == f"/thread/{post.id}#{mine.id}"
+    changed = store.get_item(app.conn, mine.id)
+    assert changed.text == "one more thing" and changed.edited_at
     page = signed_in.get(f"/thread/{post.id}").text
-    assert "Edit #1: one more thing" in page and "Edit #2: and another" in page
+    assert "one more thing" in page and "first words" not in page and "(edited)" in page
+
+
+def test_an_edit_is_searchable_and_the_old_words_are_not(app, signed_in, pass_id):
+    post, mine = _thread_with_reply(app, pass_id)
+    signed_in.post("/edit", data={"item_id": mine.id, "text": "giraffe"})
+    hits = lambda q: "No matches" not in signed_in.get(f"/search?q={q}").text
+    assert hits("giraffe") and not hits("first") and not hits("words")
 
 
 def test_you_cannot_edit_or_delete_someone_elses_reply(app, signed_in):
@@ -332,20 +340,18 @@ def test_you_cannot_edit_or_delete_someone_elses_reply(app, signed_in):
     assert "only+edit+your+own" in response.headers["location"]
     signed_in.post("/delete-reply", data={"item_id": theirs.id})
     assert store.get_item(app.conn, theirs.id).text == "first words"
-    assert store.thread_edits(app.conn, post.thread_id) == {}
 
 
 def test_deleting_a_reply_with_no_replies_removes_it_entirely(app, signed_in, pass_id):
     post, mine = _thread_with_reply(app, pass_id)
-    store.add_edit(app.conn, mine.id, "an edit")
+    signed_in.post("/edit", data={"item_id": mine.id, "text": "an edit"})
     signed_in.post("/delete-reply", data={"item_id": mine.id})
     assert store.get_item(app.conn, mine.id) is None
-    assert app.conn.execute("SELECT COUNT(*) AS n FROM item_edit").fetchone()["n"] == 0
 
 
 def test_deleting_a_reply_with_replies_leaves_a_note_and_keeps_them(app, signed_in, pass_id):
     post, mine = _thread_with_reply(app, pass_id)
-    store.add_edit(app.conn, mine.id, "an edit")
+    signed_in.post("/edit", data={"item_id": mine.id, "text": "an edit"})
     store.create_comment(app.conn, store.create_pass(app.conn), mine, "a reply to it", None)
     signed_in.post("/delete-reply", data={"item_id": mine.id})
     deleted = store.get_item(app.conn, mine.id)
@@ -358,7 +364,7 @@ def test_reply_buttons_wait_for_text_and_boxes_carry_the_naming_rule(app, signed
     post, _ = _thread_with_reply(app, pass_id)
     page = signed_in.get(f"/thread/{post.id}").text
     assert 'data-needs-text>Comment</button>' in page and 'data-needs-text>Reply</button>' in page
-    assert 'data-needs-text>Add edit</button>' in page
+    assert 'data-pending="Saving…" data-needs-text>Save</button>' in page
     assert page.count("Please don't name students or staff.") >= 3
 
 
@@ -423,36 +429,35 @@ def test_your_own_post_shows_edit_and_others_dont(app, signed_in, pass_id):
     assert f'href="#edit-{theirs.id}"' not in signed_in.get(f"/thread/{theirs.id}").text
 
 
-def test_post_edits_are_appended_and_numbered(app, signed_in, pass_id):
+def test_a_post_edit_changes_its_text_and_keeps_its_title(app, signed_in, pass_id):
     post = make_post(app, pass_id, title="My title")
     signed_in.post("/edit", data={"item_id": post.id, "text": "one more thing"})
     signed_in.post("/edit", data={"item_id": post.id, "text": "and another"})
-    unchanged = store.get_item(app.conn, post.id)
-    assert unchanged.title == "My title" and unchanged.text == "text"
+    changed = store.get_item(app.conn, post.id)
+    assert changed.title == "My title" and changed.text == "and another" and changed.edited_at
     page = signed_in.get(f"/thread/{post.id}").text
-    assert "Edit #1: one more thing" in page and "Edit #2: and another" in page
-    assert "My title" in page and "<p>text</p>" in page
+    assert "and another" in page and "<p>one more thing</p>" not in page and "My title" in page
 
 
 def test_a_post_edit_can_be_markdown(app, signed_in, pass_id):
     post = make_post(app, pass_id)
     signed_in.post("/edit", data={"item_id": post.id, "text": "**strong words**"})
     page = signed_in.get(f"/thread/{post.id}").text
-    assert "Edit #1:" in page and "<strong>strong words</strong>" in page
+    assert "<strong>strong words</strong>" in page
 
 
 def test_you_cannot_edit_someone_elses_post(app, signed_in):
     post = make_post(app, store.create_pass(app.conn))
     response = signed_in.post("/edit", data={"item_id": post.id, "text": "hijack"}, follow_redirects=False)
     assert "only+edit+your+own+posts" in response.headers["location"]
-    assert store.thread_edits(app.conn, post.thread_id) == {}
+    assert store.get_item(app.conn, post.id).text == "text"
 
 
 def test_an_empty_post_edit_is_refused(app, signed_in, pass_id):
     post = make_post(app, pass_id)
     response = signed_in.post("/edit", data={"item_id": post.id, "text": ""}, follow_redirects=False)
     assert "Write+something+first" in response.headers["location"]
-    assert store.thread_edits(app.conn, post.thread_id) == {}
+    assert store.get_item(app.conn, post.id).text == "text"
 
 
 def test_you_cannot_edit_an_unlisted_post(app, signed_in, pass_id):
@@ -460,7 +465,7 @@ def test_you_cannot_edit_an_unlisted_post(app, signed_in, pass_id):
     flag_by(app, post.id, 5)
     response = signed_in.post("/edit", data={"item_id": post.id, "text": "more"}, follow_redirects=False)
     assert "only+edit+your+own+posts" in response.headers["location"]
-    assert store.thread_edits(app.conn, post.thread_id) == {}
+    assert store.get_item(app.conn, post.id).text == "text"
 
 
 def test_a_post_edit_lands_on_the_post(app, signed_in, pass_id):
@@ -469,20 +474,20 @@ def test_a_post_edit_lands_on_the_post(app, signed_in, pass_id):
     assert response.headers["location"] == f"/thread/{post.id}#{post.id}"
 
 
-def test_nuking_a_post_deletes_its_replies_edits_too(app, pass_id):
+def test_nuking_a_post_deletes_its_replies_too(app, pass_id):
     post = make_post(app, pass_id)
     reply = store.create_comment(app.conn, pass_id, post, "a reply", None)
-    store.add_edit(app.conn, post.id, "post edit")
-    store.add_edit(app.conn, reply.id, "reply edit")
+    store.edit_item(app.conn, post.id, "post edit")
+    store.edit_item(app.conn, reply.id, "reply edit")
     store.delete_item(app.conn, post.id)
     assert store.get_item(app.conn, post.id) is None and store.get_item(app.conn, reply.id) is None
-    assert app.conn.execute("SELECT COUNT(*) AS n FROM item_edit").fetchone()["n"] == 0
 
 
 def test_cli_nuke_deleting_one_reply_keeps_the_posts_edit(monkeypatch, settings, app, pass_id, capsys):
     post = make_post(app, pass_id)
     reply = store.create_comment(app.conn, pass_id, post, "a reply", None)
-    store.add_edit(app.conn, post.id, "post edit")
-    store.add_edit(app.conn, reply.id, "reply edit")
+    store.edit_item(app.conn, post.id, "post edit")
+    store.edit_item(app.conn, reply.id, "reply edit")
     run_cli(monkeypatch, settings, capsys, "nuke", reply.id)
-    assert list(store.thread_edits(app.conn, post.id)) == [post.id]
+    assert store.get_item(app.conn, post.id).text == "post edit"
+    assert store.get_item(app.conn, reply.id) is None

@@ -75,12 +75,13 @@ def render_home(page, sort, before, after):
         pinned = store.with_comment_counts(conn, store.pinned_posts(conn))
         exclude_pinned = True
     posts = store.with_comment_counts(conn, store.posts_between(conn, start, end, sort, exclude_pinned=exclude_pinned))
+    latest = store.latest_comment_times(conn, [post.thread_id for post in pinned + posts])
     groups = [(day_label(day), rows) for day, rows in store.day_groups(posts)]
     # The ‹ arrow stops at the window holding the first post.
     prev_url = _page_url(sort, (start - timedelta(days=1)).isoformat()) if first_day and start > first_day else None
     next_url = _next_url(sort, end)
     return render(page, "list.html", kind="home", title="", empty=False,
-                  groups=groups, pinned=pinned, date_range=range_label(start, end),
+                  groups=groups, pinned=pinned, latest_comments=latest, date_range=range_label(start, end),
                   prev_url=prev_url, next_url=next_url, sort_links=HOME_SORT_LINKS,
                   day_param=end.isoformat())
 

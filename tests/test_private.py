@@ -236,6 +236,6 @@ def test_nothing_the_parent_author_does_removes_a_private_reply_under_it(app, st
         step()
         assert still_there(), f"private answer vanished after: {name}"
     assert store.get_item(app.conn, reply.id).removed_reason == store.DELETED_BY_AUTHOR
-    assert [e.n for e in store.thread_edits(app.conn, post.id)[private.id]] == [1]
+    assert store.get_item(app.conn, private.id).edited_at
     as_b.post("/delete-reply", data={"item_id": private.id, "thread_id": post.id})
     assert not still_there()
