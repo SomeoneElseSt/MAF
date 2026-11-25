@@ -14,7 +14,7 @@ from starlette.templating import Jinja2Templates
 from . import display, housetags, markdown, store
 from .app import App
 from .emoji import PICKER_EMOJI
-from .util import escape
+from .util import escape, iso, utc_now
 
 SORT_KEYS = {"new": "Newest", "old": "Oldest", "views": "Most viewed"}
 DEFAULT_SORT = "new"
@@ -134,6 +134,7 @@ def render(page: Page, template: str, status_code: int = 200, **context: Any) ->
         "active_tag": page.request.query_params.get("tag"),
         "sort": sort_param(page.request),
         "path": page.request.url.path,
+        "server_now": iso(utc_now()),
     }
     base.update(context)
     return page.app.templates.TemplateResponse(

@@ -40,7 +40,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <script src="{{ static('theme-init.js') }}"></script>
 </head>
-<body class="{{ body_class|default('') }}"{% if reply_placeholder is defined and reply_placeholder %} data-reply-placeholder="{{ reply_placeholder|e }}"{% endif %}>
+<body class="{{ body_class|default('') }}" data-now="{{ server_now }}"{% if reply_placeholder is defined and reply_placeholder %} data-reply-placeholder="{{ reply_placeholder|e }}"{% endif %}>
 <a class="skip" href="#main">Skip to content</a>
 <div class="page">
   <header class="top">

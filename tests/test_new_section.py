@@ -71,3 +71,8 @@ def test_opening_a_post_tells_the_browser_when(signed_in, app):
     post = store.create_post(app.conn, store.create_pass(app.conn), "A post", None, None, ["help"])
     page = signed_in.get(f"/thread/{post.id}").text
     assert f'id="{post.id}" data-views=' in page and 'data-now="' in page and "new.js" in page
+
+
+def test_every_page_carries_the_server_time_for_ages_worked_out_in_the_browser(signed_in):
+    # Back to a list works each "3 minutes ago" out again from the server's clock, not the old copy's.
+    assert '<body class="" data-now="' in signed_in.get("/").text
