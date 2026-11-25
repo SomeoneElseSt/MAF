@@ -1,22 +1,24 @@
 """The name filter: Microsoft Presidio PERSON detection before saving.
 
-No list of student names; only a short list of words that are never people (see NOT_PEOPLE). The spaCy model is loaded once, lazily,
+No list of student names; only a short list of words that are never people (see NOT_PEOPLE and demonyms.py). The spaCy model is loaded once, lazily,
 because it is the slowest part of startup and only submissions need it.
 """
 
 import re
 import threading
 
+from .demonyms import is_demonym
 from .settings import Settings
 
 PERSON = "PERSON"
 # Words the language model mistakes for people's names but never are on MAF. Lowercase.
+# Nationalities ("Kazakh") count too: see maf/demonyms.py.
 NOT_PEOPLE = {"minerva"}
 # Chat abbreviations confuse the model about the words around them: "Tbf Minerva" reads like "Jane Smith",
 # and "Tbf Priya Raman" like an organisation. They're taken out before the model reads the text.
 CHAT_ABBREVIATIONS = ("tbf", "tbh", "ngl", "imo", "imho", "idk", "fwiw", "btw", "iirc", "afaik", "lol", "lmao", "smh", "fr")
 _CHAT = re.compile(rf"\b(?:{'|'.join(CHAT_ABBREVIATIONS)})\b,?", re.IGNORECASE)
-_WORD = re.compile(r"[a-z]+")
+_WORD = re.compile(r"[a-z]+(?:['’]s)?")  # keeps "kazakh's" as one word
 
 
 def without_chat_abbreviations(text: str) -> str:
@@ -26,7 +28,7 @@ def without_chat_abbreviations(text: str) -> str:
 def _is_person(span: str) -> bool:
     """A flagged span counts unless every word in it is on the never-a-person list."""
     words = _WORD.findall(span.lower())
-    return not words or any(word not in NOT_PEOPLE for word in words)
+    return not words or any(word not in NOT_PEOPLE and not is_demonym(word) for word in words)
 
 
 class NameFilter:

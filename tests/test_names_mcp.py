@@ -244,3 +244,22 @@ def test_what_is_questions_about_things_are_not_people(filtering_app):
     assert not app.name_filter.finds_name("What is Zavarka? Sounds like canned beans")
     assert not app.name_filter.finds_name("What is Kombucha?")
     assert app.name_filter.finds_name("I saw Priya Raman at lunch.")
+
+
+def test_nationalities_are_not_people(filtering_app):
+    app, _ = filtering_app
+    assert not app.name_filter.finds_name("Maybe you mean Kazakh's? Not sure if Eastern European")
+    assert not app.name_filter.finds_name("Kazakhs are great")
+    assert not app.name_filter.finds_name("Maybe you mean Kazakh? Not sure")
+
+
+def test_a_name_next_to_a_nationality_is_still_caught(filtering_app):
+    app, _ = filtering_app
+    assert app.name_filter.finds_name("The Kazakh student Aigerim Bekova said so")
+    assert app.name_filter.finds_name("Ask Priya Raman, she's Indian")
+
+
+def test_nationality_words_match_plurals_and_possessives():
+    from maf.demonyms import is_demonym
+    assert is_demonym("kazakh") and is_demonym("kazakhs") and is_demonym("kazakh's")
+    assert not is_demonym("finn") and not is_demonym("priya")

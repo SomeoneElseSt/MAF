@@ -104,7 +104,7 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 
 - Run Presidio `PERSON` detection on titles, bodies and comments **before** saving.
 - If it finds a name above the score threshold (configurable), don't save. Re-render the form with the text intact and the warning: *"This looks like it names someone. MAF doesn't allow naming students or staff."* plus two buttons: **Edit post** (back to editing) and **Post anyway** (resubmits with `confirm_names=1`, which skips the check).
-- No stored list of names. A short list of words the model mistakes for names but never are on MAF (`NOT_PEOPLE` in `maf/namefilter.py`: "Minerva") is skipped.
+- No stored list of names. A short list of words the model mistakes for names but never are on MAF (`NOT_PEOPLE` in `maf/namefilter.py`: "Minerva") is skipped, and so are words for nationalities and peoples (`maf/demonyms.py`: "Kazakh", "Kazakhs", "Kazakh's"). A flagged span still counts if any other word in it isn't on these lists, so "the Kazakh student Aigerim Bekova" is caught.
 - Common chat abbreviations (tbf, tbh, ngl, imo, imho, idk, fwiw, btw, iirc, afaik, lol, lmao, smh, fr; `CHAT_ABBREVIATIONS`) are taken out before the model reads the text. Next to a capitalised word they confuse it: "Tbf Minerva" reads as a person, "Tbf Priya Raman" as an organisation.
 - The score threshold doesn't tune spaCy hits: Presidio gives every spaCy PERSON the same 0.85, so the check is effectively "did spaCy label anything a person". `en_core_web_md` missed some non-English names in plain sentences, one reason the site uses `lg`.
 - The rule appears on `/submit` and `/guide`.
