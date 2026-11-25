@@ -22,8 +22,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% if title %}{{ title }} · MAF{% else %}MAF{% endif %}</title>
 <link rel="stylesheet" href="{{ static('style.css') }}">
-<link rel="icon" type="image/png" sizes="32x32" href="{{ static('icon-32.png') }}">
+{# The tab icon matches the theme: white on black in dark mode, black on white in light (theme-init.js swaps it).
+   Both are inside the page, so switching is instant. #}
+<link rel="icon" type="image/png" sizes="32x32" href="{{ icon_dark }}" data-dark="{{ icon_dark }}" data-light="{{ icon_light }}">
 <link rel="apple-touch-icon" href="{{ static('icon-180.png') }}">
+{# Link previews (Telegram, iMessage, Slack...). The image is public, like all of /static/. #}
+<meta name="description" content="An anonymous discussion forum only for Minervans.">
+<meta property="og:site_name" content="MAF">
+<meta property="og:title" content="MAF · Minerva Anonymous Forum">
+<meta property="og:description" content="An anonymous discussion forum only for Minervans.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="{{ base_url }}/">
+<meta property="og:image" content="{{ base_url }}/static/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="MAF">
+<meta name="twitter:card" content="summary_large_image">
 <script src="{{ static('theme-init.js') }}"></script>
 </head>
 <body class="{{ body_class|default('') }}"{% if reply_placeholder is defined and reply_placeholder %} data-reply-placeholder="{{ reply_placeholder|e }}"{% endif %}>

@@ -1,5 +1,6 @@
 """Shared plumbing for the web routes: rendering, the signed-in pass, forms."""
 
+import base64
 import hashlib
 from dataclasses import dataclass
 from pathlib import Path
@@ -31,6 +32,11 @@ def static_versions(static_dir: Path) -> dict[str, str]:
         digest = hashlib.sha256(path.read_bytes()).hexdigest()
         versions[path.relative_to(static_dir).as_posix()] = digest[:STATIC_HASH_LENGTH]
     return versions
+
+
+def inline_png(static_dir: Path, name: str) -> str:
+    """A small static PNG as a data: URL, so swapping to it needs no download (the theme-matched tab icon)."""
+    return "data:image/png;base64," + base64.b64encode((static_dir / name).read_bytes()).decode()
 
 
 def make_static_url(static_dir: Path):
@@ -66,6 +72,8 @@ def make_templates(app: App) -> Jinja2Templates:
         suggested_tags=housetags.SUGGESTED_TAGS,
         base_url=app.settings.base_url,
         static=make_static_url(app.settings.static_dir),
+        icon_dark=inline_png(app.settings.static_dir, "icon-32.png"),
+        icon_light=inline_png(app.settings.static_dir, "icon-32-light.png"),
     )
     return templates
 

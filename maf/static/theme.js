@@ -21,7 +21,11 @@ toggle?.addEventListener("click", () => {
   document.documentElement.dataset.theme = next;
   try { localStorage.setItem(THEME_KEY, next); } catch { /* storage blocked: the choice lasts for this page only */ }
   updateLabel();
+  setThemeIcon();
 });
 
-prefersDark.addEventListener("change", updateLabel);
+prefersDark.addEventListener("change", () => {
+  updateLabel();
+  setThemeIcon();
+});
 updateLabel();
