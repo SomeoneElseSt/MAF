@@ -20,3 +20,11 @@ def test_a_normal_form_post_still_redirects(signed_in, app):
     response = signed_in.post("/comment", data={"parent_id": post_id, "thread_id": post_id, "text": "hey"},
                               follow_redirects=False)
     assert response.status_code == 303
+
+
+def test_a_post_edit_sent_in_place_lands_on_the_post(signed_in, app):
+    post_id = _post(signed_in, app)
+    response = signed_in.post("/edit", data={"item_id": post_id, "thread_id": post_id, "text": "more"},
+                              headers={"X-MAF-In-Place": "1"}, follow_redirects=False)
+    assert response.status_code == 200
+    assert response.json() == {"location": f"/thread/{post_id}#{post_id}"}

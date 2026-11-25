@@ -315,3 +315,16 @@ def test_post_anyway_only_points_at_a_reply_box(filtering_app):
     post = store.create_post(app.conn, pass_id, "Post", "body", None, [])
     page = client.get(f'/thread/{post.id}?notice=x&names="><script>').text
     assert "Post anyway" not in page
+
+
+def test_a_refused_post_edit_offers_post_anyway_too(filtering_app):
+    app, client = filtering_app
+    pass_id = sign_in(client, app)
+    post = store.create_post(app.conn, pass_id, "Post", "body", None, [])
+    response = client.post("/edit", data={"item_id": post.id, "thread_id": post.id, "text": "Priya Raman told me"},
+                           follow_redirects=False)
+    assert response.headers["location"].endswith(f"&names=edit-{post.id}")
+    page = client.get(response.headers["location"]).text
+    assert f'form="edit-{post.id}" name="confirm_names" value="1">Post anyway</button>' in page
+    client.post("/edit", data={"item_id": post.id, "thread_id": post.id, "text": "Priya Raman told me", "confirm_names": "1"})
+    assert len(store.thread_edits(app.conn, post.id)[post.id]) == 1

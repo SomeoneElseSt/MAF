@@ -16,6 +16,7 @@ Have a question? Contact hello@maforum.net.
 - **Hashtags with templates.** #hottakes, #help, #wondering and #confession suggest a template for posting and replying. They're not enforced. #hottakes is highlighted on the main page.
 - **Replies.** Reply to the original poster (OP) or to any other reply. Tick "Make only visible to [name]" and only you and that person can read it: it's encrypted in your browser, so not even MAF can see it.
 - **Edit and delete your own replies.** Edits are added below the reply as "Edit #1", "Edit #2" and so on; the original stays. Deleting removes the words for good.
+- **Edit your own posts.** The same append-only edits, added below the post; its title, link, text and hashtags stay as they were.
 - **Emoji reactions** on posts and replies.
 - **Feed.** The Feed button in the header counts new replies and reactions to your posts and replies, and lists them. What you've already seen is remembered in your browser only.
 - **Main page.** Pin posts, search by text, browse by hashtag with the # icon, and by date with the range switcher.

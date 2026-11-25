@@ -621,7 +621,7 @@ class Edit:
 
 
 def add_edit(conn: sqlite3.Connection, item_id: str, text: str | None, sealed: str | None = None) -> int:
-    """Appends edit #n under a reply. The reply itself never changes."""
+    """Appends edit #n under a post or reply. The item itself never changes."""
     with conn:
         n = conn.execute("SELECT COALESCE(MAX(n), 0) + 1 FROM item_edit WHERE item_id = ?", (item_id,)).fetchone()[0]
         conn.execute("INSERT INTO item_edit (item_id, n, text, sealed, created_at) VALUES (?, ?, ?, ?, ?)",
@@ -667,6 +667,8 @@ def delete_item(conn: sqlite3.Connection, item_id: str) -> None:
         for row in indexed:
             conn.execute("INSERT INTO item_fts (item_fts, rowid, title, text) VALUES ('delete', ?, ?, ?)",
                          (row["rowid"], row["title"] or "", row["text"] or ""))
+        # A post's edits sit on the post and on every reply in its thread, so they go with it.
+        conn.execute(f"DELETE FROM item_edit WHERE item_id IN (SELECT id FROM item WHERE {scope})", (scope_value,))
         conn.execute(f"DELETE FROM item WHERE {scope}", (scope_value,))
         conn.execute("DELETE FROM item_tag WHERE item_id = ?", (item_id,))
         if item.is_post:

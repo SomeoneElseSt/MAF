@@ -45,6 +45,7 @@ def item(request: Request) -> Response:
         "my_key": keys.get(page.pass_id, "") if participant else None,
         "title": markdown.plain(post.title),
         "post": post,
+        "post_mine": bool(page.pass_id) and post.pass_id == page.pass_id,
         "tree": tree,
         "label_of": label_of,
         "op_pass": op_pass,
