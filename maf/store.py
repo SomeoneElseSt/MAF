@@ -692,9 +692,62 @@ def toggle_reaction(conn: sqlite3.Connection, pass_id: str, item_id: str, emoji:
             )
             return False
         conn.execute(
-            "INSERT INTO reaction (pass_id, item_id, emoji) VALUES (?, ?, ?)", (pass_id, item_id, emoji)
+            "INSERT INTO reaction (pass_id, item_id, emoji, created_at) VALUES (?, ?, ?, ?)",
+            (pass_id, item_id, emoji, iso(utc_now())),
         )
     return True
+
+
+# -- notifications ---------------------------------------------------------
+
+NOTIFICATIONS_SHOWN = 30
+SNIPPET_LENGTH = 60
+
+
+def _snippet(row: sqlite3.Row) -> str:
+    """Your own post's title or the first words of your own reply, to say which one it's about."""
+    if row["t_title"]:
+        return row["t_title"]
+    if row["t_sealed"]:
+        return "your private reply"
+    text = " ".join((row["t_text"] or "").split())
+    return text if len(text) <= SNIPPET_LENGTH else text[:SNIPPET_LENGTH].rstrip() + "…"
+
+
+def notifications(conn: sqlite3.Connection, pass_id: str) -> list[dict]:
+    """What's new on your posts and replies, newest first: replies from others, and others' reactions
+    (grouped per post or reply, with each reaction's time so the browser can count the new ones).
+    Replies you can't see, removed or in-review replies, and your own activity never appear."""
+    replies = conn.execute(
+        "SELECT c.id, c.thread_id, c.created_at, t.parent_id IS NULL AS on_post, "
+        "t.title AS t_title, t.text AS t_text, t.sealed AS t_sealed "
+        "FROM item c JOIN item t ON t.id = c.parent_id "
+        "WHERE t.pass_id = ? AND c.pass_id != ? AND (c.private_to IS NULL OR c.private_to = ?) "
+        "AND c.removed_reason IS NULL AND NOT (c.hidden = 1 AND c.restored = 0) AND t.removed_reason IS NULL "
+        "ORDER BY c.created_at DESC LIMIT ?",
+        (pass_id, pass_id, pass_id, NOTIFICATIONS_SHOWN),
+    ).fetchall()
+    reactions = conn.execute(
+        "SELECT t.id, t.thread_id, t.parent_id IS NULL AS on_post, t.title AS t_title, t.text AS t_text, "
+        "t.sealed AS t_sealed, GROUP_CONCAT(r.created_at, ' ') AS times, GROUP_CONCAT(r.emoji, ' ') AS emoji, "
+        "MAX(r.created_at) AS latest "
+        "FROM reaction r JOIN item t ON t.id = r.item_id "
+        "WHERE t.pass_id = ? AND r.pass_id != ? AND r.created_at IS NOT NULL AND t.removed_reason IS NULL "
+        "GROUP BY t.id ORDER BY latest DESC LIMIT ?",
+        (pass_id, pass_id, NOTIFICATIONS_SHOWN),
+    ).fetchall()
+    found = [
+        {"kind": "reply", "on": "post" if r["on_post"] else "comment", "about": _snippet(r),
+         "url": f"/thread/{r['thread_id']}#{r['id']}", "at": r["created_at"], "times": [r["created_at"]]}
+        for r in replies
+    ] + [
+        {"kind": "reactions", "on": "post" if r["on_post"] else "comment", "about": _snippet(r),
+         "url": f"/thread/{r['thread_id']}" + ("" if r["on_post"] else f"#{r['id']}"), "at": r["latest"],
+         "times": r["times"].split(" "), "emoji": list(dict.fromkeys(r["emoji"].split(" ")))}
+        for r in reactions
+    ]
+    found.sort(key=lambda n: n["at"], reverse=True)
+    return found[:NOTIFICATIONS_SHOWN]
 
 
 def reaction_summary(conn: sqlite3.Connection, item_id: str, viewer_pass: str | None) -> tuple[dict[str, int], set[str]]:

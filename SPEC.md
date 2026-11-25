@@ -109,6 +109,13 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 - The score threshold doesn't tune spaCy hits: Presidio gives every spaCy PERSON the same 0.85, so the check is effectively "did spaCy label anything a person". `en_core_web_md` missed some non-English names in plain sentences, one reason the site uses `lg`.
 - The rule appears on `/submit` and `/guide`.
 
+## Feed (notifications)
+
+- **Feed** sits in the header between the search box and the Light/Dark toggle, signed-in only, with a small count tag that's always there (a muted "0" when nothing's new; the number brightens otherwise) so the header never shifts. Each page starts with the last count this browser saw, so it doesn't flash.
+- **What counts:** a reply to your post, a reply to your comment, and reactions on either, from anyone but you. Private replies count only for their recipient. Removed or in-review replies, and reactions from before reaction times were stored, never show.
+- **The list:** opens under "Feed" (300px, centred, slid left or right to stay on screen), newest first, scrolling like the # menu (faded edges and chevrons, no scrollbar). Rows: "New reply to your post/comment" or "<emoji> N reactions on your post/comment" (reactions grouped per post or comment), then "“<your title or first words>”, <time ago>". New rows get a "New" tag; opening the list counts everything as seen. Clicking a row goes to the reply (or post); a row for the page you're on reloads it in place so Back still goes where you came from.
+- **Privacy:** "seen" lives in the browser only (`maf.bell-seen`, the newest time you've seen). The server stores nothing about when you check; it only adds `reaction.created_at` (schema v5). Live updates use an in-memory ping per pass (`bell:<pass>`), like the thread banners. `/notifications` is the same list as a plain page without JavaScript; `/notifications.json` feeds the dropdown.
+
 ## Moderation
 
 No admin roles, codes or buttons. Moderation is community flags plus the maintainer using the `maf` CLI over SSH.

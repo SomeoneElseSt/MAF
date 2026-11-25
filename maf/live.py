@@ -10,6 +10,11 @@ from collections import defaultdict
 
 # The front page listens here; thread ids are three words, so they never collide with it.
 HOME = "home"
+
+
+def bell(pass_id: str) -> str:
+    """Each signed-in page's notification bell listens on its own pass (in memory only)."""
+    return f"bell:{pass_id}"
 KEEPALIVE_SECONDS = 25  # a comment line this often keeps proxies from closing an idle stream
 RETRY_MILLISECONDS = 3000  # how soon browsers reconnect, e.g. after a release restarts the server
 

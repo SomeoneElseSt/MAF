@@ -22,6 +22,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% if title %}{{ title }} · MAF{% else %}MAF{% endif %}</title>
 <link rel="stylesheet" href="{{ static('style.css') }}">
+<link rel="icon" type="image/png" sizes="32x32" href="{{ static('icon-32.png') }}">
+<link rel="apple-touch-icon" href="{{ static('icon-180.png') }}">
 <script src="{{ static('theme-init.js') }}"></script>
 </head>
 <body class="{{ body_class|default('') }}"{% if reply_placeholder is defined and reply_placeholder %} data-reply-placeholder="{{ reply_placeholder|e }}"{% endif %}>
@@ -44,6 +46,13 @@
       <div class="tag-menu" hidden></div>
     </form>
     {% endif %}
+    {% if viewer %}
+    {# Replies and reactions to your posts and replies. Without JS the bell is a link to the same list. #}
+    <div class="bell-wrap">
+      <a class="bell" href="/notifications" aria-label="Feed: replies and reactions" aria-expanded="false" aria-controls="bell-menu">Feed<span class="bell-count">0</span></a>
+      <div class="tag-menu bell-menu" id="bell-menu" hidden></div>
+    </div>
+    {% endif %}
     <button class="theme-toggle" type="button">Dark</button>
   </header>
   <main id="main">
@@ -60,6 +69,7 @@
 <script src="{{ static('grow.js') }}"></script>
 {% if tags %}<script type="application/json" id="tag-data">{{ tags|tojson }}</script>{% endif %}
 <script src="{{ static('tags.js') }}"></script>
+{% if viewer %}<script src="{{ static('bell.js') }}"></script>{% endif %}
 {% block scripts %}{% endblock %}
 </body>
 </html>

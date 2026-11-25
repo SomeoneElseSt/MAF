@@ -1,12 +1,12 @@
 """Reading a thread: /thread/<id>, its view count and the comment tree."""
 
 from starlette.requests import Request
-from starlette.responses import Response, StreamingResponse
+from starlette.responses import JSONResponse, Response, StreamingResponse
 from starlette.routing import Route
 
 from . import live, store
 from .housetags import etiquette, is_hot, reply_placeholder
-from .web import error_page, page_of, render
+from .web import error_page, page_of, redirect, render
 
 
 def item(request: Request) -> Response:
@@ -95,4 +95,35 @@ async def home_events(request: Request) -> Response:
     return _event_stream(page, live.HOME)
 
 
-routes = [Route("/thread/{id}", item), Route("/thread/{id}/events", events), Route("/events", home_events)]
+def notifications_json(request: Request) -> Response:
+    """The bell's list. Which ones are unread is decided in the browser, so the server keeps no "last seen"."""
+    page = page_of(request)
+    if page.pass_id is None:
+        return Response(status_code=401)
+    return JSONResponse({"items": store.notifications(page.conn, page.pass_id)}, headers={"Cache-Control": "no-store"})
+
+
+def notifications_page(request: Request) -> Response:
+    """The same list as a plain page, for the bell without JavaScript."""
+    page = page_of(request)
+    if page.pass_id is None:
+        return redirect("/sign-in")
+    return render(page, "notifications.html", title="Feed", items=store.notifications(page.conn, page.pass_id))
+
+
+async def bell_events(request: Request) -> Response:
+    """Pings your bell when someone replies to you or reacts to something of yours."""
+    page = page_of(request)
+    if page.pass_id is None:
+        return Response(status_code=404)
+    return _event_stream(page, live.bell(page.pass_id))
+
+
+routes = [
+    Route("/thread/{id}", item),
+    Route("/thread/{id}/events", events),
+    Route("/events", home_events),
+    Route("/notifications", notifications_page),
+    Route("/notifications.json", notifications_json),
+    Route("/notifications/events", bell_events),
+]

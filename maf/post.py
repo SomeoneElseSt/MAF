@@ -106,6 +106,7 @@ async def comment(request: Request) -> Response:
         return redirect(f"/thread/{parent.thread_id}?notice=You're+replying+fast.+Wait+a+minute.")
     reply = store.create_comment(page.conn, page.pass_id, parent, values["text"], None)
     page.app.live.publish(parent.thread_id)
+    _ring(page, parent.pass_id)
     return redirect(f"/thread/{parent.thread_id}#{reply.id}")  # land on the new reply, not the top
 
 
@@ -128,7 +129,15 @@ def _private_comment(page, parent: store.Item, private_to: str, raw_sealed: str)
         store.set_thread_key(page.conn, page.pass_id, parent.thread_id, sealed["from"])
     reply = store.create_comment(page.conn, page.pass_id, parent, None, private_to, sealed=json.dumps(sealed))
     page.app.live.publish(parent.thread_id)
+    if parent.pass_id == private_to:
+        _ring(page, private_to)
     return redirect(f"{thread}#{reply.id}")
+
+
+def _ring(page, owner: str) -> None:
+    """Tells the owner's bell something new arrived (nothing is stored; their page re-checks)."""
+    if owner != page.pass_id:
+        page.app.live.publish(live.bell(owner))
 
 
 def _own_reply(page, item: store.Item | None) -> bool:

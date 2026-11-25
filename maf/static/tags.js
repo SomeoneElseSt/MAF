@@ -23,11 +23,12 @@ function scrollArrow(direction, scroller) {
   return arrow;
 }
 
-function updateTagFade() {
-  const scroller = tagMenu.querySelector(".tag-scroll");
+// Shared with the Feed list (bell.js), which scrolls the same way.
+function updateTagFade(menu = tagMenu) {
+  const scroller = menu.querySelector(".tag-scroll");
   if (!scroller) return;
-  tagMenu.classList.toggle("more-above", scroller.scrollTop > 2);
-  tagMenu.classList.toggle("more-below", scroller.scrollTop + scroller.clientHeight < scroller.scrollHeight - 2);
+  menu.classList.toggle("more-above", scroller.scrollTop > 2);
+  menu.classList.toggle("more-below", scroller.scrollTop + scroller.clientHeight < scroller.scrollHeight - 2);
 }
 
 function renderTagMenu() {

@@ -1,0 +1,22 @@
+{#
+  notifications.html: the bell's list as a plain page (what the bell opens without JavaScript).
+
+  Context:
+    items   [{kind, on, about, url, at, times, emoji?}, ...] from store.notifications, newest first
+#}
+{% extends "base.html" %}
+{% block main %}
+<h1 class="heading">Feed</h1>
+{% if items %}
+<ol class="list list-flat notifications">
+  {% for n in items %}
+  <li>
+    <a class="title" href="{{ n.url }}">{% if n.kind == "reply" %}New reply to your {{ n.on }}{% else %}{{ n.emoji|join(" ") }} {{ n.times|length }} reaction{{ "" if n.times|length == 1 else "s" }} on your {{ n.on }}{% endif %}</a>
+    <div class="meta">“{{ n.about }}”, {{ n.at|rel }}</div>
+  </li>
+  {% endfor %}
+</ol>
+{% else %}
+<p class="empty">Replies and reactions to your posts and comments show up here.</p>
+{% endif %}
+{% endblock %}

@@ -470,3 +470,29 @@ button.note:disabled { cursor: default; }
 /* A button that can't be used right now (e.g. at the token limit) is greyed out. */
 .button:disabled { color: var(--meta); cursor: default; }
 .button:disabled:hover { border-color: transparent; }
+
+/* Notifications, left of the theme toggle: "Feed" and a small count tag (muted at 0, bright when something's new),
+   and a dropdown like the # menu. */
+.bell-wrap { position: relative; display: flex; }
+.bell { position: relative; font: 16px var(--sans); color: var(--soft); }
+.bell:hover, .bell[aria-expanded="true"] { color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+/* Always there and always the same width (room for two digits), so the header never shifts as the count changes. */
+.bell-count {
+  display: inline-block; min-width: 2.4em; margin-left: 6px; padding: 1px 4px; box-sizing: border-box; text-align: center;
+  font: 600 13px var(--sans); color: var(--meta); background: var(--tint); border-radius: 3px;
+}
+.bell.has-new .bell-count { color: var(--ink); } /* only the number lights up; "Feed" stays as it is */
+.bell-menu {
+  position: absolute; top: calc(100% + 12px); left: 50%; right: auto; transform: translateX(-50%); z-index: 20;
+  width: min(300px, calc(100vw - 32px));
+  background: var(--paper); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+.bell-menu[hidden] { display: none; }
+.bell-item { display: block; padding: 12px 20px; color: var(--ink); }
+.bell-item:hover { background: var(--tint); text-decoration: none; }
+.bell-what { display: block; font: 15px var(--sans); }
+.bell-what .new-tag { margin-left: 8px; }
+.bell-meta { display: block; font: 13px var(--sans); color: var(--meta); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bell-menu .tag-scroll { max-height: 440px; padding: 8px 0; }
+.bell-empty { margin: 0; padding: 14px 20px; font: 14px/1.5 var(--sans); color: var(--meta); }
+/* bell.js slides the list left (or right) when centring it would go past the window edge. */

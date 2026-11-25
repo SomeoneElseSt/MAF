@@ -4,7 +4,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.routing import Route
 
-from . import store
+from . import live, store
 from .emoji import PICKER_EMOJI
 from .web import form_values, gone, page_of, redirect
 
@@ -23,8 +23,10 @@ async def react(request: Request) -> Response:
         return redirect(f"/thread/{item.id}")
     if not page.memory.allow(f"react:{page.pass_id}", REACTIONS_PER_MINUTE):
         return redirect(f"/thread/{item.id}?notice=Slow+down+a+little.+Try+again+in+a+minute.")
-    store.toggle_reaction(page.conn, page.pass_id, item.id, values["emoji"])
+    added = store.toggle_reaction(page.conn, page.pass_id, item.id, values["emoji"])
     page.app.live.publish(item.thread_id)
+    if added and item.pass_id != page.pass_id:
+        page.app.live.publish(live.bell(item.pass_id))
     return redirect(f"/thread/{item.thread_id}#{item.id}")
 
 

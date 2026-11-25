@@ -7,7 +7,7 @@ so it can be extended later without a migration framework.
 import sqlite3
 from pathlib import Path
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS pass (
@@ -121,8 +121,14 @@ CREATE TABLE IF NOT EXISTS item_edit (
 );
 """
 
+# When each reaction was added, so the notification bell can tell new ones from old.
+# Reactions from before this have no time and never show as new.
+REACTION_TIMES = """
+ALTER TABLE reaction ADD COLUMN created_at TEXT;
+"""
+
 # Step n upgrades a file at version n - 1 to version n.
-MIGRATIONS = {1: SCHEMA, 2: SEALED_REPLIES, 3: REMOVED_REASON, 4: REPLY_EDITS}
+MIGRATIONS = {1: SCHEMA, 2: SEALED_REPLIES, 3: REMOVED_REASON, 4: REPLY_EDITS, 5: REACTION_TIMES}
 
 
 def connect(path: Path | str) -> sqlite3.Connection:
