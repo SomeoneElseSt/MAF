@@ -7,15 +7,14 @@ function cardFor(button) {
 }
 
 function placeCard(button) {
+  // The card sits in a positioned parent right after its button: place it against that, in local
+  // coordinates, and keep it inside the content column so it never widens the page.
   const box = button.getBoundingClientRect();
   const cardWidth = infoCard.offsetWidth;
-  // Keep the card inside the content column so it never sticks out past the page margins.
   const column = document.querySelector(".page").getBoundingClientRect();
-  const columnLeft = column.left + window.scrollX + 20;
-  const columnRight = column.right + window.scrollX - 20;
-  const left = Math.min(box.left + window.scrollX - 12, columnRight - cardWidth);
-  infoCard.style.left = `${Math.max(columnLeft, left)}px`;
-  infoCard.style.top = `${box.bottom + window.scrollY + 8}px`;
+  const left = Math.min(box.left - 12, column.right - 20 - cardWidth);
+  infoCard.style.left = `${Math.max(column.left + 20 - box.left, left - box.left)}px`;
+  infoCard.style.top = `${button.offsetHeight + 8}px`;
 }
 
 function closeCard() {

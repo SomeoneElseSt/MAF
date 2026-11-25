@@ -321,7 +321,8 @@ span.arrow { color: var(--line); cursor: default; }
 /* Private replies: laid out like any comment; the details line says who can see it, with an (i) explaining more. */
 .private-note { color: var(--meta); }
 .comment p.hidden-comment { font: 15px/1.5 var(--sans); color: var(--meta); margin: 2px 0 10px; }
-.private-toggle { display: inline-flex; align-items: center; gap: 4px; font: inherit; color: inherit; vertical-align: -2px; }
+/* Positioned, so the (i) card inside it is placed against this, not the whole page. */
+.private-toggle { position: relative; display: inline-flex; align-items: center; gap: 4px; font: inherit; color: inherit; vertical-align: -2px; }
 .private-toggle[hidden] { display: none; }
 .sealed-note { font: 15px/1.5 var(--sans); color: var(--meta); }
 /* Landing on a reply (after posting, editing or flagging) leaves a little room above it. */
