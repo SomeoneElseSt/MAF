@@ -7,7 +7,7 @@ so it can be extended later without a migration framework.
 import sqlite3
 from pathlib import Path
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS pass (
@@ -102,8 +102,14 @@ CREATE TABLE IF NOT EXISTS thread_key (
 );
 """
 
+# The maintainer can remove a comment's words and leave a reason in their place
+# ("Removed because it named someone."). The text itself is deleted, not kept.
+REMOVED_REASON = """
+ALTER TABLE item ADD COLUMN removed_reason TEXT;
+"""
+
 # Step n upgrades a file at version n - 1 to version n.
-MIGRATIONS = {1: SCHEMA, 2: SEALED_REPLIES}
+MIGRATIONS = {1: SCHEMA, 2: SEALED_REPLIES, 3: REMOVED_REASON}
 
 
 def connect(path: Path | str) -> sqlite3.Connection:

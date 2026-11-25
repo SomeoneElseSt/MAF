@@ -120,8 +120,15 @@
     const response = await fetch(window.location.pathname, { headers: { accept: "text/html" } });
     if (!response.ok) return;
     const fresh = new DOMParser().parseFromString(await response.text(), "text/html");
+    // If you just reacted, wait until your chips are updated, so your own reaction isn't counted as new.
+    await window.mafReactionSent;
     latest = { replies: newReplies(fresh), reactions: newReactions(fresh) };
-    if (latest.replies.length || latest.reactions.length) showBanner(latest.replies.length, latest.reactions.length);
+    if (!latest.replies.length && !latest.reactions.length) {
+      banner?.remove();
+      banner = null;
+      return;
+    }
+    showBanner(latest.replies.length, latest.reactions.length);
   }
 
   const source = new EventSource(`/thread/${root.dataset.thread}/events`);

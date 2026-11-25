@@ -415,6 +415,8 @@ main { display: block; }
 /* Request unhide / Request deletion are form buttons here; they look like the mockup's links. */
 .notice .actions button { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 .faded .post-reactions { margin-top: 6px; }
+/* A title-only post: no text above the reactions to absorb their pull-up, so give them the same 10px gap a post with text gets. */
+.post-head .meta + .post-reactions { margin-top: 10px; }
 /* Signed out there's no search box, so the theme toggle keeps its place on the right. */
 .top nav + .theme-toggle { margin-left: auto; }
 /* Grey notice boxes: even padding (no trailing paragraph margin) and room before whatever follows. */

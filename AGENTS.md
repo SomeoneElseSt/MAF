@@ -6,7 +6,7 @@ MAF is an anonymous forum. Nobody building or maintaining it, human or agent, re
 
 - **Never read, print, query, copy, summarise or screenshot anything students wrote on the live site**: post titles, post text, links, replies, private replies (even encrypted ones), or hashtags tied to specific posts. This covers the production database (`/var/lib/maf/maf.db`), its backups and EBS snapshots, copies of it, and anything else that holds it.
 - **Avoid it, don't just skip it.** When a task touches production data, ask only for what the task needs and never select content columns (`title`, `text`, `url`, `sealed`). Counts and ids are fine, for example `SELECT COUNT(*) FROM item`.
-- **Don't run the moderation commands that print content** (`maf show`, `maf requests`, `maf hidden`). Moderation is the maintainer's job. `maf pin`, `maf unpin`, `maf unhide`, `maf dismiss` and `maf nuke` take an id the maintainer gives you and are fine to run when asked.
+- **Don't run the moderation commands that print content** (`maf show`, `maf requests`, `maf hidden`). Moderation is the maintainer's job. `maf pin`, `maf unpin`, `maf unhide`, `maf dismiss`, `maf remove` and `maf nuke` take an id the maintainer gives you and are fine to run when asked.
 - **Don't browse the live site as a signed-in user** to look at threads.
 - **Debug with the local test server and its sample data instead.** It behaves like production. See the local development notes.
 - **If a task seems to need what students wrote, stop and ask the maintainer.** Don't work around this rule.

@@ -98,6 +98,7 @@ class Item:
     pinned: int = 0
     private_to: str | None = None
     sealed: str | None = None
+    removed_reason: str | None = None
     tags: list[str] = field(default_factory=list)
     comment_count: int = 0
     thread_title: str | None = None
@@ -138,6 +139,7 @@ def _row_to_item(row: sqlite3.Row, tags: list[str] | None = None) -> Item:
         pinned=row["pinned"],
         private_to=row["private_to"],
         sealed=row["sealed"],
+        removed_reason=row["removed_reason"],
         tags=tags or [],
     )
 
@@ -560,6 +562,31 @@ def unhide(conn: sqlite3.Connection, item_id: str) -> bool:
         cur = conn.execute("UPDATE item SET hidden = 0, restored = 1 WHERE id = ?", (item_id,))
         conn.execute("DELETE FROM moderation_request WHERE item_id = ?", (item_id,))
     return cur.rowcount > 0
+
+
+def remove_comment(conn: sqlite3.Connection, item_id: str, reason: str) -> bool:
+    """Deletes a comment's words for good and shows `reason` in their place. Replies under it stay.
+
+    The words leave the search index too, and secure_delete plus a checkpoint overwrite the freed
+    pages, so the text isn't left behind in the database file. Older backups still have it.
+    """
+    item = get_item(conn, item_id)
+    if item is None or item.is_post:
+        return False
+    indexed = conn.execute(
+        "SELECT rowid, title, text FROM item WHERE id = ? AND rowid IN (SELECT rowid FROM item_fts)", (item_id,)
+    ).fetchone()
+    conn.execute("PRAGMA secure_delete = ON")
+    with conn:
+        if indexed:
+            conn.execute("INSERT INTO item_fts (item_fts, rowid, title, text) VALUES ('delete', ?, ?, ?)",
+                         (indexed["rowid"], indexed["title"] or "", indexed["text"] or ""))
+        conn.execute("UPDATE item SET text = NULL, sealed = NULL, removed_reason = ? WHERE id = ?", (reason, item_id))
+        conn.execute("DELETE FROM reaction WHERE item_id = ?", (item_id,))
+        conn.execute("DELETE FROM moderation_request WHERE item_id = ?", (item_id,))
+    conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+    conn.execute("PRAGMA secure_delete = OFF")
+    return True
 
 
 def dismiss_requests(conn: sqlite3.Connection, item_id: str) -> bool:

@@ -30,6 +30,9 @@ def _table(rows: list[list[str]], headers: list[str]) -> str:
     return "\n".join(out)
 
 
+DEFAULT_REMOVE_REASON = "Removed because it named someone."
+
+
 def _missing(item_id: str) -> int:
     print(f"No item {item_id}")
     return 1
@@ -104,6 +107,22 @@ def cmd_nuke(conn: sqlite3.Connection, args) -> int:
     return 0
 
 
+def cmd_remove(conn: sqlite3.Connection, args) -> int:
+    """Doesn't print the comment: whoever runs it never needs to read it."""
+    item = store.get_item(conn, args.id)
+    if item is None or item.is_post:
+        print(f"No comment {args.id} (posts can only be nuked)")
+        return 1
+    if not args.yes:
+        answer = input(f'Delete the words of comment {args.id} for good and show "{args.reason}"? [y/N] ')
+        if answer.strip().lower() != "y":
+            print("Cancelled.")
+            return 0
+    store.remove_comment(conn, args.id, args.reason)
+    print(f'Removed comment {args.id}. It now reads: "{args.reason}"')
+    return 0
+
+
 def cmd_pin(conn: sqlite3.Connection, args, pinned: bool) -> int:
     item = store.get_item(conn, args.id)
     if item is None or not item.is_post:
@@ -128,6 +147,11 @@ def build_parser() -> argparse.ArgumentParser:
     nuke = sub.add_parser("nuke", help="delete an item and its replies after confirmation")
     nuke.add_argument("id")
     nuke.set_defaults(func=cmd_nuke)
+    remove = sub.add_parser("remove", help="delete a comment's words and show a reason instead; replies stay")
+    remove.add_argument("id")
+    remove.add_argument("--reason", default=DEFAULT_REMOVE_REASON, help=f'default: "{DEFAULT_REMOVE_REASON}"')
+    remove.add_argument("--yes", action="store_true", help="skip the confirmation")
+    remove.set_defaults(func=cmd_remove)
     dismiss = sub.add_parser("dismiss", help="clear an item's requests")
     dismiss.add_argument("id")
     dismiss.set_defaults(func=cmd_dismiss)

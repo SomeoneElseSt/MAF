@@ -122,6 +122,7 @@ def _tree(nodes, thread_id: str, labels, op_pass: str) -> list[dict]:
         out.append({
             "id": item.id,
             "text": item.text,
+            "removed": item.removed_reason,
             "created_at": item.created_at,
             "author_id": labels.label(item.pass_id, thread_id),
             "op": item.pass_id == op_pass,

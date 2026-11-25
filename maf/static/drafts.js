@@ -67,6 +67,18 @@
       openReplyBox(form);
     }
 
+    // Coming back with Back or Forward, the browser refills boxes with whatever they held when you
+    // left, even text that was sent. A box with no saved draft has nothing unsent, so empty it.
+    window.addEventListener("pageshow", event => {
+      const returning = event.persisted || performance.getEntriesByType("navigation")[0]?.type === "back_forward";
+      if (!returning || read(localStorage, STORAGE_KEY, {})[key]) return;
+      fields.forEach(field => {
+        if (!field.value) return;
+        field.value = "";
+        field.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+    });
+
     form.addEventListener("input", () => {
       const values = Object.fromEntries(fields.map((field, i) => [names[i], field.value]));
       const empty = Object.values(values).every(value => !value.trim());

@@ -264,3 +264,38 @@ def test_flags_hiding_a_post_send_no_email(client, app, pass_id, capsys):
     for _ in range(5):
         sign_in_as(client, app, store.create_pass(app.conn)).post("/flag", data={"item_id": post.id})
     assert "[email to" not in capsys.readouterr().out
+
+
+# -- remove with a reason ------------------------------------------------
+
+
+def test_cli_remove_deletes_the_words_and_shows_the_reason(monkeypatch, settings, app, pass_id, signed_in, capsys):
+    post = make_post(app, pass_id)
+    comment = store.create_comment(app.conn, pass_id, post, "Zorblax wrote this badly", None)
+    reply = store.create_comment(app.conn, pass_id, comment, "a reply underneath", None)
+    store.toggle_reaction(app.conn, pass_id, comment.id, "👍")
+    code, out = run_cli(monkeypatch, settings, capsys, "remove", comment.id, stdin="y\n")
+    assert code == 0
+    assert "Zorblax" not in out  # the command never prints what was written
+    removed = store.get_item(app.conn, comment.id)
+    assert removed.text is None and removed.removed_reason == "Removed because it named someone."
+    assert store.search(app.conn, "Zorblax") == []
+    page = signed_in.get(f"/thread/{post.id}").text
+    assert "Removed because it named someone." in page and "Zorblax" not in page
+    assert "a reply underneath" in page and store.get_item(app.conn, reply.id) is not None
+    assert app.conn.execute("SELECT COUNT(*) AS n FROM reaction WHERE item_id = ?", (comment.id,)).fetchone()["n"] == 0
+
+
+def test_cli_remove_takes_a_custom_reason_and_cancels_by_default(monkeypatch, settings, app, pass_id, capsys):
+    post = make_post(app, pass_id)
+    comment = store.create_comment(app.conn, pass_id, post, "words", None)
+    run_cli(monkeypatch, settings, capsys, "remove", comment.id, stdin="\n")
+    assert store.get_item(app.conn, comment.id).text == "words"
+    run_cli(monkeypatch, settings, capsys, "remove", comment.id, "--reason", "Removed: spam.", "--yes")
+    assert store.get_item(app.conn, comment.id).removed_reason == "Removed: spam."
+
+
+def test_cli_remove_refuses_posts(monkeypatch, settings, app, pass_id, capsys):
+    post = make_post(app, pass_id)
+    code, out = run_cli(monkeypatch, settings, capsys, "remove", post.id, "--yes")
+    assert code != 0 and "posts can only be nuked" in out

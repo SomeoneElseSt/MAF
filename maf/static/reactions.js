@@ -11,7 +11,13 @@
   // Reacting updates the chips in place, without a reload or a new history entry, so Back still
   // goes to the page you came from. If anything is off (signed out, slowed down), it falls back to
   // loading the result page in place of this one.
-  async function submit(box, emoji) {
+  // live.js waits for this before looking for new reactions, so your own never count as new.
+  function submit(box, emoji) {
+    window.mafReactionSent = send(box, emoji);
+    return window.mafReactionSent;
+  }
+
+  async function send(box, emoji) {
     const body = new FormData();
     body.set("item_id", box.dataset.item);
     body.set("emoji", emoji);

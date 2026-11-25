@@ -53,7 +53,10 @@
 {% macro comment(node, depth) %}
 {% set entry = node.item %}
 <li class="comment{% if entry.private_to %} private{% endif %}" id="{{ entry.id }}">
-  {% if entry.unlisted %}
+  {% if entry.removed_reason %}
+  {# The maintainer removed the words (maf remove); the reason shows instead. Replies under it stay. #}
+  <p class="hidden-comment">{{ entry.removed_reason }}</p>
+  {% elif entry.unlisted %}
   {# Five flags hide a comment for everyone; replies under it stay. #}
   <p class="hidden-comment">Original reply is in review after 5 flags.</p>
   {% else %}

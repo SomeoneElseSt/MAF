@@ -173,6 +173,7 @@ The community hides posts by flagging them. Anyone can then ask the maintainer t
 | Request deletion | Anyone, once per hidden post | Emails the maintainer right away |
 | Unhide | Maintainer, via `maf unhide` | Visible again, and flags can never hide it again |
 | Nuke | Maintainer, via `maf nuke` | Deleted from the database; the link stops working |
+| Remove with a reason | Maintainer, via `maf remove` | A comment's words are deleted and a reason ("Removed because it named someone.") shows in their place; replies stay |
 
 - **Hidden posts stay reachable by their direct link.** The post is faded and shows a banner, "Five people flagged this post, so it's been unlisted. You can still read it here and ask for it to come back or be removed permanently.", with two buttons: **Request unhide** and **Request deletion**.
 - **Requests are anonymous.** Only the post ID and a count are saved, with no record of who asked.
@@ -186,6 +187,7 @@ The community hides posts by flagging them. Anyone can then ask the maintainer t
   | `maf show <id>` | Prints a post with its flag and request counts |
   | `maf unhide <id>` | Makes it visible again; flags can never hide it again |
   | `maf nuke <id>` | Deletes the post and its comments, after a yes/no confirmation |
+  | `maf remove <id>` | Deletes a comment's words and shows a reason instead (default "Removed because it named someone."); `--reason` for another |
   | `maf dismiss <id>` | Clears its requests without changing anything |
   | `maf pin <id>` / `maf unpin <id>` | Pins a post above Today under Newest, or unpins it |
 - **No admins:** there are no admin codes, roles or buttons, so nothing about moderation can be linked to anyone.
