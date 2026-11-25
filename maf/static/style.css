@@ -111,7 +111,8 @@ a:hover { text-decoration: underline; text-decoration-thickness: 1px; text-under
 .list { list-style: none; margin: 0; padding: 0; }
 .list li { padding: 8px 0; }
 .title { font-size: 20px; line-height: 1.35; }
-.host { font: 15px var(--sans); color: var(--meta); margin-left: 6px; }
+/* The host rides beside the title's baseline: nudged down so it doesn't sit on the title's line. */
+.host { font: 15px var(--sans); color: var(--meta); margin-left: 6px; display: inline-block; position: relative; top: 2px; }
 .host:hover { color: var(--ink); }
 .meta { font: 15px/1.5 var(--sans); color: var(--meta); margin-top: 2px; }
 .meta a { color: var(--meta); }
