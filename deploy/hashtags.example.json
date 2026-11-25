@@ -1,0 +1,70 @@
+{
+  "tags": {
+    "hottakes": {
+      "submit_template": [
+        "- My take in one sentence",
+        "- Why I think this, with one experience or piece of evidence",
+        "- The strongest argument against my take, as I understand it",
+        "- What could change my mind, and whether I want debate, advice, or just listening"
+      ],
+      "reply_placeholder": [
+        "- Which part of the take you're responding to",
+        "- Your reason, or an experience that backs it up",
+        "- What would change your mind"
+      ],
+      "etiquette": "argue with the take, not the person. Push back as hard as you like, assume the poster means it in good faith, and say what would change your mind.",
+      "highlight": true
+    },
+    "help": {
+      "submit_template": [
+        "- What I need help with",
+        "- What I've already tried",
+        "- My situation: city, deadline, anything that narrows it down",
+        "- What kind of answer would help most"
+      ],
+      "reply_placeholder": [
+        "- What worked for you, or who to ask",
+        "- How sure I am and how recent my experience is"
+      ],
+      "etiquette": null,
+      "highlight": false
+    },
+    "wondering": {
+      "submit_template": [
+        "- My question",
+        "- Why I'm curious",
+        "- My best guess so far"
+      ],
+      "reply_placeholder": [
+        "- My answer or a guess",
+        "- What it's based on"
+      ],
+      "etiquette": null,
+      "highlight": false
+    },
+    "confession": {
+      "submit_template": [
+        "- What happened, or what I'm feeling",
+        "- How I feel about it now",
+        "- What I'd like back: to be heard, advice, or company",
+        "- Leave out details that could identify me or anyone else."
+      ],
+      "reply_placeholder": [
+        "- Respond to the person, not the verdict",
+        "- Share something similar if I have it"
+      ],
+      "etiquette": "respond to the person, not the verdict. Be kind, and don't guess who wrote it or who it's about.",
+      "highlight": false
+    }
+  },
+  "suggested_first": [
+    "hottakes",
+    "confession"
+  ],
+  "default_template": [
+    "- What it's about",
+    "- Your claim or question",
+    "- What kind of conversation you'd like: debate, advice, or just sharing"
+  ],
+  "example_post": "Every rotation I spend the first few weeks feeling lost. Curious which routines, apps or places made the move easier for you."
+}

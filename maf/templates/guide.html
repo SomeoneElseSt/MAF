@@ -10,18 +10,18 @@
   <p>You get a random name in each thread to avoid traceability across posts. Your email is never stored and only used for verification using <a href="https://en.wikipedia.org/wiki/Blind_signature">blind signatures</a>.</p>
 
   <h2>Rules</h2>
-  <p>Don't name students or staff. Be respectful. Five flags on a post hide it. A hidden post can be restored or deleted permanently on a case-by-case basis.</p>
+  <p>{% if org.naming_rule %}Don't name students or staff. {% endif %}Be respectful. Five flags on a post hide it. A hidden post can be restored or deleted permanently on a case-by-case basis.</p>
 
   <h2>Making a post</h2>
   <p>Click Submit and add a title plus a link or some text; hashtags are optional. You can edit a post's text afterwards (its title, link and hashtags stay as they were), and the same goes for your replies. Anything you're halfway through writing is kept in your browser (never sent anywhere) until it posts, so a reload or an outage doesn't lose it.</p>
 
   <h2>Private replies</h2>
-  <p>Tick "Make only visible to …" under a comment box to reply to just that person. Your browser encrypts the reply before sending it, so MAF's server only stores scrambled text it can't read. Private replies only appear on the device you were signed in on when you made them, and they need JavaScript.</p>
-  <p>One limit: MAF's server also sends the page's code, so someone in control of the server could change that code to copy replies before they're encrypted. Encryption protects against anyone reading the stored database or its backups.</p>
+  <p>Tick "Make only visible to …" under a comment box to reply to just that person. Your browser encrypts the reply before sending it, so {{ org.site_name }}'s server only stores scrambled text it can't read. Private replies only appear on the device you were signed in on when you made them, and they need JavaScript.</p>
+  <p>One limit: {{ org.site_name }}'s server also sends the page's code, so someone in control of the server could change that code to copy replies before they're encrypted. Encryption protects against anyone reading the stored database or its backups.</p>
 
   <h2>Hashtags</h2>
   <p>#help, #wondering, #confession and #hottakes suggest a template for your post and its replies. #hottakes posts are highlighted in orange on the main page.</p>
 
-  <p class="small">Developers may choose to read MAF <a href="/guide/use-this-data">programmatically</a>.</p>
+  <p class="small">Developers may choose to read {{ org.site_name }} <a href="/guide/use-this-data">programmatically</a>.</p>
 </div>
 {% endblock %}

@@ -9,14 +9,14 @@
 {% extends "base.html" %}
 {% block main %}
 <h1 class="heading">Sign in</h1>
-<p class="lede">MAF is for {{ org.community }}. Enter your university email and we'll send you a code. Your email is only used for login and is never stored.</p>
+<p class="lede">{{ org.site_name }} is for {{ org.community }}. Enter your {{ org.email_kind }} email and we'll send you a code. Your email is only used for login and is never stored.</p>
 
 
 {% if error and not cooldown_seconds %}<div class="notice" id="login-error" role="alert"><p>{{ error }}</p></div>{% endif %}
 
 <form action="/sign-in" method="post" novalidate>
   <div class="field">
-    <label for="email">University email</label>
+    <label for="email">{{ org.email_kind|capitalize }} email</label>
     <input id="email" name="email" type="email" placeholder="you@{{ org.email_domain }}" autocomplete="email" value="{{ email|default('') }}"{% if error and not cooldown_seconds %} aria-describedby="login-error"{% endif %}>
   </div>
   {% if cooldown_seconds %}

@@ -138,6 +138,12 @@ MAF_CONTACT_EMAIL=hello@maforum.net
 MAF_COMMUNITY="Minerva University students"
 MAF_FORUM_NAME="Minerva Anonymous Forum"
 MAF_ORG_TAG=minerva
+MAF_SITE_NAME=MAF
+MAF_EMAIL_KIND=university
+MAF_NAMING_RULE=true
+MAF_SOURCE_URL=https://github.com/SomeoneElseSt/MAF
+# Your own hashtags with templates: copy deploy/hashtags.example.json, edit it, and point to it here.
+# MAF_HASHTAGS_FILE=/etc/maf/hashtags.json
 ENV
   chown root:"$SERVICE_USER" "$tmp"
   chmod 640 "$tmp"

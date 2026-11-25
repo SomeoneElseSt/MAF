@@ -439,3 +439,58 @@ def test_another_organization_sets_its_own_domain_and_wording(settings, tmp_path
     # A Minerva address is now refused.
     refused = client.post("/sign-in", data={"email": "jane@uni.minerva.edu"})
     assert refused.status_code == 400 and "Please enter a valid email." in refused.text
+
+
+def test_site_name_email_word_and_naming_rule_are_settings(settings):
+    from dataclasses import replace
+
+    from starlette.testclient import TestClient
+
+    from maf.main import create_app
+    from maf.settings import load_settings
+
+    loaded = load_settings({"MAF_SITE_NAME": "ExForum", "MAF_EMAIL_KIND": "Work", "MAF_NAMING_RULE": "false"})
+    assert (loaded.site_name, loaded.email_kind, loaded.naming_rule) == ("ExForum", "work", False)
+    client = TestClient(create_app(replace(settings, site_name="ExForum", email_kind="work", naming_rule=False,
+                                                source_url="https://example.org/exforum")))
+    page = client.get("/sign-in").text
+    assert "<title>ExForum</title>" in page and ">ExForum</a>" in page
+    assert "Enter your work email" in page and ">Work email</label>" in page and "MAF" not in page.split("</head>")[1]
+    assert 'href="https://example.org/exforum"' in page
+
+
+def test_hashtags_come_from_a_json_file(tmp_path, settings, signed_in):
+    import json
+    from dataclasses import replace
+
+    from maf import housetags
+    from maf.main import create_app
+
+    saved = (dict(housetags.HOUSE_TAGS), list(housetags.SUGGESTED_FIRST), housetags.DEFAULT_SUBMIT_TEMPLATE, housetags.EXAMPLE_POST)
+    path = tmp_path / "hashtags.json"
+    path.write_text(json.dumps({"tags": {"#Standup": {"submit_template": ["- What I did"], "highlight": True}},
+                                "suggested_first": ["standup"], "example_post": "What's on your mind?"}))
+    try:
+        create_app(replace(settings, hashtags_file=path))
+        assert list(housetags.HOUSE_TAGS) == ["standup"] and housetags.is_hot(["standup"])
+        assert housetags.suggested_tags("acme")[:2] == ["standup", "acme"]
+        assert housetags.submit_placeholder([]) == "What's on your mind?"
+        path.write_text('{"tags": {"bad": {}}}')
+        import pytest
+        with pytest.raises(housetags.HashtagsFileError):
+            housetags.load_file(path)
+    finally:
+        housetags.HOUSE_TAGS.clear()
+        housetags.HOUSE_TAGS.update(saved[0])
+        housetags.SUGGESTED_FIRST[:] = saved[1]
+        housetags.DEFAULT_SUBMIT_TEMPLATE, housetags.EXAMPLE_POST = saved[2], saved[3]
+
+
+def test_the_example_hashtags_file_matches_the_built_in_ones():
+    import json
+    from pathlib import Path
+
+    from maf import housetags
+
+    example = json.loads((Path(__file__).parent.parent / "deploy" / "hashtags.example.json").read_text())
+    assert example["tags"] == housetags.HOUSE_TAGS and example["example_post"] == housetags.EXAMPLE_POST

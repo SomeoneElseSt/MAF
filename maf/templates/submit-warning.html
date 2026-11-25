@@ -10,7 +10,7 @@
 <h1 class="heading">Submit a post</h1>
 
 <div class="notice" role="alert">
-  <p>This looks like it names someone. MAF doesn't allow naming students or staff.</p>
+  <p>This looks like it names someone.{% if org.naming_rule %} {{ org.site_name }} doesn't allow naming students or staff.{% endif %}</p>
   <div class="row">
     <a class="button plain" href="#post-fields">Edit post</a>
     <form action="/submit" method="post" class="inline-form">

@@ -19,7 +19,7 @@ from .email import code_email, sign_in_paused_email
 from .util import new_pass_id, sha256_hex
 from .web import form_values, page_of, redirect, render
 
-PAUSED_ERROR = "MAF is currently under maintenance. Try again in {minutes} minute{s}."
+PAUSED_ERROR = "{site} is currently under maintenance. Try again in {minutes} minute{s}."
 CODE_LENGTH = 6
 TOKEN_MIN_BYTES = 32
 SEND_CHECK_WAIT_SECONDS = 10  # the code page waits this long to hear whether its email went out
@@ -41,12 +41,13 @@ def _code_page_waiting(page, email: str) -> Response:
 def _alert_if_paused(page) -> None:
     """Emails the maintainer the moment wrong codes hit the site-wide cap: someone is probably guessing."""
     if page.memory.take_pause_alert():
-        email = sign_in_paused_email(page.settings.maintainer_email, page.memory.code_guessing_minutes_left())
+        email = sign_in_paused_email(page.settings.maintainer_email, page.memory.code_guessing_minutes_left(),
+                                     site=page.settings.site_name)
         page.app.emailer.send_soon(email)
 
 
-def _paused_error(minutes: int) -> str:
-    return PAUSED_ERROR.format(minutes=minutes, s="" if minutes == 1 else "s")
+def _paused_error(minutes: int, site: str) -> str:
+    return PAUSED_ERROR.format(site=site, minutes=minutes, s="" if minutes == 1 else "s")
 
 
 def code_accepted(page, email: str, code: str, consume: bool = True) -> bool:
@@ -90,7 +91,7 @@ async def login_submit(request: Request) -> Response:
                       cooldown_seconds=max(1, page.memory.cooldown_left(email)),
                       email=values["email"])
     # The email goes out in the background: the code page shows straight away and asks /sign-in/sent how it went.
-    sending = page.app.emailer.send_soon(code_email(email, code))
+    sending = page.app.emailer.send_soon(code_email(email, code, page.settings.site_name))
     sending.add_done_callback(lambda done: done.result() or page.memory.allow_resend(email))
     # Rendered directly rather than redirected, so the address reaches the code form without going into a URL.
     return render(page, "login-code.html", email=email, cooldown_seconds=page.memory.cooldown_left(email),
@@ -110,7 +111,7 @@ async def code_submit(request: Request) -> Response:
     email = normalise_email(values["email"], page.settings.email_domain)
     if page.memory.code_guessing_paused():
         return render(page, "login-code.html", status_code=429,
-                      error=_paused_error(page.memory.code_guessing_minutes_left()),
+                      error=_paused_error(page.memory.code_guessing_minutes_left(), page.settings.site_name),
                       email=values["email"], cooldown_seconds=page.memory.cooldown_left(email) if email else 0)
     if email and page.memory.code_lock_left(email):
         return _code_page_waiting(page, email)

@@ -6,13 +6,13 @@
 {% block main %}
 <div class="prose">
   <h1 class="heading">Privacy</h1>
-  <p>Short version: MAF keeps your posts and replies, and almost nothing about you.</p>
+  <p>Short version: {{ org.site_name }} keeps your posts and replies, and almost nothing about you.</p>
 
   <h2>What we store</h2>
   <ul>
     <li><strong>Posts, replies and edits.</strong> The words you write, with the thread they belong to and a random name per thread.</li>
     <li><strong>Private replies.</strong> Only the encrypted form. Your browser encrypts them before sending, so the server stores text it can't read.</li>
-    <li><strong>A sign-in cookie.</strong> It holds your pass, signed. It's what keeps you signed in, and it's the only cookie MAF sets.</li>
+    <li><strong>A sign-in cookie.</strong> It holds your pass, signed. It's what keeps you signed in, and it's the only cookie {{ org.site_name }} sets.</li>
     <li><strong>Counts.</strong> Views, flags and reactions, tied to your pass, not to anything else about you.</li>
   </ul>
 
@@ -33,8 +33,8 @@
   <p>You can edit or delete your own replies and edit your own posts at any time. For anything else (a post you want removed, or a question about what's stored), write to <a href="mailto:{{ org.contact_email }}">{{ org.contact_email }}</a>.</p>
 
   <h2>Who runs it</h2>
-  <p>MAF is run by students for {{ org.community }}. Questions go to <a href="mailto:{{ org.contact_email }}">{{ org.contact_email }}</a>.</p>
+  <p>{{ org.site_name }} is run by students for {{ org.community }}. Questions go to <a href="mailto:{{ org.contact_email }}">{{ org.contact_email }}</a>.</p>
 
-  <p class="small">The code is public: <a href="https://github.com/SomeoneElseSt/MAF" target="_blank" rel="noopener">github.com/SomeoneElseSt/MAF<span class="sr-only"> (opens in a new tab)</span></a>. You can check each claim above yourself in it.</p>
+  <p class="small">The code is public: <a href="{{ org.source_url }}" target="_blank" rel="noopener">{{ org.source_url.split("://")[-1] }}<span class="sr-only"> (opens in a new tab)</span></a>. You can check each claim above yourself in it.</p>
 </div>
 {% endblock %}

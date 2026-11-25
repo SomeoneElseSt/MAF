@@ -71,13 +71,18 @@ Everything about your organization is a setting in the server's environment (`/e
 | `MAF_FORUM_NAME` | The full name, shown in link previews | `Minerva Anonymous Forum` |
 | `MAF_CONTACT_EMAIL` | The contact address shown on the site | `hello@maforum.net` |
 | `MAF_ORG_TAG` | A suggested hashtag for your organization; the name check never treats it as a person | `minerva` |
+| `MAF_SITE_NAME` | The short name: header, page titles, emails | `MAF` |
+| `MAF_EMAIL_KIND` | "Enter your … email" on the sign-in page, e.g. `work` | `university` |
+| `MAF_NAMING_RULE` | Show "Please don't name students or staff." under the boxes (`true` or `false`) | `true` |
+| `MAF_HASHTAGS_FILE` | A JSON file of hashtags with posting and reply templates; copy `deploy/hashtags.example.json` | built-in |
+| `MAF_SOURCE_URL` | Your fork's code, linked in the footer (the AGPL asks you to share your changes) | this repo |
 | `MAF_BASE_URL` | Your site's address | `https://maforum.net` |
 | `MAF_EMAIL_FROM` | The address sign-in codes come from | `DoNotReply@maforum.net` |
 | `MAINTAINER_EMAIL` | Where moderation requests are emailed | |
 
 For example: `MAF_EMAIL_DOMAIN=example.edu MAF_COMMUNITY="Example College students" EMAIL_BACKEND=console MAF_BASE_URL=http://localhost:8000 uv run python -m maf.main`
 
-Two things are still edited in a fork: your domain in `deploy/Caddyfile`, and `REPO_URL` (your fork) in `deploy/setup.sh`. Optionally, change the hashtags with templates in `maf/housetags.py`.
+Two things are still edited in a fork: your domain in `deploy/Caddyfile`, and `REPO_URL` (your fork) in `deploy/setup.sh`.
 
 ### 3. Put it online
 

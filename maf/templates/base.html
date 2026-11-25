@@ -20,7 +20,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% if title %}{{ title }} · MAF{% else %}MAF{% endif %}</title>
+<title>{% if title %}{{ title }} · {{ org.site_name }}{% else %}{{ org.site_name }}{% endif %}</title>
 <link rel="stylesheet" href="{{ static('style.css') }}">
 {# The tab icon matches the theme: white on black in dark mode, black on white in light (theme-init.js swaps it).
    Both are inside the page, so switching is instant. #}
@@ -28,15 +28,15 @@
 <link rel="apple-touch-icon" href="{{ static('icon-180.png') }}">
 {# Link previews (Telegram, iMessage, Slack...). The image is public, like all of /static/. #}
 <meta name="description" content="An anonymous discussion forum only for {{ org.community }}.">
-<meta property="og:site_name" content="MAF">
-<meta property="og:title" content="MAF · {{ org.forum_name }}">
+<meta property="og:site_name" content="{{ org.site_name }}">
+<meta property="og:title" content="{{ org.site_name }} · {{ org.forum_name }}">
 <meta property="og:description" content="An anonymous discussion forum only for {{ org.community }}.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="{{ base_url }}/">
 <meta property="og:image" content="{{ base_url }}/static/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="MAF">
+<meta property="og:image:alt" content="{{ org.site_name }}">
 <meta name="twitter:card" content="summary_large_image">
 <script src="{{ static('theme-init.js') }}"></script>
 </head>
@@ -44,7 +44,7 @@
 <a class="skip" href="#main">Skip to content</a>
 <div class="page">
   <header class="top">
-    <a class="brand" href="/">MAF</a>
+    <a class="brand" href="/">{{ org.site_name }}</a>
     <nav>
       {% if viewer %}
       <a href="/submit"{% if path == "/submit" %} aria-current="page"{% endif %}>Submit</a>
@@ -74,7 +74,7 @@
   </main>
 
   <footer class="foot">
-    <a href="/about">About</a><a href="/privacy">Privacy</a>{% if viewer %}<a href="/guide">User Guide</a>{% endif %}<a href="https://github.com/SomeoneElseSt/MAF" target="_blank" rel="noopener">Source Code<span class="sr-only"> (opens in a new tab)</span></a>{% if viewer %}<form action="/sign-out" method="post" class="inline-form"><button type="submit">Sign Out</button></form>{% endif %}
+    <a href="/about">About</a><a href="/privacy">Privacy</a>{% if viewer %}<a href="/guide">User Guide</a>{% endif %}<a href="{{ org.source_url }}" target="_blank" rel="noopener">Source Code<span class="sr-only"> (opens in a new tab)</span></a>{% if viewer %}<form action="/sign-out" method="post" class="inline-form"><button type="submit">Sign Out</button></form>{% endif %}
   </footer>
 </div>
 <script src="{{ static('theme.js') }}"></script>

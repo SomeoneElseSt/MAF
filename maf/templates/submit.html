@@ -45,7 +45,7 @@
   <div class="field">
     <label for="text">Text (optional)</label>
     <textarea id="text" name="text" placeholder="{{ placeholder }}">{{ values.text|default('') }}</textarea>
-    <p class="help">Please don't name students or staff.</p>
+    {% if org.naming_rule %}<p class="help">Please don't name students or staff.</p>{% endif %}
   </div>
   <div class="row">
     <button class="button" type="submit" data-pending="Submitting…">Submit</button>

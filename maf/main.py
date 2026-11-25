@@ -12,7 +12,7 @@ from starlette.responses import JSONResponse, RedirectResponse, Response
 from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 
-from . import auth, post, reactions, reading, store
+from . import auth, housetags, post, reactions, reading, store
 from .app import App, build_app
 from .display import day_label, four_day_window, range_label
 from .settings import Settings, load_settings
@@ -259,6 +259,8 @@ def _is_public(path: str) -> bool:
 def create_app(settings: Settings | None = None) -> Starlette:
     global APP
     settings = settings or load_settings()
+    if settings.hashtags_file:
+        housetags.load_file(settings.hashtags_file)
     app = build_app(settings)
     app.templates = make_templates(app)
     APP = app

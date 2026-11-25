@@ -284,7 +284,7 @@ def _alert_if_reply_hidden(page, item_id: str) -> None:
     if item is None or item.is_post or not item.unlisted or not page.memory.take_hide_alert(item.id):
         return
     page.app.emailer.send_soon(hidden_reply_email(page.settings.maintainer_email, item.id, item.thread_id, item.flags,
-                                             page.settings.base_url))
+                                             page.settings.base_url, site=page.settings.site_name))
 
 
 async def moderation_request(request: Request) -> Response:
@@ -296,7 +296,8 @@ async def moderation_request(request: Request) -> Response:
     if store.add_moderation_request(page.conn, page.pass_id, item.id, values["kind"]):
         count = sum(store.request_counts(page.conn, item.id).values())
         page.app.emailer.send_soon(
-            moderation_email(page.settings.maintainer_email, values["kind"], item.id, count, page.settings.base_url)
+            moderation_email(page.settings.maintainer_email, values["kind"], item.id, count, page.settings.base_url,
+                             site=page.settings.site_name)
         )
     return redirect(f"/thread/{item.id}?notice=Request+sent.+Thank+you.")
 

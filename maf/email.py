@@ -31,7 +31,7 @@ _templates = Environment(
 def _render(name: str, **context) -> str:
     return _templates.get_template(f"email/{name}").render(**context)
 
-CODE_SUBJECT = "Your MAF code: {code}"
+CODE_SUBJECT = "Your {site} code: {code}"
 CODE_BODY = """Your code is {code}.
 
 It's valid for 10 minutes. If you didn't ask for a code, ignore this email.
@@ -46,16 +46,17 @@ class Email:
     html: str = ""
 
 
-def code_email(to: str, code: str) -> Email:
-    """The login email: the code, with the MAF wordmark in the HTML version."""
-    subject = CODE_SUBJECT.format(code=code)
+def code_email(to: str, code: str, site: str = "MAF") -> Email:
+    """The login email: the code, with the site's wordmark in the HTML version."""
+    subject = CODE_SUBJECT.format(site=site, code=code)
     return Email(to=to, subject=subject, body=CODE_BODY.format(code=code),
-                 html=_render("code.html", subject=subject, code=code))
+                 html=_render("code.html", subject=subject, code=code, site_name=site))
 
 
-def moderation_email(to: str, kind: str, item_id: str, count: int, base_url: str, now: datetime | None = None) -> Email:
+def moderation_email(to: str, kind: str, item_id: str, count: int, base_url: str, now: datetime | None = None,
+                     site: str = "MAF") -> Email:
     label = "Unhide" if kind == "unhide" else "Deletion"
-    subject = f"MAF {label.lower()} requested for post {item_id}"
+    subject = f"{site} {label.lower()} requested for post {item_id}"
     link = f"{base_url}/thread/{item_id}"
     tally = f"{count} request{'' if count == 1 else 's'} so far as of {(now or datetime.now(UTC)):%d/%m/%y %H:%M} UTC"
     footer = "Act on it from the server with maf requests."
@@ -64,14 +65,14 @@ def moderation_email(to: str, kind: str, item_id: str, count: int, base_url: str
         subject=subject,
         body=f"{label} requested for post: {item_id}\n{link}\n\n{tally}\n",
         html=_render("moderation.html", subject=subject, label=label, noun="post", item_id=item_id, tally=tally,
-                     link=link, footer=footer),
+                     link=link, footer=footer, site_name=site),
     )
 
 
 def hidden_reply_email(to: str, item_id: str, thread_id: str, flags: int, base_url: str,
-                       now: datetime | None = None) -> Email:
+                       now: datetime | None = None, site: str = "MAF") -> Email:
     """Sent once when flags hide a reply, so the maintainer can read it and decide."""
-    subject = f"MAF review requested for reply {item_id}"
+    subject = f"{site} review requested for reply {item_id}"
     link = f"{base_url}/thread/{thread_id}#{item_id}"
     tally = f"Hidden after {flags} flags as of {(now or datetime.now(UTC)):%d/%m/%y %H:%M} UTC"
     footer = f"Read it on the server with maf show {item_id}, then maf unhide or maf nuke."
@@ -80,11 +81,11 @@ def hidden_reply_email(to: str, item_id: str, thread_id: str, flags: int, base_u
         subject=subject,
         body=f"Review requested for reply: {item_id}\n{link}\n\n{tally}\n\n{footer}\n",
         html=_render("moderation.html", subject=subject, label="Review", noun="reply", item_id=item_id, tally=tally,
-                     link=link, footer=footer),
+                     link=link, footer=footer, site_name=site),
     )
 
 
-def sign_in_paused_email(to: str, minutes_left: int, now: datetime | None = None) -> Email:
+def sign_in_paused_email(to: str, minutes_left: int, now: datetime | None = None, site: str = "MAF") -> Email:
     """Sent once when wrong codes hit the site-wide cap and sign-ins pause."""
     from .memory import SITE_WRONG_CODES_LIMIT
 
@@ -93,9 +94,10 @@ def sign_in_paused_email(to: str, minutes_left: int, now: datetime | None = None
     stamp = f"Resumes by {sent + timedelta(minutes=minutes_left):%H:%M} UTC, as of {sent:%d/%m/%y %H:%M} UTC"
     return Email(
         to=to,
-        subject=f"MAF sign-ins paused: {SITE_WRONG_CODES_LIMIT} wrong codes in the last hour",
-        body=f"{headline}\n{stamp}\n\nTo resume sign-ins early, restart MAF on the server with sudo systemctl restart maf.\n",
-        html=_render("paused.html", subject=f"MAF sign-ins paused: {SITE_WRONG_CODES_LIMIT} wrong codes in the last hour", headline=headline, stamp=stamp),
+        subject=f"{site} sign-ins paused: {SITE_WRONG_CODES_LIMIT} wrong codes in the last hour",
+        body=f"{headline}\n{stamp}\n\nTo resume sign-ins early, restart {site} on the server with sudo systemctl restart maf.\n",
+        html=_render("paused.html", subject=f"{site} sign-ins paused: {SITE_WRONG_CODES_LIMIT} wrong codes in the last hour",
+                     headline=headline, stamp=stamp, site_name=site),
     )
 
 

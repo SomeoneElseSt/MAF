@@ -39,7 +39,7 @@
    box, so the draft stays and nothing jumps to the top of the thread. "Post anyway" sends the same form. #}
 {% if names_form == form %}
 <div class="name-warning" role="alert">
-  <p>This looks like it names someone. MAF doesn't allow naming students or staff.</p>
+  <p>This looks like it names someone.{% if org.naming_rule %} {{ org.site_name }} doesn't allow naming students or staff.{% endif %}</p>
   <div class="row">
     <button class="button plain" type="button" data-edit-warning>Edit</button>
     <button class="button" type="submit" name="confirm_names" value="1" data-pending="Posting…">Post anyway</button>
@@ -52,7 +52,7 @@
 {# A refused reply's words come back even if this browser kept no draft. #}
 <input type="hidden" name="parent_id" value="{{ entry.id }}"><input type="hidden" name="thread_id" value="{{ post.id }}">
 <textarea name="text" aria-label="Write a reply" placeholder="{{ reply_placeholder or 'Write a reply' }}">{% if names_form == 'reply-' ~ entry.id %}{{ names_text }}{% endif %}</textarea>
-<p class="help">Replying as: <button class="id" type="button">{{ my_label }}</button> <span class="dot">·</span> Please don't name students or staff.
+<p class="help">Replying as: <button class="id" type="button">{{ my_label }}</button>{% if org.naming_rule %} <span class="dot">·</span> Please don't name students or staff.{% endif %}
   {% if entry.pass_id != viewer %}{{ private_toggle(label_of[entry.pass_id], entry.private_to) }}{% endif %}
 </p>
 <div class="row"><button class="button" type="submit" data-pending="Replying…" data-needs-text>Reply</button><a class="button plain cancel" href="#{{ entry.id }}">Cancel</a></div>
@@ -90,7 +90,7 @@
 {% macro private_toggle(name, forced) %}<span class="private-toggle" hidden><span class="dot">·</span> <label>Make only visible to {{ name }} <input type="checkbox" name="private"{% if forced %} checked disabled{% endif %}></label><button class="info" type="button" aria-label="About private replies" aria-expanded="false">i</button><div class="info-card" role="dialog" aria-label="About private replies" hidden>
   <p class="info-title">Private replies</p>
   <p>Only you and the person you're replying to can read them, inside this thread. Everyone else sees the thread as if they weren't there.</p>
-  <p>They're encrypted in your browser before they're sent, so MAF's server only stores scrambled text. You can read them only on the device you used in this thread.</p>
+  <p>They're encrypted in your browser before they're sent, so {{ org.site_name }}'s server only stores scrambled text. You can read them only on the device you used in this thread.</p>
   <p class="info-fine">Other students can't see or flag them.</p>
 </div></span>{% endmacro %}
 
@@ -125,7 +125,7 @@
   <form class="inline-reply edit-in-place" id="edit-{{ entry.id }}" action="/edit" method="post" data-editable="edit-{{ entry.id }}"{% if entry.private_to %} data-peer-key="{{ thread_keys.get(entry.private_to, '') }}" data-always-private{% endif %}{% if names_form != 'edit-' ~ entry.id %} hidden{% endif %}>
     <input type="hidden" name="item_id" value="{{ entry.id }}"><input type="hidden" name="thread_id" value="{{ post.id }}">
     <textarea name="text" aria-label="Edit your reply">{% if names_form == 'edit-' ~ entry.id %}{{ names_text }}{% else %}{{ entry.text or '' }}{% endif %}</textarea>
-    <p class="help">Editing as: <button class="id" type="button">{{ my_label }}</button> <span class="dot">·</span> Please don't name students or staff.</p>
+    <p class="help">Editing as: <button class="id" type="button">{{ my_label }}</button>{% if org.naming_rule %} <span class="dot">·</span> Please don't name students or staff.{% endif %}</p>
     <div class="row"><button class="button" type="submit" data-pending="Saving…" data-needs-text>Save</button><button class="button plain cancel" type="button">Cancel</button></div>
     {{ name_warning('edit-' ~ entry.id) }}
   </form>
@@ -188,7 +188,7 @@
   <form class="inline-reply edit-in-place" id="edit-{{ post.id }}" action="/edit" method="post" data-editable="edit-{{ post.id }}"{% if names_form != 'edit-' ~ post.id %} hidden{% endif %}>
     <input type="hidden" name="item_id" value="{{ post.id }}"><input type="hidden" name="thread_id" value="{{ post.id }}">
     <textarea name="text" aria-label="Edit your post">{% if names_form == 'edit-' ~ post.id %}{{ names_text }}{% else %}{{ post.text or '' }}{% endif %}</textarea>
-    <p class="help">Editing as: <button class="id" type="button">{{ my_label }}</button> <span class="dot">·</span> Please don't name students or staff.</p>
+    <p class="help">Editing as: <button class="id" type="button">{{ my_label }}</button>{% if org.naming_rule %} <span class="dot">·</span> Please don't name students or staff.{% endif %}</p>
     <div class="row"><button class="button" type="submit" data-pending="Saving…" data-needs-text>Save</button><button class="button plain cancel" type="button">Cancel</button></div>
     {{ name_warning('edit-' ~ post.id) }}
   </form>
@@ -201,7 +201,7 @@
 <form class="reply" id="comment-form" action="/comment" method="post" data-peer-key="{{ thread_keys.get(post.pass_id, '') }}">
   <input type="hidden" name="parent_id" value="{{ post.id }}"><input type="hidden" name="thread_id" value="{{ post.id }}">
   <textarea name="text" aria-label="Write a comment" placeholder="Write a comment">{% if names_form == 'comment-form' %}{{ names_text }}{% endif %}</textarea>
-  <p class="help">Commenting as: <button class="id" type="button">{{ my_label }}</button> <span class="dot">·</span> Please don't name students or staff.
+  <p class="help">Commenting as: <button class="id" type="button">{{ my_label }}</button>{% if org.naming_rule %} <span class="dot">·</span> Please don't name students or staff.{% endif %}
     {% if post.pass_id != viewer %}{{ private_toggle(label_of[post.pass_id] ~ ' (OP)', false) }}{% endif %}
   </p>
   <div class="row"><button class="button" type="submit" data-pending="Commenting…" data-needs-text>Comment</button><button class="button plain subscribe{% if subscribed %} subscribed{% endif %}" type="submit" form="subscribe-form" aria-pressed="{{ 'true' if subscribed else 'false' }}">{{ 'Subscribed' if subscribed else 'Subscribe' }}</button><span class="subscribe-info"><button class="info" type="button" aria-label="About subscribing" aria-expanded="false">i</button><div class="info-card" role="dialog" aria-label="About subscribing" hidden>

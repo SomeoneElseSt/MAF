@@ -40,7 +40,7 @@
 {% endmacro %}
 
 {% block main %}
-{% if kind == "home" %}<h1 class="sr-only">MAF, the anonymous forum for {{ org.community }}</h1>{% endif %}
+{% if kind == "home" %}<h1 class="sr-only">{{ org.site_name }}, the anonymous forum for {{ org.community }}</h1>{% endif %}
 {{ sort_row() }}
 
 {% if kind == "search" %}

@@ -45,6 +45,11 @@ class Settings:
     community: str = "Minerva University students"  # finishes "An anonymous forum for …"
     forum_name: str = "Minerva Anonymous Forum"  # the full name, in link previews
     org_tag: str = "minerva"  # suggested hashtag; never treated as a person's name
+    site_name: str = "MAF"  # the short name: header, page titles, emails
+    email_kind: str = "university"  # "Enter your university email"; e.g. "work"
+    naming_rule: bool = True  # show "Please don't name students or staff."
+    hashtags_file: Path | None = None  # JSON of hashtags with templates; the built-in ones if unset
+    source_url: str = "https://github.com/SomeoneElseSt/MAF"  # the code this site runs (the AGPL asks forks to link theirs)
     static_dir: Path = field(default_factory=lambda: Path(__file__).parent / "static")
     templates_dir: Path = field(default_factory=lambda: Path(__file__).parent / "templates")
 
@@ -100,6 +105,11 @@ def load_settings(env: dict[str, str] | None = None) -> Settings:
         community=source.get("MAF_COMMUNITY", Settings.community).strip(),
         forum_name=source.get("MAF_FORUM_NAME", Settings.forum_name).strip(),
         org_tag=source.get("MAF_ORG_TAG", Settings.org_tag).strip().lower().lstrip("#"),
+        site_name=source.get("MAF_SITE_NAME", Settings.site_name).strip(),
+        email_kind=source.get("MAF_EMAIL_KIND", Settings.email_kind).strip().lower(),
+        naming_rule=source.get("MAF_NAMING_RULE", "true").strip().lower() not in ("0", "false", "no", "off"),
+        hashtags_file=Path(source["MAF_HASHTAGS_FILE"]) if source.get("MAF_HASHTAGS_FILE") else None,
+        source_url=source.get("MAF_SOURCE_URL", Settings.source_url).strip().rstrip("/"),
     )
     if backend not in EMAIL_BACKENDS:
         raise ConfigError(f"EMAIL_BACKEND must be one of {', '.join(sorted(EMAIL_BACKENDS))}")

@@ -2,8 +2,12 @@
 
 Everything about a house tag lives in HOUSE_TAGS, so adding one needs no code
 changes elsewhere. Topic tags such as #minerva have no entry and behave as plain
-tags.
+tags. Another organization can replace them with a JSON file (MAF_HASHTAGS_FILE,
+see load_file and deploy/hashtags.example.json).
 """
+
+import json
+from pathlib import Path
 
 HOUSE_TAGS: dict[str, dict] = {
     "hottakes": {
@@ -70,10 +74,12 @@ HOUSE_TAGS: dict[str, dict] = {
     },
 }
 
-# Lead with common tags, then retain the remaining house tags in alphabetical order.
+# The Hashtags box's drop-down leads with these and the organization's tag, then the other house tags A-Z.
+SUGGESTED_FIRST = ["hottakes", "confession"]
+
+
 def suggested_tags(org_tag: str) -> list[str]:
-    """The Hashtags box's drop-down: the first few, then the other house tags."""
-    first = ("hottakes", "confession", org_tag)
+    first = [*SUGGESTED_FIRST, org_tag]
     return [*first, *(tag for tag in sorted(HOUSE_TAGS) if tag not in first)]
 
 DEFAULT_SUBMIT_TEMPLATE = [
@@ -125,3 +131,39 @@ def etiquette(tags: list[str]) -> tuple[str, str] | None:
 
 def is_hot(tags: list[str]) -> bool:
     return any(HOUSE_TAGS.get(t, {}).get("highlight") for t in tags)
+
+
+class HashtagsFileError(ValueError):
+    """The hashtags file is missing, isn't JSON, or doesn't have the expected shape."""
+
+
+def _entry(name: str, raw: dict) -> dict:
+    lines = lambda key: [str(line) for line in raw.get(key, [])]
+    if not isinstance(raw, dict) or not raw.get("submit_template"):
+        raise HashtagsFileError(f"#{name} needs a submit_template (a list of lines)")
+    return {
+        "submit_template": lines("submit_template"),
+        "reply_placeholder": lines("reply_placeholder"),
+        "etiquette": raw.get("etiquette") or None,
+        "highlight": bool(raw.get("highlight", False)),
+    }
+
+
+def load_file(path: Path) -> None:
+    """Replaces the built-in hashtags with the ones in `path`, once at startup. Shape (only "tags" is required):
+    {"tags": {"name": {"submit_template": [...], "reply_placeholder": [...], "etiquette": "...", "highlight": false}},
+     "suggested_first": ["name", ...], "default_template": [...], "example_post": "..."}"""
+    global DEFAULT_SUBMIT_TEMPLATE, EXAMPLE_POST
+    try:
+        data = json.loads(Path(path).read_text())
+    except (OSError, ValueError) as error:
+        raise HashtagsFileError(f"can't read hashtags file {path}: {error}") from None
+    tags = data.get("tags") if isinstance(data, dict) else None
+    if not isinstance(tags, dict):
+        raise HashtagsFileError('the hashtags file needs a "tags" object')
+    entries = {name.strip().lower().lstrip("#"): _entry(name, raw) for name, raw in tags.items()}
+    HOUSE_TAGS.clear()
+    HOUSE_TAGS.update(entries)
+    SUGGESTED_FIRST[:] = [t.strip().lower().lstrip("#") for t in data.get("suggested_first", [])]
+    DEFAULT_SUBMIT_TEMPLATE = [str(line) for line in data.get("default_template", DEFAULT_SUBMIT_TEMPLATE)]
+    EXAMPLE_POST = str(data.get("example_post", EXAMPLE_POST))
