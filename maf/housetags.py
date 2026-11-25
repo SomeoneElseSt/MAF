@@ -71,8 +71,10 @@ HOUSE_TAGS: dict[str, dict] = {
 }
 
 # Lead with common tags, then retain the remaining house tags in alphabetical order.
-_PRIORITY_TAGS = ("hottakes", "confession", "minerva")
-SUGGESTED_TAGS = [*_PRIORITY_TAGS, *(tag for tag in sorted(HOUSE_TAGS) if tag not in _PRIORITY_TAGS)]
+def suggested_tags(org_tag: str) -> list[str]:
+    """The Hashtags box's drop-down: the first few, then the other house tags."""
+    first = ("hottakes", "confession", org_tag)
+    return [*first, *(tag for tag in sorted(HOUSE_TAGS) if tag not in first)]
 
 DEFAULT_SUBMIT_TEMPLATE = [
     "- What it's about",

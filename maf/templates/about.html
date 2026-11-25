@@ -5,9 +5,9 @@
 {% block main %}
 <div class="prose">
   <h1 class="heading">About</h1>
-  <p>An anonymous forum for Minerva University students.</p>
-  <p>Only uni.minerva.edu accounts may sign in.</p>
+  <p>An anonymous forum for {{ org.community }}.</p>
+  <p>Only {{ org.email_domain }} accounts may sign in.</p>
   <p>Inside, you can make posts, share links, and discuss anonymously.</p>
-  <p>Have a question? Contact <a href="mailto:hello@maforum.net">hello@maforum.net</a>.</p>
+  <p>Have a question? Contact <a href="mailto:{{ org.contact_email }}">{{ org.contact_email }}</a>.</p>
 </div>
 {% endblock %}

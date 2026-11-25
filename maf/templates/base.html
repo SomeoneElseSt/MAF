@@ -27,10 +27,10 @@
 <link rel="icon" type="image/png" sizes="32x32" href="{{ icon_dark }}" data-dark="{{ icon_dark }}" data-light="{{ icon_light }}">
 <link rel="apple-touch-icon" href="{{ static('icon-180.png') }}">
 {# Link previews (Telegram, iMessage, Slack...). The image is public, like all of /static/. #}
-<meta name="description" content="An anonymous discussion forum only for Minervans.">
+<meta name="description" content="An anonymous discussion forum only for {{ org.community }}.">
 <meta property="og:site_name" content="MAF">
-<meta property="og:title" content="MAF · Minerva Anonymous Forum">
-<meta property="og:description" content="An anonymous discussion forum only for Minervans.">
+<meta property="og:title" content="MAF · {{ org.forum_name }}">
+<meta property="og:description" content="An anonymous discussion forum only for {{ org.community }}.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="{{ base_url }}/">
 <meta property="og:image" content="{{ base_url }}/static/og.png">

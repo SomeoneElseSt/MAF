@@ -39,6 +39,12 @@ class Settings:
     name_filter_enabled: bool = True
     spacy_model: str = DEFAULT_SPACY_MODEL
     base_url: str = "http://localhost:8000"
+    # Who the forum is for. Defaults are maforum.net's; another organization sets its own in the environment.
+    email_domain: str = "uni.minerva.edu"  # only addresses at this domain can sign in
+    contact_email: str = "hello@maforum.net"
+    community: str = "Minerva University students"  # finishes "An anonymous forum for …"
+    forum_name: str = "Minerva Anonymous Forum"  # the full name, in link previews
+    org_tag: str = "minerva"  # suggested hashtag; never treated as a person's name
     static_dir: Path = field(default_factory=lambda: Path(__file__).parent / "static")
     templates_dir: Path = field(default_factory=lambda: Path(__file__).parent / "templates")
 
@@ -89,6 +95,11 @@ def load_settings(env: dict[str, str] | None = None) -> Settings:
         name_filter_enabled=_bool("NAME_FILTER_ENABLED", True),
         spacy_model=source.get("SPACY_MODEL", DEFAULT_SPACY_MODEL),
         base_url=source.get("MAF_BASE_URL", "http://localhost:8000").rstrip("/"),
+        email_domain=source.get("MAF_EMAIL_DOMAIN", Settings.email_domain).strip().lower().lstrip("@"),
+        contact_email=source.get("MAF_CONTACT_EMAIL", Settings.contact_email).strip(),
+        community=source.get("MAF_COMMUNITY", Settings.community).strip(),
+        forum_name=source.get("MAF_FORUM_NAME", Settings.forum_name).strip(),
+        org_tag=source.get("MAF_ORG_TAG", Settings.org_tag).strip().lower().lstrip("#"),
     )
     if backend not in EMAIL_BACKENDS:
         raise ConfigError(f"EMAIL_BACKEND must be one of {', '.join(sorted(EMAIL_BACKENDS))}")

@@ -14,7 +14,7 @@ from .settings import Settings
 PERSON = "PERSON"
 # Words the language model mistakes for people's names but never are on MAF. Lowercase.
 # Nationalities ("Kazakh") count too: see maf/demonyms.py.
-NOT_PEOPLE = {"minerva"}
+NOT_PEOPLE: set[str] = set()  # plus the organization's own word (settings.org_tag)
 # Chat abbreviations confuse the model about the words around them: "Tbf Minerva" reads like "Jane Smith",
 # and "Tbf Priya Raman" like an organisation. They're taken out before the model reads the text.
 CHAT_ABBREVIATIONS = ("tbf", "tbh", "ngl", "imo", "imho", "idk", "fwiw", "btw", "iirc", "afaik", "lol", "lmao", "smh", "fr")
@@ -26,10 +26,10 @@ def without_chat_abbreviations(text: str) -> str:
     return _CHAT.sub(" ", text)
 
 
-def _is_person(span: str) -> bool:
+def _is_person(span: str, never_people: set[str]) -> bool:
     """A flagged span counts unless every word in it is on the never-a-person list."""
     words = _WORD.findall(span.lower())
-    return not words or any(word not in NOT_PEOPLE and not is_demonym(word) for word in words)
+    return not words or any(word not in never_people and not is_demonym(word) for word in words)
 
 
 class NameFilter:
@@ -78,4 +78,5 @@ class NameFilter:
                 language="en",
                 score_threshold=self._settings.name_filter_threshold,
             )
-        return any(_is_person(joined[found.start:found.end]) for found in results)
+        never_people = NOT_PEOPLE | {self._settings.org_tag}
+        return any(_is_person(joined[found.start:found.end], never_people) for found in results)

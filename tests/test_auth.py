@@ -296,11 +296,12 @@ def test_production_refuses_the_public_dev_secrets():
 def test_only_plain_minerva_addresses_are_accepted():
     from maf.auth import normalise_email
 
-    assert normalise_email("  Jane.Doe+x@UNI.minerva.edu ") == "jane.doe+x@uni.minerva.edu"
+    domain = "uni.minerva.edu"
+    assert normalise_email("  Jane.Doe+x@UNI.minerva.edu ", domain) == "jane.doe+x@uni.minerva.edu"
     for sneaky in ["attacker@gmail.com,victim@uni.minerva.edu", "x <attacker@gmail.com>, y@uni.minerva.edu",
                    "a@b@uni.minerva.edu", '"a b"@uni.minerva.edu', "a@uni.minerva.edu.evil.com",
                    "a@xuni.minerva.edu", "a b@uni.minerva.edu", "a@uni.minerva.edu\nbcc:x@gmail.com"]:
-        assert normalise_email(sneaky) is None, sneaky
+        assert normalise_email(sneaky, domain) is None, sneaky
 
 
 def test_wrong_codes_are_capped_site_wide():
@@ -413,3 +414,28 @@ def test_send_checks_cannot_be_guessed_or_reused(client, app, monkeypatch):
     assert client.post("/sign-in/sent", data={"check": "made-up"}).json() == {"sent": None}
     assert client.post("/sign-in/sent", data={"check": check}).json() == {"sent": True}
     assert client.post("/sign-in/sent", data={"check": check}).json() == {"sent": None}
+
+
+def test_another_organization_sets_its_own_domain_and_wording(settings, tmp_path):
+    from dataclasses import replace
+
+    from starlette.testclient import TestClient
+
+    from maf.main import create_app
+    from maf.settings import load_settings
+
+    loaded = load_settings({"MAF_EMAIL_DOMAIN": "@Example.EDU", "MAF_CONTACT_EMAIL": "help@example.edu",
+                            "MAF_COMMUNITY": "Example College students", "MAF_FORUM_NAME": "Example Forum",
+                            "MAF_ORG_TAG": "#Example"})
+    assert (loaded.email_domain, loaded.org_tag) == ("example.edu", "example")
+    custom = replace(settings, email_domain="example.edu", contact_email="help@example.edu",
+                     community="Example College students", forum_name="Example Forum", org_tag="example")
+    client = TestClient(create_app(custom))
+    page = client.get("/sign-in").text
+    assert "MAF is for Example College students." in page and 'placeholder="you@example.edu"' in page
+    assert "Example Forum" in page and "Minerva" not in page
+    about = client.get("/about").text
+    assert "Only example.edu accounts may sign in." in about and "help@example.edu" in about
+    # A Minerva address is now refused.
+    refused = client.post("/sign-in", data={"email": "jane@uni.minerva.edu"})
+    assert refused.status_code == 400 and "Please enter a valid email." in refused.text

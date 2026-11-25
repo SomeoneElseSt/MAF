@@ -72,7 +72,8 @@ def make_templates(app: App) -> Jinja2Templates:
         picker_emoji=PICKER_EMOJI,
         submit_templates={**{t: h["submit_template"] for t, h in housetags.HOUSE_TAGS.items()}, "default": housetags.DEFAULT_SUBMIT_TEMPLATE},
         example_post=housetags.EXAMPLE_POST,
-        suggested_tags=housetags.SUGGESTED_TAGS,
+        suggested_tags=housetags.suggested_tags(app.settings.org_tag),
+        org=app.settings,  # email_domain, contact_email, community, forum_name, org_tag
         base_url=app.settings.base_url,
         static=make_static_url(app.settings.static_dir),
         icon_dark=inline_png(app.settings.static_dir, "icon-32.png"),

@@ -19,19 +19,17 @@ from .email import code_email, sign_in_paused_email
 from .util import new_pass_id, sha256_hex
 from .web import form_values, page_of, redirect, render
 
-ALLOWED_DOMAIN = "uni.minerva.edu"
-EMAIL_PATTERN = re.compile(r"[a-z0-9._+-]+@" + re.escape(ALLOWED_DOMAIN))
 PAUSED_ERROR = "MAF is currently under maintenance. Try again in {minutes} minute{s}."
 CODE_LENGTH = 6
 TOKEN_MIN_BYTES = 32
 SEND_CHECK_WAIT_SECONDS = 10  # the code page waits this long to hear whether its email went out
 
 
-def normalise_email(raw: str) -> str | None:
-    """Lowercases and returns a plain Minerva address, else None. Only simple addresses pass, so nothing like
-    "Name <someone@gmail.com>, x@uni.minerva.edu" can reach SES and send a code somewhere else."""
+def normalise_email(raw: str, domain: str) -> str | None:
+    """Lowercases and returns a plain address at the forum's domain, else None. Only simple addresses pass, so
+    nothing like "Name <someone@gmail.com>, x@<domain>" can reach the email provider and send a code elsewhere."""
     email = raw.strip().lower()
-    return email if EMAIL_PATTERN.fullmatch(email) else None
+    return email if re.fullmatch(r"[a-z0-9._+-]+@" + re.escape(domain), email) else None
 
 
 def _code_page_waiting(page, email: str) -> Response:
@@ -80,7 +78,7 @@ async def login_page(request: Request) -> Response:
 async def login_submit(request: Request) -> Response:
     page = page_of(request)
     values = await form_values(request, "email")
-    email = normalise_email(values["email"])
+    email = normalise_email(values["email"], page.settings.email_domain)
     if email is None:
         return render(page, "login.html", status_code=400,
                       error="Please enter a valid email.",
@@ -109,7 +107,7 @@ async def code_page(request: Request) -> Response:
 async def code_submit(request: Request) -> Response:
     page = page_of(request)
     values = await form_values(request, "email", "code")
-    email = normalise_email(values["email"])
+    email = normalise_email(values["email"], page.settings.email_domain)
     if page.memory.code_guessing_paused():
         return render(page, "login-code.html", status_code=429,
                       error=_paused_error(page.memory.code_guessing_minutes_left()),
@@ -162,7 +160,7 @@ async def blind_sign(request: Request) -> Response:
     """Signs a blinded token. Checks a valid code first, then forgets the email."""
     page = page_of(request)
     values = await form_values(request, "email", "code", "blinded")
-    email = normalise_email(values["email"])
+    email = normalise_email(values["email"], page.settings.email_domain)
     if email is None or not code_accepted(page, email, values["code"]):
         _alert_if_paused(page)
         return Response('{"error":"invalid code"}', status_code=400, media_type="application/json")

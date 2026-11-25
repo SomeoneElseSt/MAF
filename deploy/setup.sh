@@ -132,6 +132,12 @@ AWS_REGION=us-west-2
 MAF_BASE_URL=https://maforum.net
 # Moderation requests are emailed here. The maintainer must replace this value.
 MAINTAINER_EMAIL=hello@maforum.net
+# Who the forum is for. Quote values with spaces.
+MAF_EMAIL_DOMAIN=uni.minerva.edu
+MAF_CONTACT_EMAIL=hello@maforum.net
+MAF_COMMUNITY="Minerva University students"
+MAF_FORUM_NAME="Minerva Anonymous Forum"
+MAF_ORG_TAG=minerva
 ENV
   chown root:"$SERVICE_USER" "$tmp"
   chmod 640 "$tmp"

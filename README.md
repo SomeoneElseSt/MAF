@@ -58,20 +58,26 @@ uv sync --all-extras
 EMAIL_BACKEND=console MAF_BASE_URL=http://localhost:8000 uv run python -m maf.main
 ```
 
-Open http://localhost:8000 and sign in with any `@uni.minerva.edu` address (until you change it in step 2). The code is printed in the terminal; in development `139145` also works (never in production). Run the tests with `uv run pytest`.
+Open http://localhost:8000 and sign in with any `@uni.minerva.edu` address (the default; step 2 changes it). The code is printed in the terminal; in development `139145` also works (never in production). Run the tests with `uv run pytest`.
 
 ### 2. Make it yours
 
-Fork the repo, then change these. This lists every place: `grep -rni "minerva\|maforum" maf deploy`
+Everything about your organization is a setting in the server's environment (`/etc/maf/env` once it's online; for a local try, put them before the run command above):
 
-| What | Where |
-|---|---|
-| Who may sign in | `ALLOWED_DOMAIN` in `maf/auth.py`, e.g. `"yourschool.edu"` |
-| Your organization's name and wording | `maf/templates/about.html`, `privacy.html`, `login.html`, `base.html` (page title and link previews) |
-| Contact address | `hello@maforum.net` in the templates; `MAINTAINER_EMAIL` (moderation emails) in `deploy/setup.sh` |
-| Your domain and fork | `deploy/Caddyfile`; in `deploy/setup.sh`, `REPO_URL` (your fork) and the addresses it writes to the server's settings |
-| Hashtags with templates and highlights (optional) | `maf/housetags.py` |
-| Words the name check should never treat as names, like your organization's name (optional) | `NOT_PEOPLE` in `maf/namefilter.py` |
+| Setting | What it does | maforum.net's value |
+|---|---|---|
+| `MAF_EMAIL_DOMAIN` | Only addresses at this domain can sign in | `uni.minerva.edu` |
+| `MAF_COMMUNITY` | Who it's for, as in "An anonymous forum for …" | `Minerva University students` |
+| `MAF_FORUM_NAME` | The full name, shown in link previews | `Minerva Anonymous Forum` |
+| `MAF_CONTACT_EMAIL` | The contact address shown on the site | `hello@maforum.net` |
+| `MAF_ORG_TAG` | A suggested hashtag for your organization; the name check never treats it as a person | `minerva` |
+| `MAF_BASE_URL` | Your site's address | `https://maforum.net` |
+| `MAF_EMAIL_FROM` | The address sign-in codes come from | `DoNotReply@maforum.net` |
+| `MAINTAINER_EMAIL` | Where moderation requests are emailed | |
+
+For example: `MAF_EMAIL_DOMAIN=example.edu MAF_COMMUNITY="Example College students" EMAIL_BACKEND=console MAF_BASE_URL=http://localhost:8000 uv run python -m maf.main`
+
+Two things are still edited in a fork: your domain in `deploy/Caddyfile`, and `REPO_URL` (your fork) in `deploy/setup.sh`. Optionally, change the hashtags with templates in `maf/housetags.py`.
 
 ### 3. Put it online
 
@@ -84,7 +90,7 @@ Then, on the server:
 ```sh
 curl -O https://raw.githubusercontent.com/YOU/MAF/main/deploy/setup.sh   # from your fork
 sudo bash setup.sh         # installs everything, creates /etc/maf/env with fresh secrets
-sudo nano /etc/maf/env     # check MAF_BASE_URL, MAF_EMAIL_FROM, MAINTAINER_EMAIL and the email provider
+sudo nano /etc/maf/env     # your settings from step 2, and the email provider
 sudo systemctl restart maf
 ```
 
