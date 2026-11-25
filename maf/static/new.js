@@ -119,21 +119,29 @@
   }
   settle();
 
-  // Older posts with new comments aren't on this page: the server sends their rows.
-  async function addOlder() {
-    const response = await fetch(`/new-activity?since=${encodeURIComponent(since)}`, { headers: { accept: "text/html" } });
+  // The server's latest: older posts with new comments (not on this page) come in as rows, and posts on
+  // the page take its newest comment times, so a reply that arrived since this page was made still counts
+  // (coming back with Back shows the page as it was).
+  async function refreshNew() {
+    // no-store: while a page brought back by Back loads, the browser may answer from its old saved copies.
+    const response = await fetch(`/new-activity?since=${encodeURIComponent(since)}`, { cache: "no-store", headers: { accept: "text/html" } });
     if (!response.ok) return;
     const page = new DOMParser().parseFromString(await response.text(), "text/html");
-    const shown = new Set([...document.querySelectorAll("li[data-id]")].map(row => row.dataset.id));
     for (const row of page.querySelectorAll("li[data-id][data-created]")) {
-      if (shown.has(row.dataset.id) || pinnedIds.has(row.dataset.id)) continue;
-      const label = whatsNew(row);
-      if (label) addToNew(document.adoptNode(row), label);
+      if (pinnedIds.has(row.dataset.id)) continue;
+      const shown = document.querySelector(`ol.list:not(.pinned-list) > li[data-id="${CSS.escape(row.dataset.id)}"]`);
+      if (shown && row.dataset.latestComment) shown.dataset.latestComment = row.dataset.latestComment;
+      const target = shown ?? row;
+      const label = whatsNew(target);
+      if (!label || target.parentElement === newList) continue;
+      addToNew(shown ?? document.adoptNode(row), label);
     }
     settle();
   }
-  addOlder().catch(() => {});
+  refreshNew().catch(() => {});
   window.addEventListener("pageshow", event => {
-    if (event.persisted) dropOpened();
+    if (!event.persisted) return;
+    dropOpened();
+    refreshNew().catch(() => {});
   });
 })();
