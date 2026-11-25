@@ -57,6 +57,10 @@ EMAIL_BACKEND=console MAF_BASE_URL=http://localhost:8000 uv run python -m maf.ma
 
 Sign in with any `@uni.minerva.edu` address. The code is printed in the terminal (in development, `139145` also works; it never works in production). Run the tests with `uv run pytest`. Deployment is described in [deploy/aws.md](deploy/aws.md).
 
+## Contributing
+
+Open a [GitHub issue](https://github.com/SomeoneElseSt/MAF/issues) describing the problem or idea before you start on a pull request. That way we can agree on it first, and your pull request is much more likely to be reviewed and merged.
+
 ---
 
 Not affiliated with Minerva University in any official way. MAF is run and maintained as an open student initiative. Licensed under [AGPL-3.0](LICENSE).
