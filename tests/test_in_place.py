@@ -43,3 +43,11 @@ def test_every_post_form_on_the_thread_page_is_sent_in_place():
     from pathlib import Path
     script = (Path(__file__).parent.parent / "maf" / "static" / "replies.js").read_text()
     assert "form[method='post' i]:not([data-full-page])" in script
+
+
+def test_pages_are_checked_with_the_server_before_back_reuses_them(signed_in, app):
+    # An old saved copy shown by Back would have counts lower than ones already seen.
+    _post(signed_in, app)
+    response = signed_in.get("/")
+    assert response.headers["cache-control"] == "no-cache"
+    assert '<span class="counts">' in response.text

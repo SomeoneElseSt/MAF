@@ -137,7 +137,10 @@ def render(page: Page, template: str, status_code: int = 200, **context: Any) ->
     }
     base.update(context)
     return page.app.templates.TemplateResponse(
-        page.request, template, base, status_code=status_code
+        page.request, template, base, status_code=status_code,
+        # Back may reuse the page, but only after checking with the server: an old saved copy would
+        # show counts lower than ones already seen.
+        headers={"Cache-Control": "no-cache"},
     )
 
 

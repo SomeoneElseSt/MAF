@@ -32,9 +32,25 @@
   const postRows = scope => [...scope.querySelectorAll("li[data-id][data-created]")];
 
   // Created times are UTC ISO strings, so comparing them as text compares them as times.
+  // Coming back with Back or Forward is the same visit: the page shows the labels it showed before,
+  // from the times kept with this history entry, even when the browser loads it again.
+  function lastVisit() {
+    const returning = performance.getEntriesByType("navigation")[0]?.type === "back_forward";
+    const kept = returning ? history.state?.mafLastVisit : null;
+    if (kept) return kept;
+    const visit = { seen: read(localStorage, SEEN_KEY), comments: read(localStorage, COMMENTS_KEY) };
+    try {
+      history.replaceState({ ...history.state, mafLastVisit: visit }, "");
+    } catch {
+      // No history state: a reload by Back counts as a new visit.
+    }
+    return visit;
+  }
+
   function labelNewPosts() {
     if (!plainFrontPage) return [];
-    const seen = read(localStorage, SEEN_KEY);
+    const visit = lastVisit();
+    const seen = visit.seen;
     const rows = postRows(document);
     const fresh = seen ? rows.filter(row => row.dataset.created > seen) : [];
     for (const row of fresh) {
@@ -45,7 +61,7 @@
     }
     const newest = rows.reduce((max, row) => (row.dataset.created > max ? row.dataset.created : max), seen || "");
     if (newest) write(localStorage, SEEN_KEY, newest);
-    labelNewComments(rows, read(localStorage, COMMENTS_KEY));
+    labelNewComments(rows, visit.comments);
     write(localStorage, COMMENTS_KEY, new Date().toISOString());
     return fresh;
   }
