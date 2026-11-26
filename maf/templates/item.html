@@ -202,7 +202,7 @@
     {% endif %}
   </div>
   {% if post.url %}<p class="post-link"><a href="{{ post.url }}" rel="nofollow noopener" target="_blank">{{ post.url|host }}<span class="sr-only"> (opens in a new tab)</span></a></p>{% endif %}
-  {% if post.text %}<div class="post-body text">{{ post.text|markdown }}</div>{% endif %}
+  {% if post.text %}<div class="post-body text">{{ (post.text|profile_shown if is_profile else post.text)|markdown }}</div>{% endif %}
   {% if post_mine and not post.unlisted and not is_profile %}
   {# Same in-place edit as replies: the body above is swapped for this box. #}
   <form class="inline-reply edit-in-place" id="edit-{{ post.id }}" action="/edit" method="post" data-editable="edit-{{ post.id }}"{% if names_form != 'edit-' ~ post.id %} hidden{% endif %}>

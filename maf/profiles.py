@@ -47,3 +47,13 @@ def values_of(text: str | None) -> dict:
     values = {field: by_label.get(label, "") for field, label, _ in QUESTIONS}
     values["comment"] = comment
     return values
+
+
+def shown(text: str | None) -> str:
+    """A profile as it's displayed: the answers, then "Comment:" with the comment as a quote (rendered as markdown).
+    Works on any profile's text, including ones posted before this existed."""
+    lines, _, comment = (text or "").partition("\n\n")
+    if not comment.strip():
+        return lines
+    quoted = "\n".join(f"> {line}" if line.strip() else ">" for line in comment.splitlines())
+    return f"{lines}\n\nComment:\n\n{quoted}"

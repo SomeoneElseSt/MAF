@@ -7,7 +7,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response, StreamingResponse
 from starlette.routing import Route
 
-from . import embed, live, markdown, navigation, store
+from . import embed, live, markdown, navigation, profiles, store
 from .housetags import etiquette, is_hot, reply_placeholder
 from .util import iso, utc_now
 from .web import error_page, page_of, redirect, render
@@ -198,7 +198,7 @@ def _dates_context(page, post, tree) -> dict:
         "tree": tree,
         "is_profile": True,
         "has_profile": own is not None,
-        "my_profile_text": store.get_item(page.conn, own.id).text if own and not mine else "",
+        "my_profile_text": profiles.shown(store.get_item(page.conn, own.id).text) if own and not mine else "",
         "replied": my_reply is not None,
         "reply_closed": bool(my_reply and my_reply.removed_reason),
         "match_ended": bool(my_reply and my_reply.removed_reason == store.MATCH_ENDED),

@@ -295,3 +295,11 @@ def test_a_browser_that_cant_encrypt_cant_post_a_profile(signed_in, app, pass_id
     response = signed_in.post("/dates/submit", data=PROFILE_FORM)
     assert response.status_code == 400 and "support JavaScript" in response.text
     assert store.own_profile(app.conn, pass_id) is None
+
+
+def test_a_profiles_comment_shows_under_comment_as_a_quote():
+    from maf import profiles
+
+    text = "From: Europe\nGender: Woman\n\nCoffee **first**.\n\nThen we'll see."
+    assert profiles.shown(text) == "From: Europe\nGender: Woman\n\nComment:\n\n> Coffee **first**.\n>\n> Then we'll see."
+    assert profiles.shown("From: Europe") == "From: Europe"

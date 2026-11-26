@@ -11,7 +11,7 @@ from starlette.requests import Request
 from starlette.responses import HTMLResponse, RedirectResponse, Response
 from starlette.templating import Jinja2Templates
 
-from . import display, housetags, markdown, navigation, store
+from . import display, housetags, markdown, navigation, profiles, store
 from .app import App
 from .emoji import PICKER_EMOJI
 from .util import escape, iso, utc_now
@@ -59,6 +59,7 @@ def make_templates(app: App) -> Jinja2Templates:
     env.filters["esc"] = escape
     env.filters["host"] = display.host
     env.filters["markdown"] = markdown.render
+    env.filters["profile_shown"] = profiles.shown
     env.filters["md_title"] = markdown.title
     env.filters["plain"] = markdown.plain
     env.filters["thread_url"] = navigation.thread_url
