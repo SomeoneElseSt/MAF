@@ -33,8 +33,10 @@ You can check every privacy claim in this repo. Where to look:
 | Your posts can't be traced back to your email | Sign-in uses blind signatures (RFC 9474): the server signs a token without seeing it, then forgets the email. See `maf/blind.py` and `maf/static/login.js`. |
 | Your names in different threads can't be linked | Each name comes from a keyed hash of your pass and the thread (`maf/labels.py`). |
 | Private replies are unreadable to MAF | They're encrypted in the browser (`maf/static/private.js`); the server only checks their shape and stores the scrambled text (`maf/sealed.py`). Each person has a separate key per thread. |
+| On Dates, only a profile's owner sees who replied | Sending your profile is a private reply, encrypted in your browser (`#send-dialog` in `maf/templates/item.html`, `maf/static/private.js`). Private replies are left out for everyone but the two people (`_visible_ids` in `maf/store.py`). Dates posts never show on the front page, hashtags, New or search (`_post_where` in `maf/store.py`). |
+| Unmatch, Hide and deleting a profile erase the messages | `close_profile_reply`, `close_sent_profiles` and `delete_own_post` in `maf/store.py`, all through `_secure_delete`. |
 | No IP addresses or request logs | Access logs are off in the app (`maf/main.py`) and in the web server (`deploy/Caddyfile`). API use is only tallied per endpoint per day, with no post ids or times (`maf/usage.py`). |
-| Pins and drafts stay on your device | `maf/static/pins.js` and `maf/static/drafts.js` only use your browser's storage. |
+| Pins, drafts and new Dates matches stay on your device | `maf/static/pins.js`, `maf/static/drafts.js` and `maf/static/dates-thread.js` only use your browser's storage. |
 | MAF doesn't track when you check your Feed | What you've seen is kept in your browser (`maf/static/bell.js`); the server only lists replies and reactions (`notifications` in `maf/store.py`). |
 | The name check stays on MAF's server | It runs [Presidio](https://github.com/microsoft/presidio) with spaCy's `en_core_web_lg` English model on the server itself (`maf/namefilter.py`); no text is sent elsewhere. |
 | Deleted and removed words are gone | Deleting overwrites the data on disk (`_secure_delete` in `maf/store.py`). |
