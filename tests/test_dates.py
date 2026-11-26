@@ -169,3 +169,13 @@ def test_profiles_have_no_reactions_but_pinned_dates_posts_do(signed_in, app):
     store.set_pinned(app.conn, note.id, True)
     assert "react-add" in signed_in.get(f"/dates/thread/{note.id}").text
     assert "react-add" not in signed_in.get(f"/dates/thread/{profile.id}").text
+
+
+def test_replies_inside_a_match_say_who_can_see_them_and_are_always_private(signed_in, app, pass_id):
+    mine = _post_by(app, pass_id, "My profile")
+    _move(app, mine.id, "dates")
+    started = store.create_comment(app.conn, store.create_pass(app.conn), mine, "Their profile", None)
+    store.create_comment(app.conn, pass_id, started, "Hi", started.pass_id)
+    page = signed_in.get(f"/dates/thread/{mine.id}").text
+    assert "Only visible to " in page and "Make only visible to" not in page
+    assert 'data-always-private' in page and '<input type="hidden" name="private" value="on">' in page
