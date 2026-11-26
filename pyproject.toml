@@ -30,7 +30,11 @@ maf = "maf.cli:main"
 maf-mcp = "maf.mcp:main"
 
 [dependency-groups]
-dev = ["pytest>=8", "httpx>=0.27"]
+dev = [
+    "pytest>=8",
+    "httpx>=0.27",
+    "pytest-xdist>=3.8.0",
+]
 
 [tool.uv.sources]
 en-core-web-lg = { url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.8.0/en_core_web_lg-3.8.0-py3-none-any.whl" }
@@ -44,4 +48,5 @@ packages = ["maf"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "-n 4"  # in parallel (pytest-xdist): about 6s instead of 15s
 filterwarnings = ["ignore::DeprecationWarning"]

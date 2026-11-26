@@ -32,29 +32,30 @@ def _is_person(span: str, never_people: set[str]) -> bool:
     return not words or any(word not in never_people and not is_demonym(word) for word in words)
 
 
+_ANALYZERS: dict[str, object] = {}  # one loaded model per process, whichever app asks (tests make many apps)
+_ANALYZERS_LOCK = threading.Lock()
+_ANALYZE_LOCK = threading.Lock()  # the shared model analyzes one text at a time
+
+
+def _analyzer_for(model: str):
+    with _ANALYZERS_LOCK:
+        if model not in _ANALYZERS:
+            from presidio_analyzer import AnalyzerEngine
+            from presidio_analyzer.nlp_engine import NlpEngineProvider
+
+            provider = NlpEngineProvider(
+                nlp_configuration={"nlp_engine_name": "spacy", "models": [{"lang_code": "en", "model_name": model}]}
+            )
+            _ANALYZERS[model] = AnalyzerEngine(nlp_engine=provider.create_engine(), supported_languages=["en"])
+        return _ANALYZERS[model]
+
+
 class NameFilter:
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
-        self._analyzer = None
-        self._lock = threading.Lock()
-        self._analyze_lock = threading.Lock()
 
     def _engine(self):
-        with self._lock:
-            if self._analyzer is None:
-                from presidio_analyzer import AnalyzerEngine
-                from presidio_analyzer.nlp_engine import NlpEngineProvider
-
-                provider = NlpEngineProvider(
-                    nlp_configuration={
-                        "nlp_engine_name": "spacy",
-                        "models": [{"lang_code": "en", "model_name": self._settings.spacy_model}],
-                    }
-                )
-                self._analyzer = AnalyzerEngine(
-                    nlp_engine=provider.create_engine(), supported_languages=["en"]
-                )
-            return self._analyzer
+        return _analyzer_for(self._settings.spacy_model)
 
     def warm_up(self) -> None:
         """Loads the language model now (a few seconds), so the first post after a restart isn't slow."""
@@ -71,7 +72,7 @@ class NameFilter:
         if not joined.strip():
             return False
         engine = self._engine()
-        with self._analyze_lock:
+        with _ANALYZE_LOCK:
             results = engine.analyze(
                 text=joined,
                 entities=[PERSON],

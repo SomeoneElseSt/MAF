@@ -14,9 +14,7 @@ def presidio_ready():
     pytest.importorskip("presidio_analyzer")
     import spacy
 
-    try:
-        spacy.load("en_core_web_lg")
-    except OSError:
+    if not spacy.util.is_package("en_core_web_lg"):
         pytest.skip("spaCy model en_core_web_lg is not installed")
 
 

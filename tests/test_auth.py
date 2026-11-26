@@ -357,10 +357,10 @@ def test_sign_in_answers_without_waiting_for_the_email(client, app, monkeypatch)
     import threading
     import time
 
-    sent = threading.Event()
+    release, sent = threading.Event(), threading.Event()
 
     def slow_send(email):
-        time.sleep(1.5)
+        release.wait(5)  # still sending until the test lets it finish
         sent.set()
 
     # A real provider (not the console used in tests), so the email is handed to a background worker.
@@ -370,7 +370,8 @@ def test_sign_in_answers_without_waiting_for_the_email(client, app, monkeypatch)
     response = client.post("/sign-in", data={"email": "slow@uni.minerva.edu"})
     waited = time.monotonic() - started
     assert response.status_code == 200 and "Check your inbox" in response.text
-    assert waited < 0.5
+    assert waited < 0.5 and not sent.is_set()
+    release.set()
     assert sent.wait(5)
 
 
