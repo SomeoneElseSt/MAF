@@ -179,3 +179,15 @@ def test_replies_inside_a_match_say_who_can_see_them_and_are_always_private(sign
     page = signed_in.get(f"/dates/thread/{mine.id}").text
     assert "Only visible to " in page and "Make only visible to" not in page
     assert 'data-always-private' in page and '<input type="hidden" name="private" value="on">' in page
+
+
+def test_your_profile_counts_its_replies_above_a_line(signed_in, app, pass_id):
+    mine = _post_by(app, pass_id, "My profile")
+    _move(app, mine.id, "dates")
+    page = signed_in.get(f"/dates/thread/{mine.id}").text
+    assert "profile-replies-count" not in page  # nothing to count yet
+    for _ in range(2):
+        store.create_comment(app.conn, store.create_pass(app.conn), mine, "A profile", None)
+    page = signed_in.get(f"/dates/thread/{mine.id}").text
+    assert '<p class="profile-replies-count">2 people replied with their profiles</p>' in page
+    assert 'class="comments profile-replies"' in page
