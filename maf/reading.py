@@ -56,10 +56,11 @@ def item(request: Request) -> Response:
         "title": markdown.plain(post.title),
         "post": post,
         "board": post.board,  # a Dates post's thread takes the Dates colour
-        "post_nsfw": bool(post.nsfw),
+        "post_nsfw": bool(post.nsfw),  # an NSFW post keeps the NSFW tint, whichever way the switch is
         "post_board": navigation.post_board_of(post),  # where the header's links lead (navigation.py)
-        # On Dates you answer a profile with your own, so the thread needs to know whether you have one.
-        "has_profile": post.board == "dates" and store.has_profile(page.conn, page.pass_id),  # and an NSFW post's the NSFW one, whichever way the switch is
+        # A profile is answered with your own profile and Match instead of comments (store.is_profile).
+        "is_profile": store.is_profile(post),
+        "has_profile": store.is_profile(post) and store.has_profile(page.conn, page.pass_id),
         "comment_count": store.comment_counts(page.conn, [thread_id]).get(thread_id, 0),
         "now": iso(utc_now()),
         "post_mine": bool(page.pass_id) and post.pass_id == page.pass_id,

@@ -126,3 +126,17 @@ def test_on_a_dates_post_the_header_link_goes_to_the_dates_page(signed_in, app):
     post = _post(app, "On dates")
     _move(app, post.id, "dates")
     assert '<a class="dates-toggle" href="/dates" aria-current="page">' in signed_in.get(f"/thread/{post.id}").text
+
+
+def test_a_pinned_dates_post_takes_normal_comments_and_a_profile_does_not(signed_in, app):
+    note, profile = _post(app, "How Dates works"), _post(app, "Berlin: Woman, Europe, 160–175 cm")
+    for post in (note, profile):
+        _move(app, post.id, "dates")
+    store.set_pinned(app.conn, note.id, True)
+    store.create_comment(app.conn, store.create_pass(app.conn), store.get_item(app.conn, note.id), "Feedback", None)
+    pinned_page = signed_in.get(f"/dates/thread/{note.id}").text
+    assert 'id="comment-form"' in pinned_page and "Reply with profile" not in pinned_page
+    assert 'class="match"' not in pinned_page and "match-dialog" not in pinned_page and ">Reply</a>" in pinned_page
+    assert 'data-board="dates"' in _body(pinned_page)  # still the Dates colour
+    profile_page = signed_in.get(f"/dates/thread/{profile.id}").text
+    assert 'id="comment-form"' not in profile_page and "Reply with profile" in profile_page

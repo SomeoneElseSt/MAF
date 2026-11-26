@@ -132,8 +132,8 @@
   {% endif %}
   {{ embed_cards(entry) }}
   <div class="actions">
-    {% if post.board == "dates" %}
-    {# On Dates, replies are profiles sent privately to the profile's owner, so only they see them. Instead of Reply
+    {% if is_profile %}
+    {# On a profile, replies are profiles sent privately to the profile's owner, so only they see them. Instead of Reply
        they get Match: it asks first (match-dialog), then opens a private reply. #}
     <button class="match" type="button" data-reply="reply-{{ entry.id }}">Match</button>
     {% else %}
@@ -204,8 +204,8 @@
 </article>
 
 {% if not post.unlisted %}
-{% if viewer and post.board == "dates" %}
-{# Dates: no comments. You answer someone's profile with your own; your own profile has no box. #}
+{% if viewer and is_profile %}
+{# A profile: no comments. You answer someone's profile with your own; your own profile has no box. #}
 {% if not post_mine %}
 <div class="reply profile-reply">
   <div class="row"><button class="button" type="button" id="reply-with-profile"{% if not has_profile %} aria-controls="need-profile" aria-expanded="false"{% endif %}>Reply with profile</button></div>
@@ -262,7 +262,7 @@
 <script src="{{ static('markdown.js') }}"></script>
 <script src="{{ static('private.js') }}"></script>
 {% if viewer %}<script src="{{ static('live.js') }}"></script>{% endif %}
-{% if post.board == "dates" %}
+{% if is_profile %}
 <dialog id="match-dialog">
   <p>Matching opens private messages between you two in this thread. They show only on this computer and are encrypted, so MAF can't read them.</p>
   <p>Use common sense in messages and when meeting. Take your time before sharing anything that identifies you or your contact details. Meet somewhere public and let a friend know where you'll be.</p>

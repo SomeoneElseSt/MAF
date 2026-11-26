@@ -454,8 +454,13 @@ def posts_between(
     return items
 
 
+def is_profile(post: Item) -> bool:
+    """A profile is a Dates post that isn't pinned. Pinned Dates posts are the maintainer's notes, with normal replies."""
+    return post.board == "dates" and not post.pinned
+
+
 def has_profile(conn: sqlite3.Connection, pass_id: str | None) -> bool:
-    """Whether this pass has a profile: a listed Dates post of its own (pinned ones are the maintainer's notes)."""
+    """Whether this pass has a profile (is_profile: a Dates post of its own that isn't pinned)."""
     if pass_id is None:
         return False
     row = conn.execute(
