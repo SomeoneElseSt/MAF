@@ -9,7 +9,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.routing import Route
 
-from . import live, store
+from . import boards, live, store
 from .email import hidden_reply_email, moderation_email
 from .housetags import submit_placeholder
 from .sealed import parse_sealed, valid_public_key
@@ -38,15 +38,18 @@ async def submit_page(request: Request) -> Response:
     if page.pass_id is None:
         return _login(page)
     tags: list[str] = []
+    # Submit from a board's pages starts on that board (/submit?board=dating); the form can switch it.
+    board = boards.valid(request.query_params.get("board"))
     return render(page, "submit.html", placeholder=submit_placeholder(tags),
-                  values={}, errors={})
+                  values={"board": board}, errors={}, board=board)
 
 
 async def submit_post(request: Request) -> Response:
     page = page_of(request)
     if page.pass_id is None:
         return _login(page)
-    values = await form_values(request, "title", "url", "text", "tags", "confirm_names")
+    values = await form_values(request, "title", "url", "text", "tags", "board", "confirm_names")
+    values["board"] = boards.valid(values["board"])
     tags, too_many = store.normalise_tags(values["tags"])
     errors = _validate_post(values, too_many)
     if errors:
@@ -56,7 +59,8 @@ async def submit_post(request: Request) -> Response:
     if not _allowed(page, "post", POSTS_PER_MINUTE):
         return _form_error(page, values, tags, {"form": "You're posting fast. Wait a minute and try again."})
     post = store.create_post(
-        page.conn, page.pass_id, values["title"], values["text"] or None, values["url"] or None, tags
+        page.conn, page.pass_id, values["title"], values["text"] or None, values["url"] or None, tags,
+        board=values["board"],
     )
     page.app.live.publish(live.HOME)
     return redirect(f"/thread/{post.id}")
@@ -84,12 +88,12 @@ def _valid_url(url: str) -> bool:
 
 def _form_error(page, values, tags, errors) -> Response:
     return render(page, "submit.html", status_code=400,
-                  placeholder=submit_placeholder(tags), values=values, errors=errors)
+                  placeholder=submit_placeholder(tags), values=values, errors=errors, board=values["board"])
 
 
 def _name_warning(page, values, tags) -> Response:
     return render(page, "submit-warning.html", status_code=400,
-                  placeholder=submit_placeholder(tags), values=values)
+                  placeholder=submit_placeholder(tags), values=values, board=values["board"])
 
 
 async def comment(request: Request) -> Response:

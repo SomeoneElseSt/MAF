@@ -66,9 +66,10 @@ def four_day_window(end: date) -> tuple[date, date]:
     return end - timedelta(days=3), end
 
 
-def metadata(item, comment_count: int | None = None, include_time: bool = True) -> Markup:
-    """The plain-language details line: '2 hours ago, 14 comments, 61 views'."""
-    parts = []
+def metadata(item, comment_count: int | None = None, include_time: bool = True, score: int | None = None) -> Markup:
+    """The plain-language details line: '5 points, 2 hours ago, 14 comments, 61 views'."""
+    # A negative score isn't shown, so a post that was voted down isn't marked out for it.
+    parts = [] if score is None or score < 0 else [_plural(score, "point")]
     if include_time:
         parts.append(relative_time(item.created_at))
     if comment_count is not None:

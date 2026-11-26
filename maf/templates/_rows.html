@@ -2,14 +2,17 @@
   One post (or comment hit) in a list. Shared by list.html and the New section's extra rows (new-rows.html).
   Uses from the caller's context: latest_comments {thread_id: newest comment by someone else}, viewer.
 #}
+{# Rows off the board being shown (search covers every board) say where they're from. #}
+{% macro board_badge(post) %}{% if post.board != board %} <a class="board-badge board-{{ post.board }}" href="{{ board_path(post.board) }}">{{ board_label(post.board) }}</a>{% endif %}{% endmacro %}
+
 {% macro row(post, fixed=false) %}
-<li{% if fixed %} class="fixed"{% elif is_hot(post.tags) %} class="hot"{% endif %} data-tags="{{ post.tags|join(' ') }}" data-id="{{ post.id }}" data-title="{{ post.title|plain|e }}" data-host="{{ post.url|host }}" data-created="{{ post.created_at }}" data-views="{{ post.views }}"{% if viewer and post.pass_id == viewer %} data-mine{% endif %}{% if latest_comments and latest_comments.get(post.thread_id) %} data-latest-comment="{{ latest_comments[post.thread_id] }}"{% endif %}>
+<li{% if fixed %} class="fixed"{% elif is_hot(post.tags) %} class="hot"{% endif %} data-tags="{{ post.tags|join(' ') }}" data-id="{{ post.id }}" data-title="{{ post.title|plain|e }}" data-host="{{ post.url|host }}" data-created="{{ post.created_at }}" data-views="{{ post.views }}" data-board="{{ post.board }}"{% if viewer and post.pass_id == viewer %} data-mine{% endif %}{% if latest_comments and latest_comments.get(post.thread_id) %} data-latest-comment="{{ latest_comments[post.thread_id] }}"{% endif %}>
   {% if post.title %}
   <a class="title" href="/thread/{{ post.id }}">{{ post.title|md_title }}</a>{% if post.url %}<a class="host" href="{{ post.url }}" rel="nofollow noopener" target="_blank">({{ post.url|host }})<span class="sr-only"> (opens in a new tab)</span></a>{% endif %}
-  <div class="meta"><span class="counts">{{ metadata(post, post.comment_count) }}</span>{% if post.tags %} <span class="dot">·</span> {% for tag in post.tags %}<a class="tag{% if is_hot([tag]) %} hot-tag{% endif %}" href="/?tag={{ tag }}">#{{ tag }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}</div>
+  <div class="meta"><span class="counts">{{ metadata(post, post.comment_count, score=post.score) }}</span>{% if post.tags %} <span class="dot">·</span> {% for tag in post.tags %}<a class="tag{% if is_hot([tag]) %} hot-tag{% endif %}" href="{{ board_path(post.board) }}?tag={{ tag }}">#{{ tag }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}{{ board_badge(post) }}</div>
   {% else %}
   <a class="title" href="/thread/{{ post.thread_id }}#{{ post.id }}">{{ post.text|plain|truncate(80) }}</a>
-  <div class="meta">Comment on <a href="/thread/{{ post.thread_id }}">{{ post.thread_title }}</a>, {{ post.created_at|rel }}</div>
+  <div class="meta">Comment on <a href="/thread/{{ post.thread_id }}">{{ post.thread_title }}</a>, {{ post.created_at|rel }}{{ board_badge(post) }}</div>
   {% endif %}
 </li>
 {% endmacro %}

@@ -435,6 +435,19 @@ main { display: block; }
 }
 .react-add:hover, .actions .react-add:hover, .react-add[aria-expanded="true"] { color: var(--ink); background: var(--tint); }
 
+/* Votes on a post: outlined arrows around the score; the one you cast is filled. */
+.vote { display: inline-flex; align-items: center; gap: 2px; margin-right: 8px; }
+.vote button {
+  display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; padding: 0;
+  border: none; border-radius: 4px; background: none; color: var(--meta); cursor: pointer;
+}
+.vote button:hover { background: var(--tint); color: var(--ink); }
+.vote svg path { fill: none; }
+.vote button[aria-pressed="true"] { color: var(--ink); }
+.vote button[aria-pressed="true"] svg path { fill: currentColor; }
+.vote-down svg { transform: rotate(180deg); }
+.vote-score { min-width: 1.5em; text-align: center; font: 13px var(--sans); color: var(--ink); font-variant-numeric: tabular-nums; }
+
 .emoji-picker {
   position: absolute; z-index: 20; display: grid; grid-template-columns: repeat(8, 32px); gap: 2px; padding: 6px;
   background: var(--paper); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
@@ -453,7 +466,7 @@ main { display: block; }
 /* Real app only: rules for markup the static mockups didn't need. */
 
 /* Flag, reaction and moderation buttons are small POST forms; they lay out as if the button stood alone. */
-.inline-form, .react-form { display: contents; }
+.inline-form, .react-form, .vote-form { display: contents; }
 
 /* Reply boxes start hidden. Reply links to the box, so it opens even without JavaScript. */
 .inline-reply[hidden]:target { display: block; }
@@ -549,3 +562,32 @@ button.note:disabled { cursor: default; }
 .text pre { background: var(--tint); border-radius: 4px; padding: 10px 12px; margin: 6px 0 10px; white-space: pre-wrap; font: 14px/1.5 var(--mono); }
 .text pre code { background: none; padding: 0; font: inherit; }
 .text hr { border: 0; border-top: 1px solid var(--line); margin: 12px 0; }
+
+/* Boards (maf/boards.py). A board's name is plain text, like the other header links and tags. On a board's own
+   pages (its front page, its threads, Submit to it) the whole page takes the board's colour. */
+.top nav a.board-link[aria-current] { color: var(--ink); }
+.meta .board-badge { color: var(--meta); }
+
+/* /dating/ pages are pink (#ff66b6) in light and dark mode alike, with black text: white text on this pink is 2.7:1,
+   black is 7.8:1. Every text colour is darkened to keep 4.5:1 on the pink (meta 5.1, hot 4.9, danger 5.4) and input
+   borders 3:1 (3.3). */
+body.board-dating {
+  --paper: #ff66b6;
+  --ink: #000000;
+  --soft: #2e2e2e;
+  --meta: #2e2e2e;
+  --line: #e0559f;
+  --border: #4a4a4a;
+  --tint: #ff8cc8;
+  --visited: #333333;
+  --hot: #5e1700;
+  --danger: #5c0000;
+  --hot-wash: color-mix(in srgb, var(--hot) 10%, var(--paper));
+  --new-fill: #000000;
+  --new-ink: #ffffff;
+}
+
+/* The Board choice on Submit: one radio per board. */
+.board-pick { border: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px; }
+.board-pick legend { font: 600 15px var(--sans); margin-bottom: 6px; padding: 0; width: 100%; }
+.board-option { display: inline-flex; align-items: center; gap: 6px; font: 16px var(--sans); cursor: pointer; }

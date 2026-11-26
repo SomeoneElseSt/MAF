@@ -11,7 +11,7 @@ import sqlite3
 import sys
 from pathlib import Path
 
-from . import store
+from . import boards, store
 from .settings import load_settings
 
 # The site's settings file (systemd reads it for the running app). An SSH shell doesn't, so without
@@ -152,6 +152,18 @@ def cmd_pin(conn: sqlite3.Connection, args, pinned: bool) -> int:
     return 0
 
 
+def cmd_board(conn: sqlite3.Connection, args) -> int:
+    """Moves posts (with their replies) to a board. Prints only ids, never what the posts say."""
+    failed = 0
+    for post_id in args.ids:
+        if store.set_board(conn, post_id, args.board):
+            print(f"Moved {post_id} to {boards.label(args.board)}.")
+        else:
+            print(f"No post {post_id}")
+            failed = 1
+    return failed
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="maf", description="MAF maintainer commands")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -180,6 +192,10 @@ def build_parser() -> argparse.ArgumentParser:
     unpin = sub.add_parser("unpin", help="unpin a post")
     unpin.add_argument("id")
     unpin.set_defaults(func=lambda conn, args: cmd_pin(conn, args, False))
+    board = sub.add_parser("board", help="move posts and their replies to a board, e.g. maf board dating <id> <id>")
+    board.add_argument("board", choices=list(boards.BOARDS))
+    board.add_argument("ids", nargs="+", metavar="id")
+    board.set_defaults(func=cmd_board)
     return parser
 
 

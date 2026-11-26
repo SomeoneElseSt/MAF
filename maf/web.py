@@ -11,7 +11,7 @@ from starlette.requests import Request
 from starlette.responses import HTMLResponse, RedirectResponse, Response
 from starlette.templating import Jinja2Templates
 
-from . import display, housetags, markdown, store
+from . import boards, display, housetags, markdown, store
 from .app import App
 from .emoji import PICKER_EMOJI
 from .util import escape, iso, utc_now
@@ -69,6 +69,10 @@ def make_templates(app: App) -> Jinja2Templates:
         house_tags=housetags.HOUSE_TAGS,
         is_hot=housetags.is_hot,
         sort_keys=SORT_KEYS,
+        boards=boards.BOARDS,
+        board_path=boards.path,
+        board_label=boards.label,
+        main_board=boards.MAIN,
         picker_emoji=PICKER_EMOJI,
         submit_templates={**{t: h["submit_template"] for t, h in housetags.HOUSE_TAGS.items()}, "default": housetags.DEFAULT_SUBMIT_TEMPLATE},
         example_post=housetags.EXAMPLE_POST,
@@ -113,9 +117,13 @@ def page_of(request: Request) -> Page:
 
 
 def render(page: Page, template: str, status_code: int = 200, **context: Any) -> HTMLResponse:
-    """Renders a template with the shared layout context."""
+    """Renders a template with the shared layout context.
+
+    `board` is the board the page belongs to (a board's front page, a thread on it, Submit to it):
+    the # menu lists its hashtags, Submit posts to it, and the page takes its colour."""
+    board = boards.valid(context.get("board") or boards.of_path(page.request.url.path))
     # Signed-out visitors get nothing from the forum, not even tag names in the # menu.
-    tags = store.tag_counts(page.conn) if page.pass_id else []
+    tags = store.tag_counts(page.conn, board) if page.pass_id else []
     params = dict(page.request.query_params)
 
     def sort_url(key: str) -> str:
@@ -138,6 +146,7 @@ def render(page: Page, template: str, status_code: int = 200, **context: Any) ->
         "server_now": iso(utc_now()),
     }
     base.update(context)
+    base["board"] = board
     return page.app.templates.TemplateResponse(
         page.request, template, base, status_code=status_code,
         # Back may reuse the page, but only after checking with the server: an old saved copy would

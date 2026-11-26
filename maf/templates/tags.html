@@ -10,7 +10,7 @@
 {% if tag_list %}
 <ol class="list list-flat">
   {% for tag, count in tag_list %}
-  <li><a class="title" href="/?tag={{ tag }}">#{{ tag }}</a> <span class="meta">{{ count }} post{{ '' if count == 1 else 's' }}</span></li>
+  <li><a class="title" href="{{ board_path(board) }}?tag={{ tag }}">#{{ tag }}</a> <span class="meta">{{ count }} post{{ '' if count == 1 else 's' }}</span></li>
   {% endfor %}
 </ol>
 {% else %}

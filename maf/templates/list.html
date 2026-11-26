@@ -40,7 +40,8 @@
 {% endmacro %}
 
 {% block main %}
-{% if kind == "home" %}<h1 class="sr-only">{{ org.site_name }}, the anonymous forum for {{ org.community }}</h1>{% endif %}
+{% if kind == "home" and board == main_board %}<h1 class="sr-only">{{ org.site_name }}, the anonymous forum for {{ org.community }}</h1>
+{% elif kind == "home" %}<h1 class="sr-only">{{ board_label(board) }} on {{ org.site_name }}</h1>{% endif %}
 {{ sort_row() }}
 
 {% if kind == "search" %}
@@ -84,13 +85,13 @@
   {# Pinned shows under Newest on the latest page: the maintainer's pins, then this browser's own (added by pins.js). #}
   {% if sort == "new" and not next_url %}
   <h2 class="day"{% if not pinned %} hidden{% endif %}>Pinned</h2>
-  <ol class="list pinned-list"{% if not pinned %} hidden{% endif %} data-hot-tags="{% for tag, rules in house_tags.items() if rules.highlight %}{{ tag }} {% endfor %}">
+  <ol class="list pinned-list"{% if not pinned %} hidden{% endif %} data-board="{{ board }}" data-base="{{ board_path(board) }}" data-hot-tags="{% for tag, rules in house_tags.items() if rules.highlight %}{{ tag }} {% endfor %}">
     {% for post in pinned %}{{ row(post, fixed=true) }}{% endfor %}
   </ol>
   {# New: posts and comments you haven't opened yet, until you open them. Filled by new.js from this page's
      rows and /new-activity; what you've opened stays in this browser. #}
   <h2 class="day" id="new-heading" hidden>New</h2>
-  <ol class="list new-list" hidden data-now="{{ now }}"></ol>
+  <ol class="list new-list" hidden data-now="{{ now }}" data-board="{{ board }}"></ol>
   {% endif %}
   {% for heading, posts in groups %}
   <h2 class="day">{{ heading }}</h2>
@@ -105,7 +106,7 @@
 {% block scripts %}
 <p id="pin-status" class="sr-only" aria-live="polite"></p>
 <script src="{{ static('pins.js') }}"></script>
-{% if path == "/" %}<script src="{{ static('fresh.js') }}"></script>{% endif %}
+{% if path == board_path(board) %}<script src="{{ static('fresh.js') }}"></script>{% endif %}
 <script src="{{ static('counts.js') }}"></script>
-{% if path == "/" %}<script src="{{ static('new.js') }}"></script>{% endif %}
+{% if path == board_path(board) %}<script src="{{ static('new.js') }}"></script>{% endif %}
 {% endblock %}

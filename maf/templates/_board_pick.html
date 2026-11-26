@@ -1,0 +1,10 @@
+{#
+  The Board choice on the submit forms (submit.html, submit-warning.html).
+  Uses from the caller's context: values.board, the board picked so far (main by default).
+#}
+<fieldset class="field board-pick">
+  <legend>Board</legend>
+  {% for name, (label, _) in boards.items() %}
+  <label class="board-option board-{{ name }}"><input type="radio" name="board" value="{{ name }}"{% if values.board|default(main_board) == name %} checked{% endif %}> {{ label }}</label>
+  {% endfor %}
+</fieldset>

@@ -14,7 +14,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 
-from . import markdown
+from . import boards, markdown
 from .util import day_start, iso, new_item_id, new_pass_id, parse_iso, utc_now
 
 PAGE_SIZE = 30
@@ -103,8 +103,10 @@ class Item:
     sealed: str | None = None
     removed_reason: str | None = None
     edited_at: str | None = None
+    board: str = boards.MAIN
     tags: list[str] = field(default_factory=list)
     comment_count: int = 0
+    score: int = 0
     thread_title: str | None = None
 
     @property
@@ -145,6 +147,7 @@ def _row_to_item(row: sqlite3.Row, tags: list[str] | None = None) -> Item:
         sealed=row["sealed"],
         removed_reason=row["removed_reason"],
         edited_at=row["edited_at"],
+        board=row["board"],
         tags=tags or [],
     )
 
@@ -180,13 +183,14 @@ def create_post(
     url: str | None,
     tags: list[str],
     created_at: str | None = None,
+    board: str = boards.MAIN,
 ) -> Item:
     item_id = unused_item_id(conn)
     created_at = created_at or iso(utc_now())
     with conn:
         conn.execute(
-            "INSERT INTO item (id, thread_id, pass_id, title, url, text, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (item_id, item_id, pass_id, title, url, text, created_at),
+            "INSERT INTO item (id, thread_id, pass_id, title, url, text, created_at, board) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (item_id, item_id, pass_id, title, url, text, created_at, boards.valid(board)),
         )
         for tag in tags:
             conn.execute("INSERT INTO item_tag (item_id, tag) VALUES (?, ?)", (item_id, tag))
@@ -216,9 +220,10 @@ def create_comment(
     created_at = created_at or iso(utc_now())
     with conn:
         conn.execute(
-            "INSERT INTO item (id, parent_id, thread_id, pass_id, text, created_at, private_to, sealed) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            (item_id, parent.id, parent.thread_id, pass_id, None if sealed else text, created_at, private_to, sealed),
+            "INSERT INTO item (id, parent_id, thread_id, pass_id, text, created_at, private_to, sealed, board) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (item_id, parent.id, parent.thread_id, pass_id, None if sealed else text, created_at, private_to, sealed,
+             parent.board),
         )
         if private_to is None and parent.private_to is None:
             conn.execute(
@@ -298,7 +303,7 @@ def latest_comment_times(conn: sqlite3.Connection, thread_ids: list[str], not_by
 NEW_ACTIVITY_LIMIT = 100
 
 
-def new_activity(conn: sqlite3.Connection, viewer_pass: str, since: str) -> list[Item]:
+def new_activity(conn: sqlite3.Connection, viewer_pass: str, since: str, board: str = boards.MAIN) -> list[Item]:
     """Listed posts with something new since `since` for this pass: posted by someone else after it, or
     commented on by someone else after it. Newest activity first. The browser decides which of these the
     person has already opened (that stays in the browser)."""
@@ -307,10 +312,10 @@ def new_activity(conn: sqlite3.Connection, viewer_pass: str, since: str) -> list
         "  SELECT i.*, (SELECT MAX(c.created_at) FROM item c WHERE c.thread_id = i.id AND c.parent_id IS NOT NULL"
         "    AND c.private_to IS NULL AND c.removed_reason IS NULL AND c.pass_id IS NOT ?) AS latest_other"
         "  FROM item i WHERE i.parent_id IS NULL AND i.private_to IS NULL AND i.removed_reason IS NULL"
-        "    AND NOT (i.hidden = 1 AND i.restored = 0)"
+        "    AND NOT (i.hidden = 1 AND i.restored = 0) AND i.board = ?"
         ") WHERE (pass_id IS NOT ? AND created_at > ?) OR latest_other > ? "
         "ORDER BY MAX(created_at, COALESCE(latest_other, '')) DESC LIMIT ?",
-        (viewer_pass, viewer_pass, since, since, NEW_ACTIVITY_LIMIT),
+        (viewer_pass, boards.valid(board), viewer_pass, since, since, NEW_ACTIVITY_LIMIT),
     ).fetchall()
     return [_row_to_item(r) for r in rows]
 
@@ -339,10 +344,13 @@ def subscribers(conn: sqlite3.Connection, thread_id: str) -> list[str]:
     return [r["pass_id"] for r in rows]
 
 
-def with_comment_counts(conn: sqlite3.Connection, items: list[Item]) -> list[Item]:
+def with_counts(conn: sqlite3.Connection, items: list[Item]) -> list[Item]:
+    """Fills in each item's public comment count and vote score."""
     counts = comment_counts(conn, [i.thread_id for i in items])
+    scores = vote_scores(conn, [i.id for i in items])
     for item in items:
         item.comment_count = counts.get(item.thread_id, 0)
+        item.score = scores.get(item.id, 0)
     return items
 
 
@@ -401,12 +409,14 @@ def build_tree(items: list[Item], root_id: str) -> list[dict]:
 # -- listing -------------------------------------------------------------
 
 
-def _post_where(public_only: bool = True) -> str:
-    clauses = ["parent_id IS NULL"]
-    if public_only:
-        clauses.append("private_to IS NULL")
-        clauses.append("NOT (hidden = 1 AND restored = 0)")
-    return " AND ".join(clauses)
+def _post_where(board: str, alias: str = "") -> str:
+    """Listed posts on one board: public and not unlisted by flags. Board names come from
+    boards.BOARDS only, so writing one into the SQL is safe."""
+    if board not in boards.BOARDS:
+        raise ValueError(f"no board {board!r}")
+    a = f"{alias}." if alias else ""
+    return (f"{a}parent_id IS NULL AND {a}private_to IS NULL AND NOT ({a}hidden = 1 AND {a}restored = 0) "
+            f"AND {a}board = '{board}'")
 
 
 def posts_between(
@@ -417,11 +427,12 @@ def posts_between(
     limit: int | None = None,
     offset: int = 0,
     exclude_pinned: bool = False,
+    board: str = boards.MAIN,
 ) -> list[Item]:
-    """Posts in the 4-day window start..end inclusive, newest/oldest/most viewed."""
+    """One board's posts in the 4-day window start..end inclusive, newest/oldest/most viewed."""
     order = {"new": "created_at DESC, rowid DESC", "old": "created_at ASC, rowid ASC", "views": "views DESC, created_at DESC"}[sort]
     lo, hi = iso(day_start(start)), iso(day_start(end + timedelta(days=1)))
-    where = _post_where() + " AND created_at >= ? AND created_at < ?"
+    where = _post_where(board) + " AND created_at >= ? AND created_at < ?"
     params: list = [lo, hi]
     if exclude_pinned:
         where += " AND pinned = 0"
@@ -441,55 +452,53 @@ def day_groups(items: list[Item]) -> list[tuple[date, list[Item]]]:
     return list(groups.items())
 
 
-def pinned_posts(conn: sqlite3.Connection) -> list[Item]:
+def pinned_posts(conn: sqlite3.Connection, board: str = boards.MAIN) -> list[Item]:
     rows = conn.execute(
-        f"SELECT * FROM item WHERE {_post_where()} AND pinned = 1 ORDER BY created_at DESC"
+        f"SELECT * FROM item WHERE {_post_where(board)} AND pinned = 1 ORDER BY created_at DESC"
     ).fetchall()
     return [_row_to_item(r, item_tags(conn, r["id"])) for r in rows]
 
 
-def tagged_posts(conn: sqlite3.Connection, tag: str, sort: str, limit: int = PAGE_SIZE, offset: int = 0) -> list[Item]:
+def tagged_posts(conn: sqlite3.Connection, tag: str, sort: str, limit: int = PAGE_SIZE, offset: int = 0,
+                 board: str = boards.MAIN) -> list[Item]:
     order = {"new": "i.created_at DESC, i.rowid DESC", "old": "i.created_at ASC, i.rowid ASC", "views": "i.views DESC, i.created_at DESC"}[sort]
     sql = (
         "SELECT i.* FROM item i JOIN item_tag t ON t.item_id = i.id "
-        f"WHERE t.tag = ? AND {_post_where()} ORDER BY {order} LIMIT ? OFFSET ?"
+        f"WHERE t.tag = ? AND {_post_where(board, 'i')} ORDER BY {order} LIMIT ? OFFSET ?"
     )
     rows = conn.execute(sql, (tag, limit, offset)).fetchall()
     return [_row_to_item(r, item_tags(conn, r["id"])) for r in rows]
 
 
-def tagged_count(conn: sqlite3.Connection, tag: str) -> int:
+def tagged_count(conn: sqlite3.Connection, tag: str, board: str = boards.MAIN) -> int:
     row = conn.execute(
-        "SELECT COUNT(*) AS n FROM item_tag t JOIN item i ON i.id = t.item_id "
-        "WHERE t.tag = ? AND i.parent_id IS NULL AND i.private_to IS NULL "
-        "AND NOT (i.hidden = 1 AND i.restored = 0)",
+        f"SELECT COUNT(*) AS n FROM item_tag t JOIN item i ON i.id = t.item_id WHERE t.tag = ? AND {_post_where(board, 'i')}",
         (tag,),
     ).fetchone()
     return row["n"]
 
 
-def tag_counts(conn: sqlite3.Connection) -> list[tuple[str, int]]:
-    """Every tag on a visible public post, most used first then alphabetical."""
+def tag_counts(conn: sqlite3.Connection, board: str = boards.MAIN) -> list[tuple[str, int]]:
+    """Every tag on a listed post on one board, most used first then alphabetical."""
     rows = conn.execute(
-        "SELECT t.tag AS tag, COUNT(*) AS n FROM item_tag t JOIN item i ON i.id = t.item_id "
-        "WHERE i.parent_id IS NULL AND i.private_to IS NULL AND NOT (i.hidden = 1 AND i.restored = 0) "
-        "GROUP BY t.tag ORDER BY n DESC, t.tag ASC"
+        f"SELECT t.tag AS tag, COUNT(*) AS n FROM item_tag t JOIN item i ON i.id = t.item_id "
+        f"WHERE {_post_where(board, 'i')} GROUP BY t.tag ORDER BY n DESC, t.tag ASC"
     ).fetchall()
     return [(r["tag"], r["n"]) for r in rows]
 
 
-def has_any_posts(conn: sqlite3.Connection) -> bool:
-    row = conn.execute(f"SELECT 1 FROM item WHERE {_post_where()} LIMIT 1").fetchone()
+def has_any_posts(conn: sqlite3.Connection, board: str = boards.MAIN) -> bool:
+    row = conn.execute(f"SELECT 1 FROM item WHERE {_post_where(board)} LIMIT 1").fetchone()
     return row is not None
 
 
-def first_post_day(conn: sqlite3.Connection) -> date | None:
-    row = conn.execute(f"SELECT MIN(created_at) AS m FROM item WHERE {_post_where()}").fetchone()
+def first_post_day(conn: sqlite3.Connection, board: str = boards.MAIN) -> date | None:
+    row = conn.execute(f"SELECT MIN(created_at) AS m FROM item WHERE {_post_where(board)}").fetchone()
     return parse_iso(row["m"]).date() if row and row["m"] else None
 
 
-def latest_post_day(conn: sqlite3.Connection) -> date | None:
-    row = conn.execute(f"SELECT MAX(created_at) AS m FROM item WHERE {_post_where()}").fetchone()
+def latest_post_day(conn: sqlite3.Connection, board: str = boards.MAIN) -> date | None:
+    row = conn.execute(f"SELECT MAX(created_at) AS m FROM item WHERE {_post_where(board)}").fetchone()
     return parse_iso(row["m"]).date() if row and row["m"] else None
 
 
@@ -500,7 +509,7 @@ def search(
     limit: int = PAGE_SIZE,
     offset: int = 0,
 ) -> list[Item]:
-    """FTS5 over public titles, text and comments; hidden items excluded.
+    """FTS5 over public titles, text and comments on every board; hidden items excluded.
     Matching posts come first, then matching comments, each in the chosen order."""
     match = _fts_query(query)
     if not match:
@@ -702,6 +711,17 @@ def set_pinned(conn: sqlite3.Connection, item_id: str, pinned: bool) -> bool:
     return cur.rowcount > 0
 
 
+def set_board(conn: sqlite3.Connection, post_id: str, board: str) -> bool:
+    """Moves a post and all its replies to another board. False if `post_id` isn't a post."""
+    if board not in boards.BOARDS:
+        raise ValueError(f"no board {board!r}")
+    with conn:
+        if conn.execute("SELECT 1 FROM item WHERE id = ? AND parent_id IS NULL", (post_id,)).fetchone() is None:
+            return False
+        conn.execute("UPDATE item SET board = ? WHERE thread_id = ?", (board, post_id))
+    return True
+
+
 def delete_item(conn: sqlite3.Connection, item_id: str) -> None:
     """Deletes a post and its whole thread, or a comment and its replies."""
     item = get_item(conn, item_id)
@@ -750,6 +770,43 @@ def toggle_reaction(conn: sqlite3.Connection, pass_id: str, item_id: str, emoji:
     return True
 
 
+# -- votes ---------------------------------------------------------------
+
+
+def cast_vote(conn: sqlite3.Connection, pass_id: str, item_id: str, value: int) -> int:
+    """Sets this pass's vote on an item to `value` (1 up, -1 down). Casting the same vote again takes it
+    back. Returns the vote now in place: 1, -1, or 0 for none."""
+    row = conn.execute("SELECT value FROM vote WHERE pass_id = ? AND item_id = ?", (pass_id, item_id)).fetchone()
+    with conn:
+        if row and row["value"] == value:
+            conn.execute("DELETE FROM vote WHERE pass_id = ? AND item_id = ?", (pass_id, item_id))
+            return 0
+        conn.execute(
+            "INSERT INTO vote (pass_id, item_id, value, created_at) VALUES (?, ?, ?, ?) "
+            "ON CONFLICT (pass_id, item_id) DO UPDATE SET value = excluded.value, created_at = excluded.created_at",
+            (pass_id, item_id, value, iso(utc_now())),
+        )
+    return value
+
+
+def vote_scores(conn: sqlite3.Connection, item_ids: list[str]) -> dict[str, int]:
+    """Upvotes minus downvotes, for many items at once. Items nobody voted on are left out."""
+    if not item_ids:
+        return {}
+    marks = ",".join("?" * len(item_ids))
+    rows = conn.execute(
+        f"SELECT item_id, SUM(value) AS score FROM vote WHERE item_id IN ({marks}) GROUP BY item_id", item_ids
+    ).fetchall()
+    return {r["item_id"]: r["score"] for r in rows}
+
+
+def my_vote(conn: sqlite3.Connection, pass_id: str | None, item_id: str) -> int:
+    if not pass_id:
+        return 0
+    row = conn.execute("SELECT value FROM vote WHERE pass_id = ? AND item_id = ?", (pass_id, item_id)).fetchone()
+    return row["value"] if row else 0
+
+
 # -- notifications ---------------------------------------------------------
 
 NOTIFICATIONS_SHOWN = 30
@@ -768,8 +825,9 @@ def _snippet(row: sqlite3.Row) -> str:
 
 def notifications(conn: sqlite3.Connection, pass_id: str) -> list[dict]:
     """What's new on your posts and replies, newest first: replies from others, others' reactions
-    (grouped per post or reply, with each reaction's time so the browser can count the new ones), and
-    everything new on posts you subscribed to. Replies you can't see, removed or in-review replies,
+    (grouped per post or reply, with each reaction's time so the browser can count the new ones), others'
+    upvotes on your posts (grouped the same way; downvotes never show), and everything new on posts you
+    subscribed to. Replies you can't see, removed or in-review replies,
     and your own activity never appear."""
     replies = conn.execute(
         "SELECT c.id, c.thread_id, c.created_at, t.parent_id IS NULL AS on_post, "
@@ -786,6 +844,14 @@ def notifications(conn: sqlite3.Connection, pass_id: str) -> list[dict]:
         "MAX(r.created_at) AS latest "
         "FROM reaction r JOIN item t ON t.id = r.item_id "
         "WHERE t.pass_id = ? AND r.pass_id != ? AND r.created_at IS NOT NULL AND t.removed_reason IS NULL "
+        "GROUP BY t.id ORDER BY latest DESC LIMIT ?",
+        (pass_id, pass_id, NOTIFICATIONS_SHOWN),
+    ).fetchall()
+    upvotes = conn.execute(
+        "SELECT t.id, t.thread_id, t.title AS t_title, t.text AS t_text, t.sealed AS t_sealed, "
+        "GROUP_CONCAT(v.created_at, ' ') AS times, MAX(v.created_at) AS latest "
+        "FROM vote v JOIN item t ON t.id = v.item_id "
+        "WHERE t.pass_id = ? AND v.pass_id != ? AND v.value = 1 AND t.removed_reason IS NULL "
         "GROUP BY t.id ORDER BY latest DESC LIMIT ?",
         (pass_id, pass_id, NOTIFICATIONS_SHOWN),
     ).fetchall()
@@ -810,6 +876,10 @@ def notifications(conn: sqlite3.Connection, pass_id: str) -> list[dict]:
          "url": f"/thread/{r['thread_id']}" + ("" if r["on_post"] else f"#{r['id']}"), "at": r["latest"],
          "times": r["times"].split(" "), "emoji": list(dict.fromkeys(r["emoji"].split(" ")))}
         for r in reactions
+    ] + [
+        {"kind": "upvotes", "on": "post", "about": _snippet(u), "url": f"/thread/{u['thread_id']}",
+         "at": u["latest"], "times": u["times"].split(" ")}
+        for u in upvotes
     ]
     found.sort(key=lambda n: n["at"], reverse=True)
     return found[:NOTIFICATIONS_SHOWN]

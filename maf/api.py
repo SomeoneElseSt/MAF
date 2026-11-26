@@ -11,7 +11,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 from starlette.routing import Route
 
-from . import store
+from . import boards, store
 from .display import four_day_window
 from .util import parse_date, sha256_hex, today
 
@@ -67,9 +67,11 @@ def _post_json(post: store.Item) -> dict:
         "created_at": post.created_at,
         "edited_at": post.edited_at,
         "comment_count": post.comment_count,
+        "score": post.score,
         "views": post.views,
         "tags": post.tags,
         "pinned": bool(post.pinned),
+        "board": post.board,
     }
 
 
@@ -78,24 +80,26 @@ async def posts(request: Request) -> Response:
     conn = request.state.maf.conn
     sort = _sort(request)
     tag = _param(request, "tag")
+    board = boards.valid(_param(request, "board"))
     if tag:
         page_number = max(1, int(_param(request, "page", "1") or 1))
-        rows = store.tagged_posts(conn, tag, sort, store.PAGE_SIZE, (page_number - 1) * store.PAGE_SIZE)
-        return _json({"posts": [_post_json(p) for p in store.with_comment_counts(conn, rows)]})
+        rows = store.tagged_posts(conn, tag, sort, store.PAGE_SIZE, (page_number - 1) * store.PAGE_SIZE, board=board)
+        return _json({"posts": [_post_json(p) for p in store.with_counts(conn, rows)]})
     before = parse_date(_param(request, "before"))
     end = before - timedelta(days=1) if before else today()
     start, end = four_day_window(end)
-    rows = store.posts_between(conn, start, end, sort)
+    rows = store.posts_between(conn, start, end, sort, board=board)
     return _json({
         "range": {"from": start.isoformat(), "to": end.isoformat()},
-        "posts": [_post_json(p) for p in store.with_comment_counts(conn, rows)],
+        "posts": [_post_json(p) for p in store.with_counts(conn, rows)],
     })
 
 
 @_guarded
 async def tags(request: Request) -> Response:
     conn = request.state.maf.conn
-    return _json({"tags": [{"tag": t, "count": n} for t, n in store.tag_counts(conn)]})
+    board = boards.valid(_param(request, "board"))
+    return _json({"tags": [{"tag": t, "count": n} for t, n in store.tag_counts(conn, board)]})
 
 
 @_guarded
@@ -111,7 +115,7 @@ async def item(request: Request) -> Response:
     post = next(i for i in items if i.id == thread_id)
     labels = app.labeler
     nodes = _tree(store.build_tree(items, thread_id), thread_id, labels, post.pass_id)
-    post.comment_count = store.comment_count(conn, thread_id)
+    store.with_counts(conn, [post])
     return _json({**_post_json(post), "author_id": labels.label(post.pass_id, thread_id), "op": True,
                   "comments": nodes})
 
@@ -151,6 +155,7 @@ async def search(request: Request) -> Response:
                 "thread_id": r.thread_id,
                 "is_post": r.is_post,
                 "tags": r.tags,
+                "board": r.board,
             }
             for r in rows
         ],

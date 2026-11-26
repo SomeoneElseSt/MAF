@@ -92,3 +92,14 @@
     if (!input.parentElement.contains(event.relatedTarget)) close();
   });
 })();
+
+// The page wears the colour of the board picked under Board (the /dating/ pink), like that board's own pages.
+(function () {
+  const radios = document.querySelectorAll(".board-pick input[name='board']");
+  const paint = board => {
+    [...document.body.classList].filter(name => name.startsWith("board-")).forEach(name => document.body.classList.remove(name));
+    document.body.classList.toggle("on-board", board !== "main");
+    if (board !== "main") document.body.classList.add(`board-${board}`);
+  };
+  radios.forEach(radio => radio.addEventListener("change", () => radio.checked && paint(radio.value)));
+})();

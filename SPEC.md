@@ -67,6 +67,22 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 - **Empty state:** when there are no posts at all, `/` keeps the sort row and shows "No posts yet." near the top.
 - **Pages:** `/` (four days of posts with search bar and sorter), `/thread/<id>`, `/submit`, `/about`, `/guide` (User Guide), `/guide/use-this-data` (Use this data), `/sign-in`
 
+## Boards
+
+- **What:** each post lives on one board, and its replies go with it. The main board is the front page at `/`; `/dating/` is a second front page with the same layout (Pinned, New, 4-day windows, sorts) and only its own posts. Main-board pages never list `/dating/` posts. Boards are listed in `maf/boards.py`.
+- **Colour:** a board's name (header link, tags on rows) is plain text, no box; a board's front page has no visible heading and starts with Today like the main one. A `/dating/` page (its front page, its threads, Submit to it) has a pink `#ff66b6` background in light and dark mode, with black text and text colours darkened to keep 4.5:1. On Submit the colour follows the Board choice.
+- **Posting:** Submit has a Board choice (Main or /dating/). It starts on the board you came from (`/submit?board=dating` from any /dating/ page).
+- **Scoped per board:** hashtag pages (`/dating/?tag=x`), the # menu and `/tags?board=dating`, maintainer pins, personal pins, the New section (`/new-activity?board=`) and the API (`?board=` on `/api/v1/posts` and `/api/v1/tags`; posts and search results carry `board`).
+- **Not scoped:** search covers every board; results from another board say which board they are on (a plain `/dating/` link).
+- **Moving posts:** `maf board dating <id> [<id> ...]` (or `maf board main ...` to move back). Moves the whole thread and prints only ids.
+- **First move (after the release that adds boards):** the maintainer picked these existing posts for `/dating/`. On the server, over SSH:
+
+  ```sh
+  maf board dating neat-ukulele-midnight wooden-copper-cocoa tangy-puzzle-scarf grey-drill-clarinet clumsy-river-muffin rare-plaza-postcard indigo-meadow-window odd-notebook-quilt simple-courtyard-cabin
+  ```
+
+  Each line of output reads "Moved <id> to /dating/." or "No post <id>" for an id that isn't a post. Running it again is harmless. To undo one: `maf board main <id>`.
+
 ## Hashtags
 
 - **Input:** the submit form's Hashtags field, "Up to 3, separated by commas." Normalise each tag: strip a leading `#`, lowercase, keep `[a-z0-9-]`, 1–24 characters, dedupe. More than 3 re-renders the form with an error on that field. Tags are free-form; there's no fixed list. Clicking into the field drops down suggested tags (the house tags and #minerva); picking one adds it. The list skips tags already in the box, narrows as you type, and hides once there are 3.
@@ -102,6 +118,13 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 - **Rules:** any pass, once per emoji per item, toggled. Private items: only the two parties can react or see reactions. Hidden posts keep their reactions. Not shown in lists, not used for sorting, included in the API item response as `{emoji: count}`.
 - **Rate limit:** 60 reaction toggles per minute per pass, in memory.
 
+## Votes
+
+- **What:** an up and a down arrow on each post (not on replies), around its score: upvotes minus downvotes from every pass. A score below 0 isn't shown anywhere on the site (the arrows stay; the API still gives it). Arrows are outlined; the one you cast is filled. Clicking it again takes your vote back; clicking the other arrow switches it.
+- **Storage:** `vote(pass_id, item_id, value ±1, PK(pass_id, item_id))` (schema v8). Scores are `SUM(value)`.
+- **Where:** on the thread page, in the row under the post before its reactions; each arrow is a small form that POSTs `/vote` with `item_id` and `value` (`up` or `down`), sent in place by `votes.js`. In lists the score leads the details line ("5 points, 2 hours ago, …"). In the API post response as `score`. Not used for sorting.
+- **Rate limit:** 60 votes per minute per pass, in memory. Upvotes reach the post author's Feed (see Feed); downvotes never do. No live banner in the thread for votes.
+
 ## Name filter
 
 - Run Presidio `PERSON` detection on titles, bodies and comments **before** saving.
@@ -115,7 +138,7 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 ## Feed (notifications)
 
 - **Feed** sits in the header between the search box and the Light/Dark toggle, signed-in only, with a small count tag that's always there (a muted "0" when nothing's new; the number brightens otherwise) so the header never shifts. Each page starts with the last count this browser saw, so it doesn't flash.
-- **What counts:** a reply to your post, a reply to your comment, and reactions on either, from anyone but you. Private replies count only for their recipient. Removed or in-review replies, and reactions from before reaction times were stored, never show.
+- **What counts:** a reply to your post, a reply to your comment, reactions on either, and upvotes on your post (never downvotes), from anyone but you. Upvotes are grouped per post: "3 upvotes on your post"; taking one back takes it out of the count. Private replies count only for their recipient. Removed or in-review replies, and reactions from before reaction times were stored, never show.
 - **The list:** opens under "Feed" (300px, centred, slid left or right to stay on screen), newest first, scrolling like the # menu (faded edges and chevrons, no scrollbar). Rows: "New reply to your post/comment" or "<emoji> N reactions on your post/comment" (reactions grouped per post or comment), then "“<your title or first words>”, <time ago>". New rows get a "New" tag; opening the list counts everything as seen. Clicking a row goes to the reply (or post); a row for the page you're on reloads it in place so Back still goes where you came from.
 - **Privacy:** "seen" lives in the browser only (`maf.bell-seen`, the newest time you've seen). The server stores nothing about when you check; it only adds `reaction.created_at` (schema v5). Live updates use an in-memory ping per pass (`bell:<pass>`), like the thread banners. `/notifications` is the same list as a plain page without JavaScript; `/notifications.json` feeds the dropdown.
 
@@ -145,6 +168,7 @@ No admin roles, codes or buttons. Moderation is community flags plus the maintai
   | `maf dismiss <id>` | Clears its requests without changing anything |
   | `maf pin <id>` | Sets `pinned = 1` on a post (not a comment). Pinned posts show above Today under Newest |
   | `maf unpin <id>` | Sets `pinned = 0` |
+  | `maf board <board> <id> [<id> ...]` | Moves posts and their replies to `main` or `dating`. Prints only ids, never content |
 
   An unknown id prints `No item #<id>` and exits non-zero.
 - **No bans.**
@@ -158,7 +182,7 @@ No admin roles, codes or buttons. Moderation is community flags plus the maintai
 
   | Endpoint | Returns |
   |---|---|
-  | `GET /api/v1/posts?before=YYYY-MM-DD&sort=new\|old\|views&tag=...` | Four days of posts (or, with `tag`, that tag's posts 30 per page): `id, title, url, text_preview, created_at, comment_count, views, tags, pinned` |
+  | `GET /api/v1/posts?before=YYYY-MM-DD&sort=new\|old\|views&tag=...` | Four days of posts (or, with `tag`, that tag's posts 30 per page): `id, title, url, text_preview, created_at, comment_count, score, views, tags, pinned` |
   | `GET /api/v1/tags` | Every tag with its post count |
   | `GET /api/v1/threads/<id>` | A post with its comment tree; each item carries its per-thread `author_id` and an `op` flag |
   | `GET /api/v1/search?q=...&page=N` | Matching posts and comments, 30 per page |
@@ -171,12 +195,13 @@ No admin roles, codes or buttons. Moderation is community flags plus the maintai
 ```
 pass(id)
 redeemed_token(token_hash PK)
-item(id, parent_id NULL, thread_id, pass_id, title NULL, url NULL, text NULL, created_at, views, flags, hidden, restored, pinned, private_to NULL, sealed NULL)  -- id: three words, adjective-thing-thing (e.g. quiet-river-lantern), picked at random and re-picked until unused
+item(id, parent_id NULL, thread_id, pass_id, title NULL, url NULL, text NULL, created_at, views, flags, hidden, restored, pinned, private_to NULL, sealed NULL, board)  -- board: 'main' or 'dating' (schema v9), a reply carries its post's; id: three words, adjective-thing-thing (e.g. quiet-river-lantern), picked at random and re-picked until unused
 thread_key(pass_id, thread_id, public_key, PK(pass_id, thread_id))  -- per-thread public keys for encrypted private replies
 item_tag(item_id, tag, PK both)  -- index on tag
 item_fts  -- FTS5 virtual table over item(title, text) for public items only, kept in sync with triggers
 flag(pass_id, item_id, PK both)
 reaction(pass_id, item_id, emoji, PK all)
+vote(pass_id, item_id, value, created_at, PK(pass_id, item_id))  -- value: 1 or -1, posts only; created_at: when last cast, for the Feed
 moderation_request(pass_id, item_id, kind, PK all)  -- kind: unhide | nuke
 api_token(token_hash PK, pass_id)
 ```
@@ -208,7 +233,7 @@ Target: everything on the [A11Y Project checklist](https://www.a11yproject.com/c
 
 ## Out of scope for v1
 
-Votes, uploads/images, DMs outside threads, notifications, karma, profiles, editing titles, links or hashtags, mobile app.
+Uploads/images, DMs outside threads, notifications, karma, profiles, editing titles, links or hashtags, mobile app.
 
 ## Deploy
 

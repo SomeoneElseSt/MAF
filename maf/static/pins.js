@@ -1,14 +1,16 @@
 // Personal pins. Every post in a list (front page, search, tag pages) gets a pin button. Pinned posts are saved in
-// this browser only and shown in Pinned on the front page (Newest, latest page). Nothing is sent to the server.
+// this browser only and shown in Pinned on their board's front page (Newest, latest page). Nothing is sent to the server.
 const STORAGE_KEY = "maf.pins";
 const PIN_ICON = `<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M5.5 1.5h5l-.8 4.2 2.8 2.8v1h-4v5l-.5.5-.5-.5v-5h-4v-1l2.8-2.8z" fill="var(--pin-fill)" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>`;
 
 const pinnedList = document.querySelector(".pinned-list");
 const announcer = document.getElementById("pin-status");
 const hotTags = (pinnedList?.dataset.hotTags ?? "").split(" ").filter(Boolean);
+const listBoard = pinnedList?.dataset.board ?? "main"; // pins saved before boards existed are all on main
+const tagBase = pinnedList?.dataset.base ?? "/";
 const homes = new Map();
 
-// Saved pins: [{id, title, host, tags}], most recently pinned first.
+// Saved pins: [{id, title, host, tags, board}], most recently pinned first.
 function readPins() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
@@ -27,6 +29,7 @@ const snapshotOf = row => ({
   title: row.dataset.title,
   host: row.dataset.host ?? "",
   tags: (row.dataset.tags ?? "").split(" ").filter(Boolean),
+  board: row.dataset.board || "main",
 });
 
 function setPinned(row, pinned) {
@@ -56,7 +59,7 @@ function rowFromSnapshot(pin) {
   const meta = Object.assign(document.createElement("div"), { className: "meta", textContent: "Pinned by you" });
   pin.tags.forEach((tag, index) => {
     meta.append(index === 0 ? " · " : ", ");
-    const link = Object.assign(document.createElement("a"), { className: "tag", href: `/?tag=${encodeURIComponent(tag)}`, textContent: `#${tag}` });
+    const link = Object.assign(document.createElement("a"), { className: "tag", href: `${tagBase}?tag=${encodeURIComponent(tag)}`, textContent: `#${tag}` });
     if (hotTags.includes(tag)) link.classList.add("hot-tag");
     meta.append(link);
   });
@@ -98,7 +101,8 @@ function togglePin(row) {
     refreshGroups();
   }
   if (row.isConnected) row.querySelector(".pin").focus();
-  const where = pinnedList ? "Pinned to the top." : "Pinned to the top of the front page.";
+  const board = row.dataset.board || "main";
+  const where = pinnedList ? "Pinned to the top." : board === "main" ? "Pinned to the top of the front page." : `Pinned to the top of /${board}/.`;
   announcer.textContent = pinning ? `${where} Only you can see this.` : "Unpinned.";
 }
 
@@ -118,7 +122,7 @@ const fixedIds = new Set([...document.querySelectorAll(".pinned-list li.fixed")]
 readPins().slice().reverse().forEach(pin => {
   const row = rowsById.get(pin.id);
   if (row) setPinned(row, true);
-  if (!pinnedList || fixedIds.has(pin.id)) return;
+  if (!pinnedList || fixedIds.has(pin.id) || (pin.board ?? "main") !== listBoard) return;
   const pinnedRow = row ?? rowFromSnapshot(pin);
   setPinned(pinnedRow, true);
   moveToPinned(pinnedRow);

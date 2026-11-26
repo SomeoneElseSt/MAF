@@ -13,6 +13,8 @@
     etiquette_banner  (tag, text) banner tuple or None
     reply_placeholder  guided placeholder for inline reply boxes
     reactions       {item_id: {counts: {emoji: n}, mine: {emoji}}}
+    score           the post's upvotes minus downvotes, from everyone
+    my_vote         the viewer's vote on the post: 1, -1, or 0 for none
     embeds          {item_id: [Embed, ...]} preview cards for MAF thread links in each item
     flags           {item_id: already flagged by the viewer}
     requests        {"unhide": n, "nuke": n} request counts for the post
@@ -69,6 +71,21 @@
     </form>
     {% endfor %}
     <button class="react-add" type="button" aria-label="Add a reaction" aria-expanded="false"><svg viewBox="0 0 18 16" width="18" height="16" aria-hidden="true"><circle cx="7.5" cy="8.5" r="6" fill="none" stroke="currentColor" stroke-width="1.2"/><circle cx="5.5" cy="7.3" r=".8" fill="currentColor"/><circle cx="9.5" cy="7.3" r=".8" fill="currentColor"/><path d="M5 10.3c1.4 1.5 3.6 1.5 5 0" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M15 1v4M13 3h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></button>
+  </span>
+{% endmacro %}
+
+{# The post's score between an up and a down arrow. An arrow is outlined until you cast that vote, then filled;
+   clicking it again takes the vote back. Each arrow is a small POST form, so it works without JS too (votes.js). #}
+{% macro vote_box(entry) %}
+  <span class="vote" data-item="{{ entry.id }}">
+    {% for value, label, cast in [("up", "Upvote", 1), ("down", "Downvote", -1)] %}
+    <form action="/vote" method="post" class="vote-form">
+      <input type="hidden" name="item_id" value="{{ entry.id }}"><input type="hidden" name="thread_id" value="{{ post.id }}">
+      <input type="hidden" name="value" value="{{ value }}">
+      <button class="vote-{{ value }}" type="submit" aria-pressed="{{ 'true' if my_vote == cast else 'false' }}" aria-label="{{ label }}"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M8 2.5 13.5 9H10.2v4.5H5.8V9H2.5Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></button>
+    </form>
+    {% if value == "up" and score >= 0 %}<span class="vote-score" aria-label="Score {{ score }}">{{ score }}</span>{% endif %}
+    {% endfor %}
   </span>
 {% endmacro %}
 
@@ -175,7 +192,8 @@
 <article class="post-head" id="{{ post.id }}" data-views="{{ post.views }}" data-comments="{{ comment_count }}" data-now="{{ now }}">
   <h1>{{ post.title|md_title }}</h1>
   <div class="meta">Posted by <button class="id" type="button">{{ label_of[post.pass_id] }}</button> {{ post.created_at|rel }}{% if post.edited_at %} <span class="edited">(edited)</span>{% endif %}, {{ post.views }} view{{ '' if post.views == 1 else 's' }}
-    {% if tags_list %} <span class="dot">·</span> {% for tag in tags_list %}<a class="tag{% if is_hot([tag]) %} hot-tag{% endif %}" href="/?tag={{ tag }}">#{{ tag }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}
+    {% if tags_list %} <span class="dot">·</span> {% for tag in tags_list %}<a class="tag{% if is_hot([tag]) %} hot-tag{% endif %}" href="{{ board_path(board) }}?tag={{ tag }}">#{{ tag }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}
+    {% if board != main_board %} <span class="dot">·</span> <a class="board-badge board-{{ board }}" href="{{ board_path(board) }}">{{ board_label(board) }}</a>{% endif %}
     {% if not post.unlisted %} <span class="sep">|</span>
     <form action="/flag" method="post" class="inline-form"><input type="hidden" name="item_id" value="{{ post.id }}"><input type="hidden" name="thread_id" value="{{ post.id }}"><button class="meta-action{% if flags.get(post.id) %} flagged{% endif %}" type="submit" aria-pressed="{{ 'true' if flags.get(post.id) else 'false' }}">{% if flags.get(post.id) %}Flagged{% else %}Flag Post{% endif %}{{ flag_count(post) }}</button></form>{% if flags.get(post.id) %} <span class="flag-note">5 flags hide a post. Urgent? Email <a href="mailto:{{ org.contact_email }}">{{ org.contact_email }}</a>.</span>{% endif %}
     {% if post_mine %} <span class="sep">|</span> <button class="reply-toggle meta-action" type="button" data-edit="edit-{{ post.id }}" aria-controls="edit-{{ post.id }}" aria-expanded="false">Edit</button>{% endif %}
@@ -193,7 +211,7 @@
     {{ name_warning('edit-' ~ post.id) }}
   </form>
   {% endif %}
-  <div class="post-reactions">{{ reactions_box(post) }}</div>
+  <div class="post-reactions">{{ vote_box(post) }}{{ reactions_box(post) }}</div>
 </article>
 
 {% if not post.unlisted %}
@@ -244,4 +262,5 @@
 {% if viewer %}<script src="{{ static('live.js') }}"></script>{% endif %}
 <script src="{{ static('info.js') }}"></script>
 <script src="{{ static('reactions.js') }}"></script>
+<script src="{{ static('votes.js') }}"></script>
 {% endblock %}

@@ -3,7 +3,7 @@
 
   Context:
     placeholder the Text box hint for those tags
-    values      {title, url, text, tags} to re-fill after an error
+    values      {title, url, text, tags, board} to re-fill after an error
     errors      {field: message} plus an optional "form" entry
 #}
 {% extends "base.html" %}
@@ -23,6 +23,7 @@
 
 <script type="application/json" id="submit-templates">{{ submit_templates|tojson }}</script>
 <form action="/submit" method="post" data-submit-form data-example="{{ example_post|e }}">
+  {% include "_board_pick.html" %}
   <div class="field">
     <label for="title">Title</label>
     <input id="title" name="title" type="text" placeholder="What helped you settle into a new city fast?" value="{{ values.title|default('') }}"{% if errors.title %} aria-describedby="title-error"{% endif %}>
@@ -49,7 +50,7 @@
   </div>
   <div class="row">
     <button class="button" type="submit" data-pending="Submitting…">Submit</button>
-    <a class="note" href="/">Cancel</a>
+    <a class="note" href="{{ board_path(values.board) }}">Cancel</a>
   </div>
 </form>
 {% endblock %}

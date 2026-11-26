@@ -158,7 +158,8 @@
   // (coming back with Back shows the page as it was).
   async function refreshNew() {
     // no-store: while a page brought back by Back loads, the browser may answer from its old saved copies.
-    const response = await fetch(`/new-activity?since=${encodeURIComponent(since)}`, { cache: "no-store", headers: { accept: "text/html" } });
+    const board = encodeURIComponent(newList.dataset.board || "main");
+    const response = await fetch(`/new-activity?since=${encodeURIComponent(since)}&board=${board}`, { cache: "no-store", headers: { accept: "text/html" } });
     if (!response.ok) return;
     const page = new DOMParser().parseFromString(await response.text(), "text/html");
     for (const row of page.querySelectorAll("li[data-id][data-created]")) {
