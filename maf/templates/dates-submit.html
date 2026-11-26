@@ -24,6 +24,7 @@
   {% if not profile %}<input type="hidden" name="can_encrypt" value="">{% endif %}
   {{ choice_field("region", "From", choices.region, "Where you're from", values, errors, help="To give people a sense of you.") }}
   {{ choice_field("gender", "Gender", choices.gender, "How you identify", values, errors) }}
+  {{ choice_field("interested_in", "Interested in", choices.interested_in, "Who you'd like to meet", values, errors) }}
   {{ choice_field("height", "Height", choices.height, "Pick a range", values, errors) }}
   {{ choice_field("city", "Rotation city", choices.city, "Where you are now", values, errors) }}
   {{ choice_field("looking_for", "What are you looking for?", choices.looking_for, "Friend or relationship", values, errors) }}

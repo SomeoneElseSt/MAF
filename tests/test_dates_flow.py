@@ -4,7 +4,7 @@ from maf import profiles, store
 from tests.conftest import sign_in_as
 from tests.test_private import register_keys, sealed_json
 
-ANSWERS = {"region": "Europe", "gender": "Woman", "height": "Over 5′9″ (175 cm)", "city": "Tokyo", "looking_for": "Friend"}
+ANSWERS = {"region": "Europe", "gender": "Woman", "interested_in": "Men", "height": "Over 5′9″ (175 cm)", "city": "Tokyo", "looking_for": "Friend"}
 
 
 def _profile(app, pass_id):

@@ -1,7 +1,7 @@
 """A Dates profile: its questions, and the one way its answers become a post and back.
 
 A profile is a normal post. Its text is plain lines, one per question ("From: Europe"), then the optional comment;
-its title is "<Rotation city>: <gender>, <from>, <height in cm>". Only these answers can be set or changed, so a
+its title is "<Rotation city>: <gender>, <from>, <height in cm>, into <interested in>". Only these answers can be set or changed, so a
 profile always reads the same way.
 """
 
@@ -11,7 +11,8 @@ import re
 QUESTIONS = [
     ("region", "From", ["Africa", "East Asia", "Europe", "Latin America", "Middle East", "Mixed", "North America",
                         "Oceania", "South Asia"]),
-    ("gender", "Gender", ["Woman", "Man", "Non-binary"]),
+    ("gender", "Gender", ["Man", "Woman", "Non-binary"]),
+    ("interested_in", "Interested in", ["Men", "Women", "Everyone"]),
     ("height", "Height", ["Under 5′3″ (160 cm)", "5′3″–5′9″ (160–175 cm)", "Over 5′9″ (175 cm)"]),
     ("city", "Rotation city", ["Berlin", "Buenos Aires", "San Francisco", "Tokyo"]),
     ("looking_for", "Looking for", ["Friend", "Relationship", "Either, depending on how it goes"]),
@@ -32,10 +33,11 @@ def text_of(values: dict) -> str:
 
 
 def title_of(values: dict) -> str:
-    """e.g. "Berlin: Woman, Europe, 160–175 cm"; the height's range in cm, with under/over lowercase."""
+    """e.g. "Berlin: Woman, Europe, 160–175 cm, into men"; the height's range in cm, with under/over lowercase."""
     cm = re.search(r"\((.*)\)", values["height"]).group(1)
     height = f"under {cm}" if values["height"].startswith("Under") else f"over {cm}" if values["height"].startswith("Over") else cm
-    return f"{values['city']}: {values['gender']}, {values['region']}, {height}"
+    interest = f", into {values['interested_in'].lower()}" if values.get("interested_in") else ""
+    return f"{values['city']}: {values['gender']}, {values['region']}, {height}{interest}"
 
 
 def values_of(text: str | None) -> dict:

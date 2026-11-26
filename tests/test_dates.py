@@ -215,13 +215,13 @@ def test_saving_on_a_dates_thread_comes_back_to_its_dates_address(signed_in, app
     assert response.headers["location"] == f"/dates/thread/{note.id}#{mine.id}"
 
 
-ANSWERS = {"region": "Europe", "gender": "Woman", "height": "Under 5′3″ (160 cm)", "city": "Berlin",
+ANSWERS = {"region": "Europe", "gender": "Woman", "interested_in": "Men", "height": "Under 5′3″ (160 cm)", "city": "Berlin",
            "looking_for": "Friend", "comment": "Film and long walks."}
 
 
 def test_a_profile_is_written_and_read_back_the_same_way():
     from maf import profiles
-    assert profiles.title_of(ANSWERS) == "Berlin: Woman, Europe, under 160 cm"
+    assert profiles.title_of(ANSWERS) == "Berlin: Woman, Europe, under 160 cm, into men"
     assert profiles.values_of(profiles.text_of(ANSWERS)) == ANSWERS
     assert profiles.missing({**ANSWERS, "city": "Paris"}) == {"city": "Pick one."}
 
@@ -262,7 +262,7 @@ def test_the_feed_says_when_someone_sends_their_profile_and_when_they_match(app,
     assert sorted(labels) == sorted(["Someone replied with their profile", "Someone matched with you", "New message from your match"])
 
 
-PROFILE_FORM = {"region": "Europe", "gender": "Woman", "height": "5′3″–5′9″ (160–175 cm)", "city": "Berlin",
+PROFILE_FORM = {"region": "Europe", "gender": "Woman", "interested_in": "Men", "height": "5′3″–5′9″ (160–175 cm)", "city": "Berlin",
            "looking_for": "Friend", "comment": "Coffee first."}
 
 
@@ -270,7 +270,7 @@ def test_posting_a_profile_puts_it_on_dates_and_a_second_post_edits_it(signed_in
     response = signed_in.post("/dates/submit", data={**PROFILE_FORM, "can_encrypt": "1"}, follow_redirects=False)
     profile = store.own_profile(app.conn, pass_id)
     assert response.status_code == 303 and response.headers["location"] == f"/dates/thread/{profile.id}"
-    assert profile.board == "dates" and profile.title == "Berlin: Woman, Europe, 160–175 cm"
+    assert profile.board == "dates" and profile.title == "Berlin: Woman, Europe, 160–175 cm, into men"
     signed_in.post("/dates/submit", data={**PROFILE_FORM, "can_encrypt": "1", "city": "Tokyo"})
     assert store.own_profile(app.conn, pass_id).id == profile.id
     assert store.get_item(app.conn, profile.id).title.startswith("Tokyo:")
