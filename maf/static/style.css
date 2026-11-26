@@ -593,7 +593,7 @@ body[data-board="dates"] { --paper: var(--dates-paper); --tint: var(--dates-tint
 #match-dialog, #hide-dialog, #unmatch-dialog, #send-dialog, #delete-dialog { max-width: 420px; }
 #match-dialog p, #hide-dialog p, #unmatch-dialog p, #send-dialog p, #delete-dialog p { text-wrap: pretty; }
 /* Dates threads: Reply with profile sits where the comment box would start; its notice opens just under it. */
-.profile-reply .row { margin-top: 4px; }
+.profile-reply .row { margin-top: -12px; } /* 18px under the profile's last line, as a thread's button sits under its box */
 .notice.need-profile { margin-top: 12px; }
 /* A profile's replies: a grey count, then a line, and the same line between each reply profile. */
 :root { --divider: color-mix(in srgb, var(--ink) 18%, transparent); }
