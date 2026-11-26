@@ -7,7 +7,7 @@ so it can be extended later without a migration framework.
 import sqlite3
 from pathlib import Path
 
-SCHEMA_VERSION = 8
+SCHEMA_VERSION = 9
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS pass (
@@ -151,8 +151,13 @@ ALTER TABLE item ADD COLUMN nsfw INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE item ADD COLUMN nsfw_marked INTEGER;
 """
 
+# Why the maintainer hid an item (maf hide). NULL when flags hid it, or it isn't hidden.
+HIDDEN_REASON = """
+ALTER TABLE item ADD COLUMN hidden_reason TEXT;
+"""
+
 MIGRATIONS = {1: SCHEMA, 2: SEALED_REPLIES, 3: REMOVED_REASON, 4: REPLY_EDITS, 5: REACTION_TIMES, 6: EDITED_AT, 7: SUBSCRIPTIONS,
-              8: NSFW}
+              8: NSFW, 9: HIDDEN_REASON}
 
 
 def connect(path: Path | str) -> sqlite3.Connection:

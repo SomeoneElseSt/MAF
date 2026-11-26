@@ -50,6 +50,7 @@ def _table(rows: list[list[str]], headers: list[str]) -> str:
 
 
 DEFAULT_REMOVE_REASON = "Removed because it named someone."
+DEFAULT_HIDE_REASON = "Hidden because it mentioned someone."
 
 
 def _missing(item_id: str) -> int:
@@ -92,6 +93,22 @@ def cmd_show(conn: sqlite3.Connection, args) -> int:
     print(f"  flags:    {item.flags}")
     print(f"  hidden:   {bool(item.hidden)}  restored: {bool(item.restored)}  pinned: {bool(item.pinned)}")
     print(f"  requests: unhide {counts.get('unhide', 0)}, nuke {counts.get('nuke', 0)}")
+    return 0
+
+
+def _id_from(address: str) -> str:
+    """An item id from an id, a thread address, or a reply's address (…/thread/<post>#reply-<id>)."""
+    if "#" in address:
+        return address.rsplit("#", 1)[1].removeprefix("reply-")
+    return address.rstrip("/").rsplit("/", 1)[-1]
+
+
+def cmd_hide(conn: sqlite3.Connection, args) -> int:
+    """Doesn't print the item: whoever runs it never needs to read it."""
+    item_id = _id_from(args.id)
+    if not store.hide(conn, item_id, args.reason):
+        return _missing(item_id)
+    print(f'Hid {item_id}. It now reads: "{args.reason}". Undo with maf unhide {item_id}.')
     return 0
 
 
@@ -172,6 +189,10 @@ def build_parser() -> argparse.ArgumentParser:
     show = sub.add_parser("show", help="print one item")
     show.add_argument("id")
     show.set_defaults(func=cmd_show)
+    hide = sub.add_parser("hide", help="hide a post or reply, with a reason in its place; undo with unhide")
+    hide.add_argument("id", help="id, or the post's or reply's address")
+    hide.add_argument("--reason", default=DEFAULT_HIDE_REASON, help=f'default: "{DEFAULT_HIDE_REASON}"')
+    hide.set_defaults(func=cmd_hide)
     unhide = sub.add_parser("unhide", help="unhide an item; flags can never hide it again")
     unhide.add_argument("id")
     unhide.set_defaults(func=cmd_unhide)

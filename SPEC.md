@@ -148,6 +148,7 @@ No admin roles, codes or buttons. Moderation is community flags plus the maintai
   | `maf requests` | Table of items with open `moderation_request` rows: id, title or first 60 chars, kind, count |
   | `maf hidden` | Table of items with `hidden = 1` |
   | `maf show <id>` | Prints the item's title, URL or text, flags, hidden/restored state and request counts |
+  | `maf hide <id or address> [--reason]` | Hides a post or reply itself: unlisted like 5 flags, with the reason in its place (default "Hidden because it mentioned someone."; a hidden post's banner starts with it). Unflagging doesn't bring it back; `maf unhide` does. Doesn't print the item |
   | `maf unhide <id>` | Sets `hidden = 0, restored = 1` and clears its requests. Once `restored = 1`, flags never hide it again |
   | `maf nuke <id>` | Prints the item, asks `Delete post #<id> and its N comments? [y/N]`, then deletes the item (and, for a post, its whole thread) along with its flags and requests. FTS rows go via triggers. `/thread/<id>` then returns 404 |
   | `maf remove <id> [--reason TEXT] [--yes]` | Comments only. Deletes the comment's text (and any sealed copy) for good, removes it from search, drops its reactions and requests, and stores the reason (default "Removed because it named someone."), which shows in its place in the meta style. Replies stay. Uses `secure_delete` and a WAL checkpoint so the words don't linger in the database file; older backups still have them. Never prints the comment |

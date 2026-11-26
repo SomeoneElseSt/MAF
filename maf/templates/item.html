@@ -114,8 +114,8 @@
   {# Words removed by the maintainer (maf remove) or deleted by the author; the reason shows instead. Replies stay. #}
   <p class="hidden-comment">{{ entry.removed_reason }}</p>
   {% elif entry.unlisted %}
-  {# Five flags hide a comment for everyone; replies under it stay. Its author can still delete it. #}
-  <p class="hidden-comment">Original reply is in review after 5 flags.</p>
+  {# Five flags (or the maintainer, with a reason) hide a comment for everyone; replies under it stay. Its author can still delete it. #}
+  <p class="hidden-comment">{{ entry.hidden_reason or "Original reply is in review after 5 flags." }}</p>
   {% if mine %}<div class="actions">{{ delete_link(entry) }}</div>{{ delete_box(entry) }}{% endif %}
   {% else %}
   {{ meta_line(entry) }}
@@ -157,7 +157,8 @@
 
 {% if post.unlisted %}
 <div class="notice">
-  <p>Five people flagged this post, so it's been unlisted. You can still read it here and ask for it to come back or be removed permanently.</p>
+  {% if post.hidden_reason %}<p>{{ post.hidden_reason }} It's been unlisted. You can still read it here and ask for it to come back or be removed permanently.</p>
+  {% else %}<p>Five people flagged this post, so it's been unlisted. You can still read it here and ask for it to come back or be removed permanently.</p>{% endif %}
   <div class="actions">
     <form action="/moderation-request" method="post" class="inline-form"><input type="hidden" name="item_id" value="{{ post.id }}"><input type="hidden" name="thread_id" value="{{ post.id }}"><input type="hidden" name="kind" value="unhide"><button type="submit" data-pending="Sending…">Request unhide{% if requests.unhide %} ({{ requests.unhide }}){% endif %}</button></form>
     <form action="/moderation-request" method="post" class="inline-form"><input type="hidden" name="item_id" value="{{ post.id }}"><input type="hidden" name="thread_id" value="{{ post.id }}"><input type="hidden" name="kind" value="nuke"><button type="submit" data-pending="Sending…">Request deletion{% if requests.nuke %} ({{ requests.nuke }}){% endif %}</button></form>

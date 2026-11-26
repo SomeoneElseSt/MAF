@@ -97,6 +97,7 @@ class Item:
     views: int = 0
     flags: int = 0
     hidden: int = 0
+    hidden_reason: str | None = None  # set when the maintainer hid it (maf hide), shown in its place
     restored: int = 0
     pinned: int = 0
     private_to: str | None = None
@@ -141,6 +142,7 @@ def _row_to_item(row: sqlite3.Row, tags: list[str] | None = None) -> Item:
         views=row["views"],
         flags=row["flags"],
         hidden=row["hidden"],
+        hidden_reason=row["hidden_reason"],
         restored=row["restored"],
         pinned=row["pinned"],
         private_to=row["private_to"],
@@ -582,13 +584,13 @@ def add_flag(conn: sqlite3.Connection, pass_id: str, item_id: str) -> bool:
 
 
 def remove_flag(conn: sqlite3.Connection, pass_id: str, item_id: str) -> bool:
-    """Takes a pass's flag back; an item hidden by flags comes back once it drops below 5."""
+    """Takes a pass's flag back; an item hidden by flags comes back once it drops below 5 (not one the maintainer hid)."""
     with conn:
         cur = conn.execute("DELETE FROM flag WHERE pass_id = ? AND item_id = ?", (pass_id, item_id))
         if cur.rowcount == 0:
             return False
         conn.execute("UPDATE item SET flags = flags - 1 WHERE id = ? AND flags > 0", (item_id,))
-        conn.execute("UPDATE item SET hidden = 0 WHERE id = ? AND flags < ?", (item_id, FLAGS_TO_HIDE))
+        conn.execute("UPDATE item SET hidden = 0 WHERE id = ? AND flags < ? AND hidden_reason IS NULL", (item_id, FLAGS_TO_HIDE))
     return True
 
 
@@ -634,9 +636,17 @@ def hidden_items(conn: sqlite3.Connection) -> list[Item]:
     return [_row_to_item(r) for r in rows]
 
 
+def hide(conn: sqlite3.Connection, item_id: str, reason: str) -> bool:
+    """The maintainer hides an item: it's unlisted like one hidden by flags, with the reason shown in its place.
+    Undone with unhide. Unflagging doesn't bring it back."""
+    with conn:
+        cur = conn.execute("UPDATE item SET hidden = 1, restored = 0, hidden_reason = ? WHERE id = ?", (reason, item_id))
+    return cur.rowcount > 0
+
+
 def unhide(conn: sqlite3.Connection, item_id: str) -> bool:
     with conn:
-        cur = conn.execute("UPDATE item SET hidden = 0, restored = 1 WHERE id = ?", (item_id,))
+        cur = conn.execute("UPDATE item SET hidden = 0, restored = 1, hidden_reason = NULL WHERE id = ?", (item_id,))
         conn.execute("DELETE FROM moderation_request WHERE item_id = ?", (item_id,))
     return cur.rowcount > 0
 
