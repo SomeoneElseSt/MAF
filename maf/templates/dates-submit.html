@@ -35,6 +35,7 @@
     {% if profile %}
     <button class="button" type="submit" data-pending="Saving…">Save profile</button>
     <a class="note" href="{{ profile|thread_url }}">Cancel</a>
+    <a class="note reply-toggle" href="#delete-profile" aria-controls="delete-profile" aria-expanded="false">Delete profile</a>
     {% else %}
     <button class="button" type="submit" data-pending="Posting…">Post profile</button>
     <a class="note" href="/dates">Cancel</a>
@@ -43,7 +44,6 @@
 </form>
 {% if profile %}
 {# Deleting asks first, in the same inline box as deleting a reply (replies.js opens it; :target without JS). #}
-<p class="actions delete-profile"><a class="reply-toggle" href="#delete-profile" aria-controls="delete-profile" aria-expanded="false">Delete profile</a></p>
 <form class="inline-reply delete-confirm" id="delete-profile" action="/dates/delete" method="post" data-full-page hidden>
   <p class="help">Delete your profile? It leaves the Dates page, and the profiles people sent you and your conversations go with it. This can't be undone.</p>
   <div class="row"><button class="button" type="submit" data-pending="Deleting…">Delete</button><a class="button plain cancel" href="#">Cancel</a></div>

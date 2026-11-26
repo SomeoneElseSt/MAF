@@ -230,7 +230,7 @@ def test_your_profile_is_edited_through_its_form(signed_in, app, pass_id):
     mine = store.create_post(app.conn, pass_id, profiles.title_of(ANSWERS), profiles.text_of(ANSWERS), None, [])
     _move(app, mine.id, "dates")
     page = signed_in.get(f"/dates/thread/{mine.id}").text
-    assert '<a class="meta-action" href="/dates/edit">Edit</a>' in page and f'id="edit-{mine.id}"' not in page
+    assert '<a class="button" href="/dates/edit">Edit profile</a>' in page and f'id="edit-{mine.id}"' not in page
     assert signed_in.get("/dates/submit", follow_redirects=False).headers["location"] == "/dates/edit"
     form = signed_in.get("/dates/edit").text
     assert "Edit your profile" in form and "Film and long walks." in form and 'value="Berlin"' in form

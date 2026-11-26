@@ -198,9 +198,7 @@
     {% if tags_list %} <span class="dot">·</span> {% for tag in tags_list %}<a class="tag{% if is_hot([tag]) %} hot-tag{% endif %}" href="{{ tag_url(tag, post) }}">#{{ tag }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}
     {% if not post.unlisted %} <span class="sep">|</span>
     <form action="/flag" method="post" class="inline-form"><input type="hidden" name="item_id" value="{{ post.id }}"><input type="hidden" name="thread_id" value="{{ post.id }}"><button class="meta-action{% if flags.get(post.id) %} flagged{% endif %}" type="submit" aria-pressed="{{ 'true' if flags.get(post.id) else 'false' }}">{% if flags.get(post.id) %}Flagged{% else %}Flag Post{% endif %}{{ flag_count(post) }}</button></form>{% if flags.get(post.id) %} <span class="flag-note">5 flags hide a post. Urgent? Email <a href="mailto:{{ org.contact_email }}">{{ org.contact_email }}</a>.</span>{% endif %}
-    {# A profile is edited through its form, so only its answers can change. #}
-    {% if post_mine and is_profile %} <span class="sep">|</span> <a class="meta-action" href="/dates/edit">Edit</a>
-    {% elif post_mine %} <span class="sep">|</span> <button class="reply-toggle meta-action" type="button" data-edit="edit-{{ post.id }}" aria-controls="edit-{{ post.id }}" aria-expanded="false">Edit</button>{% endif %}
+    {% if post_mine and not is_profile %} <span class="sep">|</span> <button class="reply-toggle meta-action" type="button" data-edit="edit-{{ post.id }}" aria-controls="edit-{{ post.id }}" aria-expanded="false">Edit</button>{% endif %}
     {% endif %}
   </div>
   {% if post.url %}<p class="post-link"><a href="{{ post.url }}" rel="nofollow noopener" target="_blank">{{ post.url|host }}<span class="sr-only"> (opens in a new tab)</span></a></p>{% endif %}
@@ -220,8 +218,11 @@
 
 {% if not post.unlisted %}
 {% if viewer and is_profile %}
-{# A profile: no comments. You answer someone's profile with your own; your own profile has no box. #}
-{% if not post_mine %}
+{# A profile: no comments. You answer someone's profile with your own. Your own has Edit profile instead, which
+   opens its form, so only its answers can change. #}
+{% if post_mine %}
+<div class="reply profile-reply"><div class="row"><a class="button" href="/dates/edit">Edit profile</a></div></div>
+{% else %}
 {% set replied = tree|selectattr("item.pass_id", "equalto", viewer)|list|length > 0 %}
 <div class="reply profile-reply">
   {% if replied %}
@@ -295,7 +296,6 @@
 </dialog>
 <dialog id="send-dialog">
   <p>Send your profile to {{ label_of[post.pass_id] }}? Only they will see it, and if they match with you, you can message each other here.</p>
-  <p>Your messages can only be read on this device, so keep using it for Dates.</p>
   <div class="row"><button class="button" type="button" data-send-yes>Send profile</button><button class="button plain" type="button" data-send-no>Cancel</button></div>
 </dialog>
 <dialog id="unmatch-dialog">
