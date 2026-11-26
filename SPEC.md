@@ -166,6 +166,7 @@ No admin roles, codes or buttons. Moderation is community flags plus the maintai
 - **Tokens:** on `/guide/use-this-data`, a signed-in pass can create a read token: 32 random bytes, base64url, shown once. A pass can hold at most 5; at 5 the create button is greyed out. Store `api_token(token_hash PK, pass_id)` with `sha256(token)`. The page lists the pass's tokens by their last 4 characters, each with a Revoke button. No creation time is stored.
 - **Auth:** `Authorization: Bearer <token>`. Tokens are read-only and can't post, comment, flag or request.
 - **Rate limit:** 60 requests per minute per token, kept in memory. Over the limit returns `429` with `Retry-After`.
+- **Usage counts:** with `MAF_USAGE_LOG` set, the API keeps daily totals per endpoint pattern in that JSON file (`{"2026-11-26": {"GET /api/v1/threads/{id}": 17}}`), printed by `maf usage`. No post ids, no times finer than the day, no token, pass or IP: a tally, not a request log (`maf/usage.py`).
 - **Endpoints** (JSON; hidden items excluded, same as the site):
 
   | Endpoint | Returns |
