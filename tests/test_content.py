@@ -397,3 +397,11 @@ def test_times_and_days_carry_what_the_browser_needs_to_show_its_own_time_zone(c
     assert '<ol class="list day-list" data-sort="new">' in body
     assert 'class="range" data-start="' in body
     assert "localdays.js" in body
+
+
+def test_the_header_search_box_goes_to_search_results(client, app, pass_id):
+    # It pointed at the front page, which ignores ?q=, so typing a search did nothing.
+    make_post(app, pass_id, title="Findable thing")
+    body = client.get("/").text
+    assert '<form class="find" action="/search" method="get" role="search">' in body
+    assert "Findable thing" in client.get("/search", params={"q": "Findable"}).text
