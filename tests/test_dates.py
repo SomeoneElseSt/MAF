@@ -301,8 +301,8 @@ def test_a_profiles_comment_shows_under_comment_as_a_quote():
     from maf import profiles
 
     text = "From: Europe\nGender: Woman\n\nCoffee **first**.\n\nThen we'll see."
-    assert profiles.shown(text) == "From: Europe\nGender: Woman\n\nComment:\n\n> Coffee **first**.\n>\n> Then we'll see."
-    assert profiles.shown("From: Europe") == "From: Europe"
+    assert profiles.shown(text) == "From: Europe\nGender: Woman\nComment:\n> Coffee **first**.\n>\n> Then we'll see."
+    assert profiles.shown("From: Europe") == profiles.shown("From: Europe\n\n  ") == "From: Europe"
 
 
 def test_the_dates_page_marks_its_profiles_for_new_tags(signed_in, app):

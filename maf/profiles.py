@@ -56,4 +56,4 @@ def shown(text: str | None) -> str:
     if not comment.strip():
         return lines
     quoted = "\n".join(f"> {line}" if line.strip() else ">" for line in comment.splitlines())
-    return f"{lines}\n\nComment:\n\n{quoted}"
+    return f"{lines}\nComment:\n{quoted}"  # right under the answers, the quote right under "Comment:"
