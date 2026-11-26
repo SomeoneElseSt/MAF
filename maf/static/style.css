@@ -571,6 +571,8 @@ button.note:disabled { cursor: default; }
 .text li + li { margin-top: 2px; }
 .text blockquote { margin: 6px 0 10px; padding-left: 12px; border-left: 3px solid var(--line); color: var(--soft); }
 .text blockquote p { margin: 0; }
+/* A profile's "Comment:" sits right on top of its quoted comment (profiles.shown), on the profile and in profiles sent. */
+.profile-text p:has(+ blockquote), .profile-replies > li > .text p:has(+ blockquote) { margin-bottom: 0; }
 .text code { font: 0.85em var(--mono); background: var(--tint); padding: 1px 4px; border-radius: 3px; }
 .text pre { background: var(--tint); border-radius: 4px; padding: 10px 12px; margin: 6px 0 10px; white-space: pre-wrap; font: 14px/1.5 var(--mono); }
 .text pre code { background: none; padding: 0; font: inherit; }
