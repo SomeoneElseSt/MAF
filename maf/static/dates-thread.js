@@ -1,6 +1,7 @@
 // A Dates thread. Reply with profile: without a profile it opens the notice under it. (Sending your profile
 // as a private reply comes with profiles themselves.) Match, on your own profile: asks first, then opens a
-// private reply to that person. Hide and Unmatch ask first.
+// private reply to that person, which stays open until it's sent, and Match and Hide become Unmatch.
+// Hide and Unmatch ask first. (Doing them comes with profiles' backend.)
 (function () {
   const replyButton = document.getElementById("reply-with-profile");
   const notice = document.getElementById("need-profile");
@@ -11,31 +12,42 @@
     });
   }
 
-  // Hide and Unmatch ask first. (Doing it comes with profiles' backend.)
-  const confirmFirst = (buttons, dialogId, yes, no) => {
-    const box = document.getElementById(dialogId);
-    if (!box) return;
-    document.querySelectorAll(buttons).forEach(button => button.addEventListener("click", () => box.showModal()));
-    box.querySelector(no).addEventListener("click", () => box.close());
-    box.querySelector(yes).addEventListener("click", () => box.close());
+  const dialogs = {
+    match: document.getElementById("match-dialog"),
+    hide: document.getElementById("hide-dialog"),
+    unmatch: document.getElementById("unmatch-dialog"),
   };
-  confirmFirst("button.hide-profile", "hide-dialog", "[data-hide-yes]", "[data-hide-no]");
-  confirmFirst("button.unmatch", "unmatch-dialog", "[data-unmatch-yes]", "[data-unmatch-no]");
+  if (!dialogs.match) return;
+  let matching = null; // the Match button whose dialog is open
 
-  const dialog = document.getElementById("match-dialog");
-  if (!dialog) return;
-  let form = null;
-  document.querySelectorAll("button.match").forEach(button => button.addEventListener("click", () => {
-    form = document.getElementById(button.dataset.reply);
-    dialog.showModal();
-  }));
-  dialog.querySelector("[data-match-no]").addEventListener("click", () => dialog.close());
-  dialog.querySelector("[data-match-yes]").addEventListener("click", () => {
-    dialog.close();
+  // One listener, so buttons added later (Unmatch, after matching) work too.
+  document.addEventListener("click", event => {
+    const button = event.target.closest("button.match, button.hide-profile, button.unmatch");
+    if (!button) return;
+    if (button.matches(".match")) matching = button;
+    const which = button.matches(".match") ? "match" : button.matches(".unmatch") ? "unmatch" : "hide";
+    dialogs[which].showModal();
+  });
+  for (const [name, box] of Object.entries(dialogs)) {
+    box.querySelector(`[data-${name}-no]`).addEventListener("click", () => box.close());
+    if (name !== "match") box.querySelector(`[data-${name}-yes]`).addEventListener("click", () => box.close());
+  }
+
+  dialogs.match.querySelector("[data-match-yes]").addEventListener("click", () => {
+    dialogs.match.close();
+    if (!matching) return;
+    const form = document.getElementById(matching.dataset.reply);
+    const actions = matching.closest(".actions");
+    actions.querySelector("button.hide-profile")?.remove();
+    const unmatch = document.createElement("button");
+    unmatch.type = "button";
+    unmatch.className = "unmatch";
+    unmatch.textContent = "Unmatch";
+    matching.replaceWith(unmatch);
+    matching = null;
     if (!form) return;
     form.hidden = false;
-    const privately = form.querySelector('input[name="private"]');
-    if (privately) privately.checked = true;
+    form.querySelector(".cancel")?.remove(); // the first message opens the conversation, so the box stays
     form.querySelector("textarea")?.focus();
   });
 })();
