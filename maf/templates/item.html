@@ -298,7 +298,7 @@
   <form action="/comment" method="post" data-peer-key="{{ thread_keys.get(post.pass_id, '') }}" data-always-private>
     <input type="hidden" name="parent_id" value="{{ post.id }}"><input type="hidden" name="thread_id" value="{{ post.id }}"><input type="hidden" name="private" value="on">
     <textarea name="text" hidden aria-hidden="true">{{ my_profile_text }}</textarea>
-    <p>Send your profile to {{ label_of[post.pass_id] }}? Only they will see it, and if they match with you, you can message each other here.</p>
+    <p>Send your profile to {{ label_of[post.pass_id] }}? Only they will see it, and if they match with you, you can message each other here privately.</p>
     <div class="row"><button class="button" type="submit" data-send-yes data-pending="Sending…">Send profile</button><button class="button plain" type="button" data-send-no>Cancel</button></div>
   </form>
 </dialog>
