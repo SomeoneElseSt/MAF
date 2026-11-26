@@ -132,15 +132,20 @@
   {% endif %}
   {{ embed_cards(entry) }}
   <div class="actions">
-    {% if is_profile %}
-    {# On a profile, replies are profiles sent privately to the profile's owner, so only they see them. Instead of Reply
-       they get Match: it asks first (match-dialog), then opens a private reply. #}
-    <button class="match" type="button" data-reply="reply-{{ entry.id }}">Match</button>
+    {% set profile_reply = is_profile and entry.parent_id == post.id %}
+    {% if profile_reply %}
+    {# A reply to a profile is the sender's profile, seen only by the two of them, so there's no Flag. The owner
+       answers it with Match (asks first, then opens private messages) or Hide (asks first; it's gone for good);
+       the sender sees that it's Sent. Once they're talking (messages under it), either one can Unmatch. #}
+    {% set matched = node.children|length > 0 %}
+    {% if matched and (post_mine or mine) %}<button class="unmatch" type="button" data-unmatch="{{ entry.id }}">Unmatch</button>
+    {% elif post_mine and not mine %}<button class="match" type="button" data-reply="reply-{{ entry.id }}">Match</button><button class="hide-profile" type="button" data-hide="{{ entry.id }}">Hide</button>
+    {% elif mine %}<span class="sent">Sent</span>{% endif %}
     {% else %}
     <a class="reply-toggle" href="#reply-{{ entry.id }}" aria-controls="reply-{{ entry.id }}" aria-expanded="false">Reply</a>
-    {% endif %}
     {% if not entry.private_to %}<form action="/flag" method="post" class="inline-form"><input type="hidden" name="item_id" value="{{ entry.id }}"><input type="hidden" name="thread_id" value="{{ post.id }}"><button type="submit"{% if flags.get(entry.id) %} class="flagged"{% endif %} aria-pressed="{{ 'true' if flags.get(entry.id) else 'false' }}">{% if flags.get(entry.id) %}Flagged{% else %}Flag{% endif %}{{ flag_count(entry) }}</button></form>{% if flags.get(entry.id) %}<span class="flag-note">5 flags hide a comment. Urgent? Email <a href="mailto:{{ org.contact_email }}">{{ org.contact_email }}</a>.</span>{% endif %}{% endif %}
-    {% if mine %}<button class="reply-toggle" type="button" data-edit="edit-{{ entry.id }}" aria-controls="edit-{{ entry.id }}" aria-expanded="false">Edit</button>{{ delete_link(entry) }}{% endif %}
+    {% endif %}
+    {% if mine and not profile_reply %}<button class="reply-toggle" type="button" data-edit="edit-{{ entry.id }}" aria-controls="edit-{{ entry.id }}" aria-expanded="false">Edit</button>{% endif %}{% if mine %}{{ delete_link(entry) }}{% endif %}
     {{ reactions_box(entry) }}
   </div>
     <form class="inline-reply" id="reply-{{ entry.id }}" action="/comment" method="post" data-peer-key="{{ thread_keys.get(peer_of(entry), '') }}"{% if names_form != 'reply-' ~ entry.id %} hidden{% endif %}>
@@ -267,6 +272,14 @@
   <p>Matching opens private messages between you two in this thread. They show only on this computer and are encrypted, so MAF can't read them.</p>
   <p>Use common sense in messages and when meeting. Take your time before sharing anything that identifies you or your contact details. Meet somewhere public and let a friend know where you'll be.</p>
   <div class="row"><button class="button" type="button" data-match-yes>Match</button><button class="button plain" type="button" data-match-no>Cancel</button></div>
+</dialog>
+<dialog id="unmatch-dialog">
+  <p>Unmatch? Your messages are erased for both of you, and you can't match again.</p>
+  <div class="row"><button class="button" type="button" data-unmatch-yes>Unmatch</button><button class="button plain" type="button" data-unmatch-no>Cancel</button></div>
+</dialog>
+<dialog id="hide-dialog">
+  <p>Hide this profile? It goes away for good, and they can't reply to your profile again.</p>
+  <div class="row"><button class="button" type="button" data-hide-yes>Hide</button><button class="button plain" type="button" data-hide-no>Cancel</button></div>
 </dialog>
 <script src="{{ static('dates-thread.js') }}"></script>
 {% endif %}

@@ -140,3 +140,23 @@ def test_a_pinned_dates_post_takes_normal_comments_and_a_profile_does_not(signed
     assert 'data-board="dates"' in _body(pinned_page)  # still the Dates colour
     profile_page = signed_in.get(f"/dates/thread/{profile.id}").text
     assert 'id="comment-form"' not in profile_page and "Reply with profile" in profile_page
+
+
+def test_profile_replies_show_match_hide_sent_and_unmatch_without_flag(signed_in, app, pass_id):
+    mine = _post_by(app, pass_id, "My profile")
+    _move(app, mine.id, "dates")
+    waiting, talking = store.create_pass(app.conn), store.create_pass(app.conn)
+    store.create_comment(app.conn, waiting, mine, "Their profile", None)
+    started = store.create_comment(app.conn, talking, mine, "Another profile", None)
+    store.create_comment(app.conn, pass_id, started, "Hi", talking)
+    owner_view = signed_in.get(f"/dates/thread/{mine.id}").text
+    assert owner_view.count('class="match"') == 1 and owner_view.count('class="hide-profile"') == 1
+    assert owner_view.count('class="unmatch"') == 1 and "Flag</button>" not in owner_view
+    theirs = _post(app, "Their profile post")
+    _move(app, theirs.id, "dates")
+    store.create_comment(app.conn, pass_id, store.get_item(app.conn, theirs.id), "My profile", None)
+    assert '<span class="sent">Sent</span>' in signed_in.get(f"/dates/thread/{theirs.id}").text
+
+
+def _post_by(app, pass_id, title):
+    return store.create_post(app.conn, pass_id, title, None, None, ["help"])
