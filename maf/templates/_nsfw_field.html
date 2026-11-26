@@ -2,10 +2,10 @@
   The "Is NSFW?" question on the submit form (and its name-warning copy). Answered from a dropdown like the
   Hashtags one (nsfw-field.js); the box itself holds "Yes" or "No" and is what's sent. Required: the
   server says so with the form's other errors.
-  Uses: values.nsfw (to re-fill), errors.nsfw, nsfw_mode (posting with NSFW on starts at Yes).
+  Uses: values.nsfw (to re-fill), errors.nsfw, nsfw_mode (posting starts at Yes with NSFW on, No with it off).
 #}
 {% macro nsfw_field(values, errors) %}
-{% set answer = values.nsfw if values.nsfw in ("Yes", "No") else ("Yes" if nsfw_mode else "") %}
+{% set answer = values.nsfw if values.nsfw in ("Yes", "No") else ("Yes" if nsfw_mode else "No") %}
 <div class="field">
   <div class="label-row"><label for="nsfw">Is NSFW?</label><span class="label-info"><button class="info" type="button" aria-label="What counts as NSFW" aria-expanded="false">i</button><div class="info-card" role="dialog" aria-label="What counts as NSFW" hidden>
     <p class="info-title">NSFW: Not Safe For Work</p>

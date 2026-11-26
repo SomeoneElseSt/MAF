@@ -66,8 +66,8 @@ def test_the_header_switch_shows_the_side_youre_on(signed_in):
     assert 'aria-pressed="true">NSFW' in on and "data-nsfw" in on.split("<body", 1)[1].split(">", 1)[0]
 
 
-def test_posting_with_nsfw_on_starts_at_yes(signed_in):
-    assert 'value=""' in signed_in.get("/submit").text.split('id="nsfw"', 1)[1].split(">", 1)[0]
+def test_posting_starts_at_no_with_nsfw_off_and_yes_with_it_on(signed_in):
+    assert 'value="No"' in signed_in.get("/submit").text.split('id="nsfw"', 1)[1].split(">", 1)[0]
     signed_in.cookies.update(NSFW_ON)
     assert 'value="Yes"' in signed_in.get("/submit").text.split('id="nsfw"', 1)[1].split(">", 1)[0]
 
