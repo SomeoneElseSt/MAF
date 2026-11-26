@@ -1,8 +1,10 @@
 {#
-  dates-submit.html: the Dates profile form. Every question but Comment is required; the answers are broad
-  on purpose so a profile doesn't point at one person.
+  dates-submit.html: the Dates profile form, for making your profile or editing it. Every question but Comment
+  is required; the answers are broad on purpose so a profile doesn't point at one person. Editing changes only
+  these answers (profiles.py), never the title or text directly.
 
   Context:
+    profile  your profile when editing it, else None
     choices  {field: [options]} for the pick-one questions
     values   answers to re-fill after an error
     errors   {field: message}
@@ -10,10 +12,15 @@
 {% extends "base.html" %}
 {% from "_choice_field.html" import choice_field with context %}
 {% block main %}
+{% if profile %}
+<h1 class="heading">Edit your profile</h1>
+<p class="lede">Change your answers and save. Replies and matches stay as they are.</p>
+{% else %}
 <h1 class="heading">Make your profile</h1>
 <p class="lede">Your profile appears only on the Dates page. People reply with their own profiles, and you can choose to match with them. Matching opens private replies between the two of you in the thread. You can read them only on the computer or phone where you made your profile. You can have one profile at most.</p>
+{% endif %}
 
-<form action="/dates/submit" method="post">
+<form action="{{ '/dates/edit' if profile else '/dates/submit' }}" method="post" data-full-page>
   {{ choice_field("region", "From", choices.region, "Where you're from", values, errors, help="To give people a sense of you.") }}
   {{ choice_field("gender", "Gender", choices.gender, "How you identify", values, errors) }}
   {{ choice_field("height", "Height", choices.height, "Pick a range", values, errors) }}
@@ -25,11 +32,25 @@
     {% if org.naming_rule %}<p class="help">Please don't name yourself or anyone else.</p>{% endif %}
   </div>
   <div class="row">
+    {% if profile %}
+    <button class="button" type="submit" data-pending="Saving…">Save profile</button>
+    <a class="note" href="{{ profile|thread_url }}">Cancel</a>
+    {% else %}
     <button class="button" type="submit" data-pending="Posting…">Post profile</button>
     <a class="note" href="/dates">Cancel</a>
+    {% endif %}
   </div>
 </form>
+{% if profile %}
+{# Deleting asks first, in the same inline box as deleting a reply (replies.js opens it; :target without JS). #}
+<p class="actions delete-profile"><a class="reply-toggle" href="#delete-profile" aria-controls="delete-profile" aria-expanded="false">Delete profile</a></p>
+<form class="inline-reply delete-confirm" id="delete-profile" action="/dates/delete" method="post" data-full-page hidden>
+  <p class="help">Delete your profile? It leaves the Dates page, and the profiles people sent you and your conversations go with it. This can't be undone.</p>
+  <div class="row"><button class="button" type="submit" data-pending="Deleting…">Delete</button><a class="button plain cancel" href="#">Cancel</a></div>
+</form>
+{% endif %}
 {% endblock %}
 {% block scripts %}
 <script src="{{ static('choice.js') }}"></script>
+{% if profile %}<script src="{{ static('replies.js') }}"></script>{% endif %}
 {% endblock %}

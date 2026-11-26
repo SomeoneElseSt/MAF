@@ -12,7 +12,7 @@ from starlette.responses import JSONResponse, RedirectResponse, Response
 from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 
-from . import auth, housetags, navigation, post, reactions, reading, store
+from . import auth, housetags, navigation, post, profiles, reactions, reading, store
 from .app import App, build_app
 from .display import day_label, four_day_window, range_label, short_range_label
 from .settings import Settings, load_settings
@@ -44,14 +44,6 @@ def home(request: Request) -> Response:
 
 
 # The Dates profile questions. Broad on purpose, so a profile doesn't point at one person.
-PROFILE_CHOICES = {
-    "region": ["Africa", "East Asia", "Europe", "Latin America", "Middle East", "Mixed", "North America",
-               "Oceania", "South Asia"],
-    "gender": ["Woman", "Man", "Non-binary"],
-    "height": ["Under 5′3″ (160 cm)", "5′3″–5′9″ (160–175 cm)", "Over 5′9″ (175 cm)"],
-    "city": ["Berlin", "Buenos Aires", "San Francisco", "Tokyo"],
-    "looking_for": ["Friend", "Relationship", "Either, depending on how it goes"],
-}
 
 
 def render_dates(page, template: str, **context) -> Response:
@@ -75,9 +67,23 @@ def dates(request: Request) -> Response:
 
 
 def dates_submit(request: Request) -> Response:
-    """The Dates profile form (Submit while on Dates)."""
-    return render_dates(page_of(request), "dates-submit.html", title="Make your profile",
-                        choices=PROFILE_CHOICES, values={}, errors={})
+    """The Dates profile form (Submit while on Dates). With a profile already, it's that profile's edit form."""
+    page = page_of(request)
+    profile = store.own_profile(page.conn, page.pass_id)
+    if profile is not None:
+        return redirect("/dates/edit")
+    return render_dates(page, "dates-submit.html", title="Make your profile", profile=None,
+                        choices=profiles.CHOICES, values={}, errors={})
+
+
+def dates_edit(request: Request) -> Response:
+    """Your profile's form, filled in: only its answers can change, so it always reads like a profile."""
+    page = page_of(request)
+    profile = store.own_profile(page.conn, page.pass_id)
+    if profile is None:
+        return redirect("/dates/submit")
+    return render_dates(page, "dates-submit.html", title="Edit your profile", profile=profile,
+                        choices=profiles.CHOICES, values=profiles.values_of(profile.text), errors={})
 
 
 def render_tag(page, tag: str, sort: str, page_number: int):
@@ -321,6 +327,7 @@ def create_app(settings: Settings | None = None) -> Starlette:
         Route("/search", search),
         Route("/dates", dates),
         Route("/dates/submit", dates_submit),
+        Route("/dates/edit", dates_edit),
         Route("/tags", tags_page),
         Route("/about", about),
         Route("/privacy", privacy),

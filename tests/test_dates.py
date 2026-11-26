@@ -212,3 +212,35 @@ def test_saving_on_a_dates_thread_comes_back_to_its_dates_address(signed_in, app
     mine = store.create_comment(app.conn, pass_id, store.get_item(app.conn, note.id), "First words", None)
     response = signed_in.post("/edit", data={"item_id": mine.id, "thread_id": note.id, "text": "Better words"}, follow_redirects=False)
     assert response.headers["location"] == f"/dates/thread/{note.id}#{mine.id}"
+
+
+ANSWERS = {"region": "Europe", "gender": "Woman", "height": "Under 5′3″ (160 cm)", "city": "Berlin",
+           "looking_for": "Friend", "comment": "Film and long walks."}
+
+
+def test_a_profile_is_written_and_read_back_the_same_way():
+    from maf import profiles
+    assert profiles.title_of(ANSWERS) == "Berlin: Woman, Europe, under 160 cm"
+    assert profiles.values_of(profiles.text_of(ANSWERS)) == ANSWERS
+    assert profiles.missing({**ANSWERS, "city": "Paris"}) == {"city": "Pick one."}
+
+
+def test_your_profile_is_edited_through_its_form(signed_in, app, pass_id):
+    from maf import profiles
+    mine = store.create_post(app.conn, pass_id, profiles.title_of(ANSWERS), profiles.text_of(ANSWERS), None, [])
+    _move(app, mine.id, "dates")
+    page = signed_in.get(f"/dates/thread/{mine.id}").text
+    assert '<a class="meta-action" href="/dates/edit">Edit</a>' in page and f'id="edit-{mine.id}"' not in page
+    assert signed_in.get("/dates/submit", follow_redirects=False).headers["location"] == "/dates/edit"
+    form = signed_in.get("/dates/edit").text
+    assert "Edit your profile" in form and "Film and long walks." in form and 'value="Berlin"' in form
+    assert 'id="delete-profile"' in form
+
+
+def test_after_sending_your_profile_the_button_says_replied(signed_in, app, pass_id):
+    theirs = _post(app, "Their profile")
+    _move(app, theirs.id, "dates")
+    assert "data-send-profile" in signed_in.get(f"/dates/thread/{theirs.id}").text or "need-profile" in signed_in.get(f"/dates/thread/{theirs.id}").text
+    store.create_comment(app.conn, pass_id, store.get_item(app.conn, theirs.id), "My profile", None)
+    page = signed_in.get(f"/dates/thread/{theirs.id}").text
+    assert ">Replied</button>" in page and "Reply with profile" not in page

@@ -2,7 +2,7 @@
 // as a private reply comes with profiles themselves.) Match, on your own profile: asks first, then opens a
 // private reply to that person, which stays open until it's sent, and Match and Hide become Unmatch. Until the
 // first message, only this browser knows about the match (like the messages themselves), so it remembers it.
-// Hide and Unmatch ask first. (Doing them comes with profiles' backend.)
+// Reply with profile, Hide and Unmatch ask first. (Doing them comes with profiles' backend.)
 (function () {
   const replyButton = document.getElementById("reply-with-profile");
   const notice = document.getElementById("need-profile");
@@ -16,6 +16,7 @@
   const dialogs = {
     match: document.getElementById("match-dialog"),
     hide: document.getElementById("hide-dialog"),
+    send: document.getElementById("send-dialog"),
     unmatch: document.getElementById("unmatch-dialog"),
   };
   if (!dialogs.match) return;
@@ -23,10 +24,10 @@
 
   // One listener, so buttons added later (Unmatch, after matching) work too.
   document.addEventListener("click", event => {
-    const button = event.target.closest("button.match, button.hide-profile, button.unmatch");
+    const button = event.target.closest("button.match, button.hide-profile, button.unmatch, button[data-send-profile]");
     if (!button) return;
     if (button.matches(".match")) matching = button;
-    const which = button.matches(".match") ? "match" : button.matches(".unmatch") ? "unmatch" : "hide";
+    const which = button.matches(".match") ? "match" : button.matches(".unmatch") ? "unmatch" : button.matches("[data-send-profile]") ? "send" : "hide";
     dialogs[which].showModal();
   });
   for (const [name, box] of Object.entries(dialogs)) {

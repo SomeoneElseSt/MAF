@@ -459,14 +459,18 @@ def is_profile(post: Item) -> bool:
     return post.board == "dates" and not post.pinned
 
 
-def has_profile(conn: sqlite3.Connection, pass_id: str | None) -> bool:
-    """Whether this pass has a profile (is_profile: a Dates post of its own that isn't pinned)."""
+def own_profile(conn: sqlite3.Connection, pass_id: str | None) -> Item | None:
+    """This pass's profile (is_profile: a Dates post of its own that isn't pinned), if it has one."""
     if pass_id is None:
-        return False
+        return None
     row = conn.execute(
-        f"SELECT 1 FROM item WHERE {_post_where(board='dates')} AND pinned = 0 AND pass_id = ? LIMIT 1", (pass_id,)
+        f"SELECT id FROM item WHERE {_post_where(board='dates')} AND pinned = 0 AND pass_id = ? LIMIT 1", (pass_id,)
     ).fetchone()
-    return row is not None
+    return get_item(conn, row["id"]) if row else None
+
+
+def has_profile(conn: sqlite3.Connection, pass_id: str | None) -> bool:
+    return own_profile(conn, pass_id) is not None
 
 
 def board_posts(conn: sqlite3.Connection, board: str, sort: str = "new", limit: int = PAGE_SIZE) -> list[Item]:
