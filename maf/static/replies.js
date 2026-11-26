@@ -27,12 +27,15 @@
     box.selectionStart = box.selectionEnd = box.value.length;
   }
 
-  // The words make way for the box. Returns false when there are no words to swap.
+  // The words make way for the box, and so does the reply's row of actions (Reply, Edit, Delete) while it's open.
+  // Returns false when there are no words to swap.
   function swapIn(form) {
     const target = form.previousElementSibling;
     if (!target || !target.classList.contains("text")) return false;
-    editState.set(form.id, { target });
+    const actions = form.closest("li.comment")?.querySelector(":scope > .actions") || null;
+    editState.set(form.id, { target, actions });
     target.hidden = true;
+    if (actions) actions.hidden = true;
     form.hidden = false;
     return true;
   }
@@ -40,6 +43,7 @@
   function closeEdit(form) {
     const saved = editState.get(form.id);
     if (saved) saved.target.hidden = false;
+    if (saved?.actions) saved.actions.hidden = false;
     form.hidden = true;
     editState.delete(form.id);
     document.querySelector(`[data-edit="${CSS.escape(form.id)}"]`)?.setAttribute("aria-expanded", "false");
