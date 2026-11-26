@@ -203,3 +203,12 @@ def test_a_match_box_waits_until_the_other_person_has_a_device_key(signed_in, ap
     app.conn.execute("INSERT INTO thread_key (pass_id, thread_id, public_key) VALUES (?, ?, 'k')", (them, mine.id))
     app.conn.commit()
     assert "once they open this thread on their device" not in signed_in.get(f"/dates/thread/{mine.id}").text
+
+
+def test_saving_on_a_dates_thread_comes_back_to_its_dates_address(signed_in, app, pass_id):
+    note = _post(app, "How Dates works")
+    _move(app, note.id, "dates")
+    store.set_pinned(app.conn, note.id, True)
+    mine = store.create_comment(app.conn, pass_id, store.get_item(app.conn, note.id), "First words", None)
+    response = signed_in.post("/edit", data={"item_id": mine.id, "thread_id": note.id, "text": "Better words"}, follow_redirects=False)
+    assert response.headers["location"] == f"/dates/thread/{note.id}#{mine.id}"

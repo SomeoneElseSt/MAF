@@ -14,7 +14,7 @@ from .email import hidden_reply_email, moderation_email
 from .housetags import submit_placeholder
 from .sealed import parse_sealed, valid_public_key
 from .util import sha256_hex
-from .web import form_values, gone, page_of, redirect, render
+from .web import form_values, gone, page_of, redirect, to_thread, render
 
 POSTS_PER_MINUTE = 6
 # The thread page shows the name-check warning by the box it belongs to, so the reply or edit stays
@@ -61,7 +61,7 @@ async def submit_post(request: Request) -> Response:
         nsfw=values["nsfw"] == NSFW_YES,
     )
     page.app.live.publish(live.HOME)
-    return redirect(f"/thread/{post.id}")
+    return to_thread(page, post.id)
 
 
 def _validate_post(values: dict[str, str], too_many: bool) -> dict[str, str]:
@@ -106,18 +106,18 @@ async def comment(request: Request) -> Response:
     if private_to is not None:
         return _private_comment(page, parent, private_to, values["sealed"])
     if not values["text"]:
-        return redirect(f"/thread/{parent.thread_id}?notice=Write+something+first.")
+        return to_thread(page, parent.thread_id, "?notice=Write+something+first.")
     if values["confirm_names"] != "1" and await run_in_threadpool(page.app.name_filter.finds_name, values["text"]):
         # The thread page shows the warning and "Post anyway" inside this box (the name check can be wrong).
-        return redirect(f"/thread/{parent.thread_id}?notice={NAMES_NOTICE}&names={_names_box(parent)}&text={quote_plus(values['text'])}")
+        return to_thread(page, parent.thread_id, f"?notice={NAMES_NOTICE}&names={_names_box(parent)}&text={quote_plus(values['text'])}")
     if not _allowed(page, "comment", COMMENTS_PER_MINUTE):
-        return redirect(f"/thread/{parent.thread_id}?notice=You're+replying+fast.+Wait+a+minute.")
+        return to_thread(page, parent.thread_id, "?notice=You're+replying+fast.+Wait+a+minute.")
     reply = store.create_comment(page.conn, page.pass_id, parent, values["text"], None)
     page.app.live.publish(parent.thread_id)
     page.app.live.publish(live.HOME)  # front pages refresh their New section and counts
     _ring(page, parent.pass_id)
     _ring_subscribers(page, parent.thread_id)
-    return redirect(f"/thread/{parent.thread_id}#{reply.id}")  # land on the new reply, not the top
+    return to_thread(page, parent.thread_id, f"#{reply.id}")  # land on the new reply, not the top
 
 
 def _names_box(parent: store.Item) -> str:
@@ -130,23 +130,23 @@ def _private_comment(page, parent: store.Item, private_to: str, raw_sealed: str)
 
     The name filter can't run here: the server never sees the words.
     """
-    thread = f"/thread/{parent.thread_id}"
+    thread_id = parent.thread_id
     sealed = parse_sealed(raw_sealed)
     if sealed is None:
-        return redirect(f"{thread}?notice=Private+replies+need+JavaScript.+Turn+it+on+and+try+again.")
+        return to_thread(page, thread_id, "?notice=Private+replies+need+JavaScript.+Turn+it+on+and+try+again.")
     keys = store.thread_keys(page.conn, parent.thread_id)
     own_key = keys.get(page.pass_id)
     if keys.get(private_to) != sealed["to"] or own_key not in (None, sealed["from"]):
-        return redirect(f"{thread}?notice=Couldn't+send+that+privately.+Reload+the+page+and+try+again.")
+        return to_thread(page, thread_id, "?notice=Couldn't+send+that+privately.+Reload+the+page+and+try+again.")
     if not _allowed(page, "comment", COMMENTS_PER_MINUTE):
-        return redirect(f"{thread}?notice=You're+replying+fast.+Wait+a+minute.")
+        return to_thread(page, thread_id, "?notice=You're+replying+fast.+Wait+a+minute.")
     if own_key is None:
         store.set_thread_key(page.conn, page.pass_id, parent.thread_id, sealed["from"])
     reply = store.create_comment(page.conn, page.pass_id, parent, None, private_to, sealed=json.dumps(sealed))
     page.app.live.publish(parent.thread_id)
     if parent.pass_id == private_to:
         _ring(page, private_to)
-    return redirect(f"{thread}#{reply.id}")
+    return to_thread(page, thread_id, f"#{reply.id}")
 
 
 def _ring(page, owner: str) -> None:
@@ -176,36 +176,36 @@ async def edit(request: Request) -> Response:
     item = store.get_item(page.conn, values["item_id"])
     if page.pass_id is None or item is None:
         return gone(page, values["thread_id"])
-    thread = f"/thread/{item.thread_id}"
+    thread_id = item.thread_id
     if not _own_item(page, item) or item.removed_reason or item.unlisted:
         what = "posts" if item.is_post else "replies"
-        return redirect(f"{thread}?notice=You+can+only+edit+your+own+{what}.")
+        return to_thread(page, thread_id, f"?notice=You+can+only+edit+your+own+{what}.")
     if not _allowed(page, "comment", COMMENTS_PER_MINUTE):
-        return redirect(f"{thread}?notice=You're+editing+fast.+Wait+a+minute.")
+        return to_thread(page, thread_id, "?notice=You're+editing+fast.+Wait+a+minute.")
     if item.private_to:
         return _private_edit(page, item, values["sealed"])
     if not values["text"]:
-        return redirect(f"{thread}?notice=Write+something+first.")
+        return to_thread(page, thread_id, "?notice=Write+something+first.")
     if len(values["text"]) > store.BODY_MAX:
-        return redirect(f"{thread}?notice=That's+too+long.+Try+trimming+it.")
+        return to_thread(page, thread_id, "?notice=That's+too+long.+Try+trimming+it.")
     if values["confirm_names"] != "1" and await run_in_threadpool(page.app.name_filter.finds_name, values["text"]):
         # Same as a refused reply: the warning shows in the edit box, with the words.
-        return redirect(f"{thread}?notice={NAMES_NOTICE}&names=edit-{item.id}&text={quote_plus(values['text'])}")
+        return to_thread(page, thread_id, f"?notice={NAMES_NOTICE}&names=edit-{item.id}&text={quote_plus(values['text'])}")
     store.edit_item(page.conn, item.id, values["text"])
-    return redirect(f"{thread}#{item.id}")
+    return to_thread(page, thread_id, f"#{item.id}")
 
 
 def _private_edit(page, item: store.Item, raw_sealed: str) -> Response:
     """A private reply's edits are encrypted to the same two people, like the reply itself."""
-    thread = f"/thread/{item.thread_id}"
+    thread_id = item.thread_id
     sealed = parse_sealed(raw_sealed)
     if sealed is None:
-        return redirect(f"{thread}?notice=Private+replies+need+JavaScript.+Turn+it+on+and+try+again.")
+        return to_thread(page, thread_id, "?notice=Private+replies+need+JavaScript.+Turn+it+on+and+try+again.")
     keys = store.thread_keys(page.conn, item.thread_id)
     if keys.get(page.pass_id) != sealed["from"] or keys.get(item.private_to) != sealed["to"]:
-        return redirect(f"{thread}?notice=Couldn't+save+that+privately.+Reload+the+page+and+try+again.")
+        return to_thread(page, thread_id, "?notice=Couldn't+save+that+privately.+Reload+the+page+and+try+again.")
     store.edit_item(page.conn, item.id, None, sealed=json.dumps(sealed))
-    return redirect(f"{thread}#{item.id}")
+    return to_thread(page, thread_id, f"#{item.id}")
 
 
 async def subscribe(request: Request) -> Response:
@@ -215,12 +215,12 @@ async def subscribe(request: Request) -> Response:
     post = store.get_item(page.conn, values["thread_id"])
     if page.pass_id is None or post is None or not post.is_post:
         return gone(page, values["thread_id"])
-    back = f"/thread/{post.id}" + ("#" + values["back"] if values["back"] else "")
+    back = "#" + values["back"] if values["back"] else ""
     if post.unlisted or post.removed_reason:
-        return redirect(back)
+        return to_thread(page, post.id, back)
     following = store.is_subscribed(page.conn, page.pass_id, post.id)
     store.set_subscribed(page.conn, page.pass_id, post.id, not following)
-    return redirect(back)
+    return to_thread(page, post.id, back)
 
 
 async def delete_reply(request: Request) -> Response:
@@ -231,13 +231,13 @@ async def delete_reply(request: Request) -> Response:
     if page.pass_id is None or item is None:
         return gone(page, values["thread_id"])
     if not _own_reply(page, item):
-        return redirect(f"/thread/{item.thread_id}?notice=You+can+only+delete+your+own+replies.")
+        return to_thread(page, item.thread_id, "?notice=You+can+only+delete+your+own+replies.")
     store.delete_own_comment(page.conn, item.id)
     # Stay where it was: on its "Deleted by its author." note, else on the reply it answered.
     if store.get_item(page.conn, item.id) is not None:
-        return redirect(f"/thread/{item.thread_id}#{item.id}")
+        return to_thread(page, item.thread_id, f"#{item.id}")
     anchor = f"#{item.parent_id}" if item.parent_id != item.thread_id else ""
-    return redirect(f"/thread/{item.thread_id}{anchor}")
+    return to_thread(page, item.thread_id, anchor)
 
 
 async def thread_key(request: Request) -> Response:
@@ -279,7 +279,7 @@ async def flag(request: Request) -> Response:
     if item.private_to is None and not store.remove_flag(page.conn, page.pass_id, item.id):
         store.add_flag(page.conn, page.pass_id, item.id)
         _alert_if_reply_hidden(page, item.id)
-    return redirect(f"/thread/{item.thread_id}#{item.id}")
+    return to_thread(page, item.thread_id, f"#{item.id}")
 
 
 def _alert_if_reply_hidden(page, item_id: str) -> None:
@@ -303,7 +303,7 @@ async def moderation_request(request: Request) -> Response:
             moderation_email(page.settings.maintainer_email, values["kind"], item.id, count, page.settings.base_url,
                              site=page.settings.site_name)
         )
-    return redirect(f"/thread/{item.id}?notice=Request+sent.+Thank+you.")
+    return to_thread(page, item.id, "?notice=Request+sent.+Thank+you.")
 
 
 async def create_token(request: Request) -> Response:

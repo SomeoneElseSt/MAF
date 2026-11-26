@@ -166,6 +166,16 @@ def redirect(url: str, status_code: int = 303) -> RedirectResponse:
     return RedirectResponse(url, status_code=status_code)
 
 
+def to_thread(page, item_id: str, rest: str = "") -> Response:
+    """Back to a thread (or something in it) at its one address, under its board (navigation.thread_url), so
+    the browser doesn't take a second hop and scripts comparing addresses see the page they're on."""
+    item = store.get_item(page.conn, item_id)
+    if item is None:
+        return redirect("/")
+    post = item if item.parent_id is None else store.get_item(page.conn, item.thread_id)
+    return redirect(navigation.thread_url(post, item_id) + rest)
+
+
 def gone(page, thread_id: str) -> Response:
     """The reply (or post) was deleted while someone had the page open: back to the thread with a
     note, not to sign-in. Forms send thread_id because the site sends no Referer."""
@@ -174,7 +184,7 @@ def gone(page, thread_id: str) -> Response:
     thread = store.get_item(page.conn, thread_id) if thread_id else None
     if thread is None or not thread.is_post:
         return redirect("/")  # the whole post is gone
-    return redirect(f"/thread/{thread.id}?notice=That+reply+was+deleted.")
+    return to_thread(page, thread.id, "?notice=That+reply+was+deleted.")
 
 
 def sort_param(request: Request) -> str:
