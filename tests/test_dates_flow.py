@@ -134,3 +134,9 @@ def test_the_send_form_comes_before_the_script_that_encrypts_it(client, app):
     sign_in_as(client, app, sender)
     page = client.get(f"/dates/thread/{profile.id}").text
     assert page.index('id="send-dialog"') < page.index("private.js")
+
+
+def test_a_profile_is_flagged_as_a_profile(client, app):
+    owner, sender, profile, *_ = _people(app, client)
+    sign_in_as(client, app, sender)
+    assert "Flag Profile" in client.get(f"/dates/thread/{profile.id}").text
