@@ -160,7 +160,7 @@ def test_home_rows_carry_their_latest_comment_time(client, app, pass_id):
     comment = make_comment(app, store.create_pass(app.conn), post, "a reply")
     body = client.get("/").text
     assert f'data-latest-comment="{comment.created_at}"' in body
-    assert f'data-id="{silent.id}" data-title="No comments" data-host="" data-created="{silent.created_at}" data-views="0">' in body
+    assert f'data-id="{silent.id}" data-title="No comments" data-host="" data-created="{silent.created_at}" data-views="0" data-board="main">' in body
 
 
 def test_home_rows_link_their_host_in_a_new_tab(client, app, pass_id):

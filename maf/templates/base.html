@@ -10,6 +10,7 @@
     sort         "new" | "old" | "views"
     path         current request path, for aria-current
     body_class   optional class on <body>
+    board        the board this page belongs to ("main", "dating"); other boards colour the page
     reply_placeholder  optional guided reply placeholder for the thread page
   Blocks:
     main         page content
@@ -40,14 +41,17 @@
 <meta name="twitter:card" content="summary_large_image">
 <script src="{{ static('theme-init.js') }}"></script>
 </head>
-<body class="{{ body_class|default('') }}" data-now="{{ server_now }}"{% if reply_placeholder is defined and reply_placeholder %} data-reply-placeholder="{{ reply_placeholder|e }}"{% endif %}>
+<body class="{{ body_class|default('') }}{% if board != main_board %} on-board board-{{ board }}{% endif %}" data-now="{{ server_now }}"{% if reply_placeholder is defined and reply_placeholder %} data-reply-placeholder="{{ reply_placeholder|e }}"{% endif %}>
 <a class="skip" href="#main">Skip to content</a>
 <div class="page">
   <header class="top">
     <a class="brand" href="/">{{ org.site_name }}</a>
     <nav>
       {% if viewer %}
-      <a href="/submit"{% if path == "/submit" %} aria-current="page"{% endif %}>Submit</a>
+      <a href="/submit{% if board != main_board %}?board={{ board }}{% endif %}"{% if path == "/submit" %} aria-current="page"{% endif %}>Submit</a>
+      {% for name in boards if name != main_board %}
+      <a class="board-link board-{{ name }}" href="{{ board_path(name) }}"{% if path == board_path(name) %} aria-current="page"{% endif %}>{{ board_label(name) }}</a>
+      {% endfor %}
       {% else %}
       <a href="/sign-in"{% if path == "/sign-in" %} aria-current="page"{% endif %}>Sign in</a>
       {% endif %}
@@ -55,6 +59,8 @@
     {% if viewer %}
     <form class="find" action="/search" method="get" role="search">
       {% if sort != "new" %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
+      {# Searching "#tag" opens that tag on this page's board; plain searches cover every board. #}
+      {% if board != main_board %}<input type="hidden" name="board" value="{{ board }}">{% endif %}
       <input type="search" name="q" placeholder="Search" aria-label="Search posts and comments" value="{{ search_query }}">
       <button class="tag-toggle" type="button" aria-label="Browse hashtags" aria-expanded="false">#</button>
       <div class="tag-menu" hidden></div>
@@ -82,7 +88,7 @@
 <script src="{{ static('drafts.js') }}"></script>
 <script src="{{ static('pending.js') }}"></script>
 <script src="{{ static('grow.js') }}"></script>
-{% if tags %}<script type="application/json" id="tag-data">{{ tags|tojson }}</script>{% endif %}
+{% if tags %}<script type="application/json" id="tag-data" data-base="{{ board_path(board) }}">{{ tags|tojson }}</script>{% endif %}
 <script src="{{ static('tags.js') }}"></script>
 {% if viewer %}<script src="{{ static('bell.js') }}"></script>{% endif %}
 {% block scripts %}{% endblock %}

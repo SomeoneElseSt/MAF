@@ -12,7 +12,7 @@ from starlette.responses import JSONResponse, RedirectResponse, Response
 from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 
-from . import auth, housetags, post, reactions, reading, store, votes
+from . import auth, boards, housetags, post, reactions, reading, store, votes
 from .app import App, build_app
 from .display import day_label, four_day_window, range_label
 from .settings import Settings, load_settings
@@ -23,48 +23,59 @@ APP: App = None  # set by create_app
 
 
 def home(request: Request) -> Response:
+    """A board's front page: / for the main board, /dating/ and so on for the others."""
     page = page_of(request)
+    board = boards.of_path(request.url.path) or boards.MAIN
     sort = sort_param(request)
     tag = request.query_params.get("tag", "").strip().lower()
     if tag:
-        return render_tag(page, tag, sort, max(1, int(request.query_params.get("page", "1") or 1)))
+        return render_tag(page, board, tag, sort, max(1, int(request.query_params.get("page", "1") or 1)))
     before = parse_date(request.query_params.get("before"))
     after = parse_date(request.query_params.get("after"))
-    return render_home(page, sort, before, after)
+    return render_home(page, board, sort, before, after)
 
 
-def render_tag(page, tag: str, sort: str, page_number: int):
-    """Posts with one tag, across all time, 30 per page (SPEC Hashtags)."""
+def render_tag(page, board: str, tag: str, sort: str, page_number: int):
+    """One board's posts with one tag, across all time, 30 per page (SPEC Hashtags)."""
     conn = page.conn
     offset = (page_number - 1) * store.PAGE_SIZE
-    rows = store.tagged_posts(conn, tag, sort, store.PAGE_SIZE + 1, offset)
+    rows = store.tagged_posts(conn, tag, sort, store.PAGE_SIZE + 1, offset, board=board)
     has_next = len(rows) > store.PAGE_SIZE
     results = store.with_counts(conn, rows[: store.PAGE_SIZE])
     pager = {
-        "prev": _tag_url(tag, sort, page_number - 1) if page_number > 1 else None,
-        "next": _tag_url(tag, sort, page_number + 1) if has_next else None,
+        "prev": _tag_url(board, tag, sort, page_number - 1) if page_number > 1 else None,
+        "next": _tag_url(board, tag, sort, page_number + 1) if has_next else None,
     }
-    return render(page, "list.html", kind="tag", title=f"#{tag}", results=results, pager=pager)
+    return render(page, "list.html", kind="tag", title=_board_title(board, f"#{tag}"), results=results, pager=pager)
 
 
-def _tag_url(tag: str, sort: str, page_number: int) -> str:
+def _board_title(board: str, title: str) -> str:
+    """Page titles on other boards say which one: "/dating/", "#help · /dating/"."""
+    if board == boards.MAIN:
+        return title
+    return f"{title} · {boards.label(board)}" if title else boards.label(board)
+
+
+def _tag_url(board: str, tag: str, sort: str, page_number: int) -> str:
     from urllib.parse import urlencode
 
     params = {"tag": tag, "page": page_number}
     if sort != "new":
         params["sort"] = sort
-    return "/?" + urlencode(params)
+    return boards.path(board) + "?" + urlencode(params)
 
 
-def render_home(page, sort, before, after):
+def render_home(page, board, sort, before, after):
     conn = page.conn
-    if not store.has_any_posts(conn):
-        return render(page, "list.html", kind="home", title="", empty=True,
+    base = boards.path(board)
+    title = _board_title(board, "")
+    if not store.has_any_posts(conn, board):
+        return render(page, "list.html", kind="home", title=title, empty=True,
                       groups=[], pinned=[], date_range=range_label(*four_day_window(today())),
-                      sort_links=HOME_SORT_LINKS, prev_url=None, next_url=None)
+                      sort_links=_sort_links(base), prev_url=None, next_url=None)
 
-    first_day = store.first_post_day(conn)
-    window_end = _window_end(conn, sort, before, after)
+    first_day = store.first_post_day(conn, board)
+    window_end = _window_end(conn, board, sort, before, after)
     # Nothing to show before the first post: a window ending earlier opens the earliest one instead.
     if first_day and window_end < first_day:
         window_end = first_day + timedelta(days=3)
@@ -72,56 +83,58 @@ def render_home(page, sort, before, after):
     pinned: list = []
     exclude_pinned = False
     if sort == "new" and before is None:
-        pinned = store.with_counts(conn, store.pinned_posts(conn))
+        pinned = store.with_counts(conn, store.pinned_posts(conn, board))
         exclude_pinned = True
-    posts = store.with_counts(conn, store.posts_between(conn, start, end, sort, exclude_pinned=exclude_pinned))
+    posts = store.with_counts(conn, store.posts_between(conn, start, end, sort, exclude_pinned=exclude_pinned, board=board))
     latest = store.latest_comment_times(conn, [post.thread_id for post in pinned + posts], not_by=page.pass_id)
     groups = [(day_label(day), rows) for day, rows in store.day_groups(posts)]
     # The ‹ arrow stops at the window holding the first post.
-    prev_url = _page_url(sort, (start - timedelta(days=1)).isoformat()) if first_day and start > first_day else None
-    next_url = _next_url(sort, end)
-    return render(page, "list.html", kind="home", title="", empty=False,
+    prev_url = _page_url(base, sort, (start - timedelta(days=1)).isoformat()) if first_day and start > first_day else None
+    next_url = _next_url(base, sort, end)
+    return render(page, "list.html", kind="home", title=title, empty=False,
                   groups=groups, pinned=pinned, latest_comments=latest, date_range=range_label(start, end),
-                  prev_url=prev_url, next_url=next_url, sort_links=HOME_SORT_LINKS,
+                  prev_url=prev_url, next_url=next_url, sort_links=_sort_links(base),
                   day_param=end.isoformat(), now=iso(utc_now()),
                   range_start=start.isoformat(), range_end=end.isoformat())
 
 
-def _window_end(conn, sort, before, after):
+def _window_end(conn, board, sort, before, after):
     """The last day of the 4-day window, so the range label always matches the posts."""
     if before:
         return before - timedelta(days=1)
     if after:
         return after + timedelta(days=3)
     if sort == "old":
-        first = store.first_post_day(conn) or today()
+        first = store.first_post_day(conn, board) or today()
         return first + timedelta(days=3)
     return today()
 
 
-# Switching sort resets the page: Newest and Most viewed open the latest 4 days, Oldest the earliest.
-HOME_SORT_LINKS = {"new": "/", "old": "/?sort=old", "views": "/?sort=views"}
+def _sort_links(base: str) -> dict[str, str]:
+    """Switching sort resets the page: Newest and Most viewed open the latest 4 days, Oldest the earliest."""
+    return {"new": base, "old": f"{base}?sort=old", "views": f"{base}?sort=views"}
 
 
-def _page_url(sort: str, before: str) -> str:
-    return f"/?before={before}" if sort == "new" else f"/?before={before}&sort={sort}"
+def _page_url(base: str, sort: str, before: str) -> str:
+    return f"{base}?before={before}" if sort == "new" else f"{base}?before={before}&sort={sort}"
 
 
-def _next_url(sort: str, end) -> str | None:
+def _next_url(base: str, sort: str, end) -> str | None:
     """The › arrow is disabled when the window already reaches today."""
     if end >= today():
         return None
     later = end + timedelta(days=4)
     if sort == "new":
-        return "/" if later >= today() else f"/?before={later.isoformat()}"
-    return f"/?before={later.isoformat()}&sort={sort}"
+        return base if later >= today() else f"{base}?before={later.isoformat()}"
+    return f"{base}?before={later.isoformat()}&sort={sort}"
 
 
 def search(request: Request) -> Response:
     page = page_of(request)
     query = request.query_params.get("q", "").strip()
     if query.startswith("#") and len(query) > 1:
-        return redirect(f"/?tag={query[1:].strip().lower()}")
+        board = boards.valid(request.query_params.get("board"))
+        return redirect(f"{boards.path(board)}?tag={query[1:].strip().lower()}")
     sort = sort_param(request)
     page_number = max(1, int(request.query_params.get("page", "1") or 1))
     offset = (page_number - 1) * store.PAGE_SIZE
@@ -149,7 +162,9 @@ def _search_url(query: str, sort: str, page_number: int) -> str:
 
 def tags_page(request: Request) -> Response:
     page = page_of(request)
-    return render(page, "tags.html", title="Hashtags", tag_list=store.tag_counts(page.conn))
+    board = boards.valid(request.query_params.get("board"))
+    return render(page, "tags.html", title=_board_title(board, "Hashtags"), board=board,
+                  tag_list=store.tag_counts(page.conn, board))
 
 
 def about(request: Request) -> Response:
@@ -269,6 +284,7 @@ def create_app(settings: Settings | None = None) -> Starlette:
 
     routes = [
         Route("/", home),
+        *[Route(boards.path(name), home) for name in boards.BOARDS if name != boards.MAIN],
         Route("/search", search),
         Route("/tags", tags_page),
         Route("/about", about),

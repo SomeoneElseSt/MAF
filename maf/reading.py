@@ -7,7 +7,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response, StreamingResponse
 from starlette.routing import Route
 
-from . import embed, live, markdown, store
+from . import boards, embed, live, markdown, store
 from .housetags import etiquette, is_hot, reply_placeholder
 from .util import iso, utc_now
 from .web import error_page, page_of, redirect, render
@@ -49,6 +49,7 @@ def item(request: Request) -> Response:
         "my_key": keys.get(page.pass_id, "") if participant else None,
         "title": markdown.plain(post.title),
         "post": post,
+        "board": post.board,
         "comment_count": store.comment_counts(page.conn, [thread_id]).get(thread_id, 0),
         "now": iso(utc_now()),
         "post_mine": bool(page.pass_id) and post.pass_id == page.pass_id,
@@ -98,15 +99,16 @@ MOMENT = re.compile(r"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ")
 
 
 def new_activity(request: Request) -> Response:
-    """Rows for the front page's New section that aren't on the page: older posts with new comments.
+    """Rows for a board's New section that aren't on the page: older posts with new comments.
     The browser sends only when it started counting (no record of what was opened leaves it)."""
     page = page_of(request)
     since = request.query_params.get("since", "")
     if not page.pass_id or not MOMENT.fullmatch(since):
         return Response(status_code=400)
-    posts = store.with_counts(page.conn, store.new_activity(page.conn, page.pass_id, since))
+    board = boards.valid(request.query_params.get("board"))
+    posts = store.with_counts(page.conn, store.new_activity(page.conn, page.pass_id, since, board))
     latest = store.latest_comment_times(page.conn, [p.id for p in posts], not_by=page.pass_id)
-    return render(page, "new-rows.html", posts=posts, latest_comments=latest)
+    return render(page, "new-rows.html", posts=posts, latest_comments=latest, board=board)
 
 
 def _event_stream(page, key: str) -> Response:

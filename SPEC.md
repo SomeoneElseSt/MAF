@@ -67,6 +67,22 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 - **Empty state:** when there are no posts at all, `/` keeps the sort row and shows "No posts yet." near the top.
 - **Pages:** `/` (four days of posts with search bar and sorter), `/thread/<id>`, `/submit`, `/about`, `/guide` (User Guide), `/guide/use-this-data` (Use this data), `/sign-in`
 
+## Boards
+
+- **What:** each post lives on one board, and its replies go with it. The main board is the front page at `/`; `/dating/` is a second front page with the same layout (Pinned, New, 4-day windows, sorts) and only its own posts. Main-board pages never list `/dating/` posts. Boards are listed in `maf/boards.py`.
+- **Colour:** a board's name (header link, tags on rows) is plain text, no box; a board's front page has no visible heading and starts with Today like the main one. A `/dating/` page (its front page, its threads, Submit to it) has a pink `#ff66b6` background in light and dark mode, with black text and text colours darkened to keep 4.5:1. On Submit the colour follows the Board choice.
+- **Posting:** Submit has a Board choice (Main or /dating/). It starts on the board you came from (`/submit?board=dating` from any /dating/ page).
+- **Scoped per board:** hashtag pages (`/dating/?tag=x`), the # menu and `/tags?board=dating`, maintainer pins, personal pins, the New section (`/new-activity?board=`) and the API (`?board=` on `/api/v1/posts` and `/api/v1/tags`; posts and search results carry `board`).
+- **Not scoped:** search covers every board; results from another board say which board they are on (a plain `/dating/` link).
+- **Moving posts:** `maf board dating <id> [<id> ...]` (or `maf board main ...` to move back). Moves the whole thread and prints only ids.
+- **First move (after the release that adds boards):** the maintainer picked these existing posts for `/dating/`. On the server, over SSH:
+
+  ```sh
+  maf board dating neat-ukulele-midnight wooden-copper-cocoa tangy-puzzle-scarf grey-drill-clarinet clumsy-river-muffin rare-plaza-postcard indigo-meadow-window odd-notebook-quilt simple-courtyard-cabin
+  ```
+
+  Each line of output reads "Moved <id> to /dating/." or "No post <id>" for an id that isn't a post. Running it again is harmless. To undo one: `maf board main <id>`.
+
 ## Hashtags
 
 - **Input:** the submit form's Hashtags field, "Up to 3, separated by commas." Normalise each tag: strip a leading `#`, lowercase, keep `[a-z0-9-]`, 1–24 characters, dedupe. More than 3 re-renders the form with an error on that field. Tags are free-form; there's no fixed list. Clicking into the field drops down suggested tags (the house tags and #minerva); picking one adds it. The list skips tags already in the box, narrows as you type, and hides once there are 3.
@@ -152,6 +168,7 @@ No admin roles, codes or buttons. Moderation is community flags plus the maintai
   | `maf dismiss <id>` | Clears its requests without changing anything |
   | `maf pin <id>` | Sets `pinned = 1` on a post (not a comment). Pinned posts show above Today under Newest |
   | `maf unpin <id>` | Sets `pinned = 0` |
+  | `maf board <board> <id> [<id> ...]` | Moves posts and their replies to `main` or `dating`. Prints only ids, never content |
 
   An unknown id prints `No item #<id>` and exits non-zero.
 - **No bans.**
@@ -178,7 +195,7 @@ No admin roles, codes or buttons. Moderation is community flags plus the maintai
 ```
 pass(id)
 redeemed_token(token_hash PK)
-item(id, parent_id NULL, thread_id, pass_id, title NULL, url NULL, text NULL, created_at, views, flags, hidden, restored, pinned, private_to NULL, sealed NULL)  -- id: three words, adjective-thing-thing (e.g. quiet-river-lantern), picked at random and re-picked until unused
+item(id, parent_id NULL, thread_id, pass_id, title NULL, url NULL, text NULL, created_at, views, flags, hidden, restored, pinned, private_to NULL, sealed NULL, board)  -- board: 'main' or 'dating' (schema v9), a reply carries its post's; id: three words, adjective-thing-thing (e.g. quiet-river-lantern), picked at random and re-picked until unused
 thread_key(pass_id, thread_id, public_key, PK(pass_id, thread_id))  -- per-thread public keys for encrypted private replies
 item_tag(item_id, tag, PK both)  -- index on tag
 item_fts  -- FTS5 virtual table over item(title, text) for public items only, kept in sync with triggers

@@ -11,8 +11,11 @@ const SCROLL_STEP = 128;
 const CHEVRON_UP = '<svg viewBox="0 0 16 10" width="14" height="9" aria-hidden="true"><path d="M2 8l6-6 6 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const CHEVRON_DOWN = '<svg viewBox="0 0 16 10" width="14" height="9" aria-hidden="true"><path d="M2 2l6 6 6-6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
+// Tags open on the board this page belongs to (/ or /dating/), whose tags the menu lists.
+const TAG_BASE = tagData?.dataset.base || "/";
+
 function goToTag(tag) {
-  window.location.assign(tag ? `/?tag=${encodeURIComponent(tag)}` : "/");
+  window.location.assign(tag ? `${TAG_BASE}?tag=${encodeURIComponent(tag)}` : TAG_BASE);
 }
 
 function scrollArrow(direction, scroller) {
