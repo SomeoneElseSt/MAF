@@ -572,6 +572,10 @@ button.note:disabled { cursor: default; }
 body[data-nsfw] { --paper: var(--nsfw-paper); --tint: var(--nsfw-tint); --meta: var(--nsfw-meta); --hot-wash: color-mix(in srgb, var(--hot) var(--wash), var(--paper)); }
 #nsfw-dialog .row { display: flex; gap: 14px; align-items: center; }
 .nsfw-answer { cursor: pointer; caret-color: transparent; }
+/* "Is NSFW?" with its (i) beside it; the card opens under the (i). */
+.field .label-row { display: flex; align-items: center; margin-bottom: 6px; }
+.field .label-row label { margin-bottom: 0; }
+.label-info { position: relative; display: inline-flex; align-items: center; margin-left: 2px; }
 .short-date { display: none; }
 
 /* Phones: NSFW and Dark join MAF and Submit on the top row, at the right above Feed; Search and Feed share

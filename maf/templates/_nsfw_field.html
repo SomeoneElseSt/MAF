@@ -7,7 +7,11 @@
 {% macro nsfw_field(values, errors) %}
 {% set answer = values.nsfw if values.nsfw in ("Yes", "No") else ("Yes" if nsfw_mode else "") %}
 <div class="field">
-  <label for="nsfw">Is NSFW?</label>
+  <div class="label-row"><label for="nsfw">Is NSFW?</label><span class="label-info"><button class="info" type="button" aria-label="What counts as NSFW" aria-expanded="false">i</button><div class="info-card" role="dialog" aria-label="What counts as NSFW" hidden>
+    <p class="info-title">NSFW: Not Safe For Work</p>
+    <p>Sex or hookups, nudity, explicit relationship details, drugs or getting wasted, graphic violence, etc.</p>
+    <p class="info-fine">Not sure? Pick Yes. Mismarked posts get moved.</p>
+  </div></span></div>
   <div class="tag-field">
     <input id="nsfw" name="nsfw" type="text" class="nsfw-answer" readonly placeholder="Yes or No" value="{{ answer }}" autocomplete="off" aria-haspopup="listbox" aria-expanded="false" aria-controls="nsfw-menu" aria-describedby="nsfw-help{% if errors and errors.nsfw %} nsfw-error{% endif %}">
     <div class="tag-menu tag-suggest" id="nsfw-menu" role="listbox" hidden><div class="tag-scroll">
