@@ -13,6 +13,10 @@
     });
   }
 
+  // A button with data-opens="<dialog id>" opens that pop-up; data-closes inside it closes it.
+  document.querySelectorAll("[data-opens]").forEach(button => button.addEventListener("click", () => document.getElementById(button.dataset.opens)?.showModal()));
+  document.querySelectorAll("dialog [data-closes]").forEach(button => button.addEventListener("click", () => button.closest("dialog").close()));
+
   const dialogs = {
     match: document.getElementById("match-dialog"),
     hide: document.getElementById("hide-dialog"),

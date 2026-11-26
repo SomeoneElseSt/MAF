@@ -291,7 +291,7 @@ span.arrow { color: var(--line); cursor: default; }
 .inline-reply textarea { min-height: 80px; resize: vertical; }
 @media (max-width: 560px) { .inline-reply { margin-left: 16px; } }
 /* An edit replaces the words in place, so its box lines up with them (no reply indent). */
-.inline-reply.edit-in-place, #delete-profile { margin-left: 0; } /* not under a reply, so no indent */
+.inline-reply.edit-in-place { margin-left: 0; }
 
 /* The name check's warning, inside the box it belongs to: same grey box as a notice, under the buttons. */
 .name-warning { margin-top: 12px; background: var(--tint); border-radius: 4px; padding: 12px 14px; font: 15px/1.5 var(--sans); }
@@ -588,10 +588,10 @@ body[data-board="dates"] { --paper: var(--dates-paper); --tint: var(--dates-tint
 .dates-toggle { font: 16px var(--sans); color: var(--soft); }
 .dates-toggle:hover { color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
 .dates-toggle[aria-current], .dates-toggle[aria-current]:hover { color: var(--dates-accent); }
-#nsfw-dialog .row, #match-dialog .row, #hide-dialog .row, #unmatch-dialog .row, #send-dialog .row { display: flex; gap: 14px; align-items: center; }
+#nsfw-dialog .row, #match-dialog .row, #hide-dialog .row, #unmatch-dialog .row, #send-dialog .row, #delete-dialog .row { display: flex; gap: 14px; align-items: center; }
 /* Match's notice is longer than the other pop-ups: a little wider, and no word left alone on a line. */
-#match-dialog, #hide-dialog, #unmatch-dialog, #send-dialog { max-width: 420px; }
-#match-dialog p, #hide-dialog p, #unmatch-dialog p, #send-dialog p { text-wrap: pretty; }
+#match-dialog, #hide-dialog, #unmatch-dialog, #send-dialog, #delete-dialog { max-width: 420px; }
+#match-dialog p, #hide-dialog p, #unmatch-dialog p, #send-dialog p, #delete-dialog p { text-wrap: pretty; }
 /* Dates threads: Reply with profile sits where the comment box would start; its notice opens just under it. */
 .profile-reply .row { margin-top: 4px; }
 .notice.need-profile { margin-top: 12px; }

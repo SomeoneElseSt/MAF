@@ -234,7 +234,7 @@ def test_your_profile_is_edited_through_its_form(signed_in, app, pass_id):
     assert signed_in.get("/dates/submit", follow_redirects=False).headers["location"] == "/dates/edit"
     form = signed_in.get("/dates/edit").text
     assert "Edit your profile" in form and "Film and long walks." in form and 'value="Berlin"' in form
-    assert 'id="delete-profile"' in form
+    assert 'id="delete-dialog"' in form
 
 
 def test_after_sending_your_profile_the_button_says_replied(signed_in, app, pass_id):

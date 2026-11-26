@@ -35,7 +35,7 @@
     {% if profile %}
     <button class="button" type="submit" data-pending="Saving…">Save profile</button>
     <a class="note" href="{{ profile|thread_url }}">Cancel</a>
-    <a class="note reply-toggle" href="#delete-profile" aria-controls="delete-profile" aria-expanded="false">Delete profile</a>
+    <button class="note" type="button" data-opens="delete-dialog">Delete profile</button>
     {% else %}
     <button class="button" type="submit" data-pending="Posting…">Post profile</button>
     <a class="note" href="/dates">Cancel</a>
@@ -43,14 +43,16 @@
   </div>
 </form>
 {% if profile %}
-{# Deleting asks first, in the same inline box as deleting a reply (replies.js opens it; :target without JS). #}
-<form class="inline-reply delete-confirm" id="delete-profile" action="/dates/delete" method="post" data-full-page hidden>
-  <p class="help">Delete your profile? It leaves the Dates page, and the profiles people sent you and your conversations go with it. This can't be undone.</p>
-  <div class="row"><button class="button" type="submit" data-pending="Deleting…">Delete</button><a class="button plain cancel" href="#">Cancel</a></div>
-</form>
+{# Deleting asks first, in a pop-up like Match, Hide and Unmatch. #}
+<dialog id="delete-dialog">
+  <form action="/dates/delete" method="post" data-full-page>
+    <p>Delete your profile? It leaves the Dates page, and the profiles people sent you and your conversations go with it. This can't be undone.</p>
+    <div class="row"><button class="button" type="submit" data-pending="Deleting…">Delete profile</button><button class="button plain" type="button" data-closes>Cancel</button></div>
+  </form>
+</dialog>
 {% endif %}
 {% endblock %}
 {% block scripts %}
 <script src="{{ static('choice.js') }}"></script>
-{% if profile %}<script src="{{ static('replies.js') }}"></script>{% endif %}
+{% if profile %}<script src="{{ static('dates-thread.js') }}"></script>{% endif %}
 {% endblock %}
