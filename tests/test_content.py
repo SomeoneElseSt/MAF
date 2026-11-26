@@ -405,3 +405,10 @@ def test_the_header_search_box_goes_to_search_results(client, app, pass_id):
     body = client.get("/").text
     assert '<form class="find" action="/search" method="get" role="search">' in body
     assert "Findable thing" in client.get("/search", params={"q": "Findable"}).text
+
+
+def test_search_lists_matching_posts_before_matching_comments(client, app, pass_id):
+    post = make_post(app, pass_id, title="Kayak trip", days_ago=2)
+    make_comment(app, store.create_pass(app.conn), post, "kayak rental is cheap")
+    body = client.get("/search", params={"q": "kayak"}).text
+    assert body.index("Kayak trip</a>") < body.index("kayak rental is cheap")

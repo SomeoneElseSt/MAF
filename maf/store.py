@@ -500,7 +500,8 @@ def search(
     limit: int = PAGE_SIZE,
     offset: int = 0,
 ) -> list[Item]:
-    """FTS5 over public titles, text and comments; hidden items excluded."""
+    """FTS5 over public titles, text and comments; hidden items excluded.
+    Matching posts come first, then matching comments, each in the chosen order."""
     match = _fts_query(query)
     if not match:
         return []
@@ -508,7 +509,7 @@ def search(
     sql = (
         "SELECT i.* FROM item_fts f JOIN item i ON i.rowid = f.rowid "
         "WHERE item_fts MATCH ? AND NOT (i.hidden = 1 AND i.restored = 0) "
-        f"ORDER BY {order} LIMIT ? OFFSET ?"
+        f"ORDER BY i.parent_id IS NOT NULL, {order} LIMIT ? OFFSET ?"
     )
     try:
         rows = conn.execute(sql, (match, limit, offset)).fetchall()
