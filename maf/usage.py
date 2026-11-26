@@ -1,14 +1,32 @@
-"""API usage counts: one line per API request in a log file, and a command to total them.
+"""API usage counts: how many requests each endpoint got per UTC day, and a command to print them.
 
-The line holds only the time and the endpoint. No token, no pass, no IP and no
-query string, so the file can't say who read what. Without MAF_USAGE_LOG nothing
+Only totals are kept, in a small JSON file: {"2026-11-26": {"GET /api/v1/threads/{id}": 17}}. Endpoints are
+the route's pattern, never the address asked for, so no post id is recorded; no times finer than the day,
+no token, no pass, no IP and no query string. It's a tally, not a request log. Without MAF_USAGE_LOG nothing
 is written and usage() says so.
 """
 
+import json
 import threading
-from collections import Counter
 from datetime import UTC, datetime
 from pathlib import Path
+
+
+def endpoint_of(method: str, path: str, path_params: dict) -> str:
+    """The route's pattern: /api/v1/threads/quiet-river-lantern becomes /api/v1/threads/{id}."""
+    for name, value in path_params.items():
+        path = path.replace(str(value), "{" + name + "}")
+    return f"{method} {path}"
+
+
+def _read(path: Path) -> dict[str, dict[str, int]]:
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text() or "{}")
+    except ValueError:
+        return {}
+    return data if isinstance(data, dict) else {}
 
 
 class UsageLog:
@@ -23,32 +41,24 @@ class UsageLog:
     def record(self, endpoint: str) -> None:
         if self._path is None:
             return
-        stamp = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+        day = datetime.now(UTC).strftime("%Y-%m-%d")
         with self._lock:
+            counts = _read(self._path)
+            today = counts.setdefault(day, {})
+            today[endpoint] = today.get(endpoint, 0) + 1
             try:
-                with self._path.open("a") as log:
-                    log.write(f"{stamp} {endpoint}\n")
+                self._path.write_text(json.dumps(counts, sort_keys=True))
             except OSError:
                 return
 
 
-def read_usage(path: Path) -> Counter:
-    """Counts per endpoint. Skips lines that don't look like one of ours."""
-    counts: Counter = Counter()
-    for line in path.read_text().splitlines():
-        _, _, endpoint = line.partition(" ")
-        if endpoint.partition(" ")[2].startswith("/api/"):
-            counts[endpoint] += 1
-    return counts
-
-
 def usage(path: Path | None) -> str:
     if path is None or not path.is_file():
-        return "No usage log yet. Set MAF_USAGE_LOG to a writable file path to start one."
-    counts = read_usage(path)
-    if not counts:
-        return f"No API requests in {path} yet."
-    total = sum(counts.values())
-    width = max(len(endpoint) for endpoint in counts)
-    rows = [f"{endpoint.ljust(width)}  {count}" for endpoint, count in counts.most_common()]
-    return "\n".join([f"{total} API requests in {path}", *rows])
+        return "No usage counts yet. Set MAF_USAGE_LOG to a writable file path to start counting."
+    counts = _read(path)
+    rows = [(day, endpoint, n) for day in sorted(counts) for endpoint, n in sorted(counts[day].items(), key=lambda kv: -kv[1])]
+    if not rows:
+        return f"No API requests counted in {path} yet."
+    width = max(len(endpoint) for _, endpoint, _ in rows)
+    total = sum(n for _, _, n in rows)
+    return "\n".join([f"{total} API requests in {path}", *(f"{day}  {endpoint.ljust(width)}  {n}" for day, endpoint, n in rows)])

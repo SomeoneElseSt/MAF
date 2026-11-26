@@ -1,19 +1,29 @@
-"""The API usage log counts requests per endpoint and holds nothing about who made them."""
+"""API usage: daily totals per endpoint pattern. Nothing about who asked or which post."""
 
-from maf.usage import UsageLog, read_usage, usage
+import json
+
+from maf.usage import UsageLog, endpoint_of, usage
 
 
-def test_each_api_request_adds_a_line_with_only_time_and_endpoint(tmp_path):
-    path = tmp_path / "usage.log"
+def test_requests_add_up_per_day_and_endpoint(tmp_path):
+    path = tmp_path / "usage.json"
     log = UsageLog(path)
     log.record("GET /api/v1/posts")
     log.record("GET /api/v1/posts")
-    log.record("GET /api/v1/tags")
-    lines = path.read_text().splitlines()
-    assert len(lines) == 3
-    stamp, _, endpoint = lines[0].partition(" ")
-    assert stamp.endswith("Z") and endpoint == "GET /api/v1/posts"
-    assert read_usage(path) == {"GET /api/v1/posts": 2, "GET /api/v1/tags": 1}
+    log.record("GET /api/v1/threads/{id}")
+    (day, counts), = json.loads(path.read_text()).items()
+    assert len(day) == 10 and counts == {"GET /api/v1/posts": 2, "GET /api/v1/threads/{id}": 1}
+
+
+def test_a_threads_id_is_never_recorded():
+    assert endpoint_of("GET", "/api/v1/threads/quiet-river-lantern", {"id": "quiet-river-lantern"}) == "GET /api/v1/threads/{id}"
+
+
+def test_the_api_counts_by_pattern(app, client, tmp_path):
+    app.usage = UsageLog(tmp_path / "usage.json")
+    client.get("/api/v1/threads/some-post-id")
+    stored = (tmp_path / "usage.json").read_text()
+    assert "some-post-id" not in stored and "GET /api/v1/threads/{id}" in stored
 
 
 def test_without_a_path_nothing_is_written(tmp_path):
@@ -22,10 +32,9 @@ def test_without_a_path_nothing_is_written(tmp_path):
     assert "MAF_USAGE_LOG" in usage(None)
 
 
-def test_usage_prints_a_total_and_one_row_per_endpoint(tmp_path):
-    path = tmp_path / "usage.log"
-    path.write_text("2026-11-26T10:00:00Z GET /api/v1/posts\n2026-11-26T10:01:00Z GET /api/v1/search\n"
-                    "2026-11-26T10:02:00Z GET /api/v1/posts\n")
-    printed = usage(path)
-    assert printed.splitlines()[0].startswith("3 API requests")
-    assert "GET /api/v1/posts" in printed and " 2" in printed
+def test_usage_prints_a_total_and_a_row_per_day_and_endpoint(tmp_path):
+    path = tmp_path / "usage.json"
+    path.write_text(json.dumps({"2026-11-26": {"GET /api/v1/posts": 41, "GET /api/v1/threads/{id}": 17}}))
+    lines = usage(path).splitlines()
+    assert lines[0].startswith("58 API requests")
+    assert lines[1].split() == ["2026-11-26", "GET", "/api/v1/posts", "41"]
