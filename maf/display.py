@@ -2,6 +2,8 @@
 
 from datetime import date, datetime, timedelta
 
+from markupsafe import Markup
+
 from .util import parse_iso, today
 
 DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
@@ -15,8 +17,13 @@ def _plural(n: int, word: str) -> str:
     return f"{n} {word}{'' if n == 1 else 's'}"
 
 
-def relative_time(created_at: str, now: datetime | None = None) -> str:
-    """Plain-language age: '2 hours ago', 'Yesterday', 'Friday 20 November'."""
+def relative_time(created_at: str, now: datetime | None = None) -> Markup:
+    """Plain-language age in a <time>, so the browser can redo the day-based ones ('Yesterday') in its own
+    time zone (localdays.js): '2 hours ago', 'Yesterday', 'Friday 20 November'."""
+    return Markup('<time class="rel" datetime="{}">{}</time>').format(created_at, _age(created_at, now))
+
+
+def _age(created_at: str, now: datetime | None = None) -> str:
     moment = parse_iso(created_at)
     current = now or datetime.now(moment.tzinfo)
     seconds = max(0, int((current - moment).total_seconds()))
@@ -59,7 +66,7 @@ def four_day_window(end: date) -> tuple[date, date]:
     return end - timedelta(days=3), end
 
 
-def metadata(item, comment_count: int | None = None, include_time: bool = True) -> str:
+def metadata(item, comment_count: int | None = None, include_time: bool = True) -> Markup:
     """The plain-language details line: '2 hours ago, 14 comments, 61 views'."""
     parts = []
     if include_time:
@@ -67,7 +74,7 @@ def metadata(item, comment_count: int | None = None, include_time: bool = True) 
     if comment_count is not None:
         parts.append(_plural(comment_count, "comment"))
     parts.append(_plural(item.views, "view"))
-    return ", ".join(parts)
+    return Markup(", ").join(parts)
 
 
 def host(url: str | None) -> str:

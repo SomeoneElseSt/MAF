@@ -30,7 +30,7 @@
     {% endfor %}
   </div>
   {% if date_range %}
-  <span class="range">
+  <span class="range"{% if range_start %} data-start="{{ range_start }}" data-end="{{ range_end }}"{% endif %}>
     {% if prev_url %}<a class="arrow" href="{{ prev_url }}" aria-label="Earlier 4 days">‹</a>{% else %}<span class="arrow" aria-disabled="true">‹</span>{% endif %}
     <span>{{ date_range }}</span>
     {% if next_url %}<a class="arrow" href="{{ next_url }}" aria-label="Later 4 days">›</a>{% else %}<span class="arrow" aria-disabled="true">›</span>{% endif %}
@@ -94,7 +94,7 @@
   {% endif %}
   {% for heading, posts in groups %}
   <h2 class="day">{{ heading }}</h2>
-  <ol class="list">
+  <ol class="list day-list" data-sort="{{ sort }}">
     {% for post in posts %}{{ row(post) }}{% endfor %}
   </ol>
   {% endfor %}

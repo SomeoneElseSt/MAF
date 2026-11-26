@@ -83,7 +83,8 @@ def render_home(page, sort, before, after):
     return render(page, "list.html", kind="home", title="", empty=False,
                   groups=groups, pinned=pinned, latest_comments=latest, date_range=range_label(start, end),
                   prev_url=prev_url, next_url=next_url, sort_links=HOME_SORT_LINKS,
-                  day_param=end.isoformat(), now=iso(utc_now()))
+                  day_param=end.isoformat(), now=iso(utc_now()),
+                  range_start=start.isoformat(), range_end=end.isoformat())
 
 
 def _window_end(conn, sort, before, after):

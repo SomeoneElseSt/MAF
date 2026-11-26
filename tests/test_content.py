@@ -160,7 +160,7 @@ def test_home_rows_carry_their_latest_comment_time(client, app, pass_id):
     comment = make_comment(app, store.create_pass(app.conn), post, "a reply")
     body = client.get("/").text
     assert f'data-latest-comment="{comment.created_at}"' in body
-    assert f'data-id="{silent.id}" data-title="No comments" data-host="" data-created="{silent.created_at}">' in body
+    assert f'data-id="{silent.id}" data-title="No comments" data-host="" data-created="{silent.created_at}" data-views="0">' in body
 
 
 def test_home_rows_link_their_host_in_a_new_tab(client, app, pass_id):
@@ -387,3 +387,13 @@ def test_a_date_before_the_first_post_opens_the_earliest_posts(signed_in, app, p
 def test_with_only_recent_posts_there_is_no_going_back(signed_in, app, pass_id):
     make_post(app, pass_id, title="Just this one")
     assert 'aria-label="Earlier 4 days"' not in signed_in.get("/").text
+
+
+def test_times_and_days_carry_what_the_browser_needs_to_show_its_own_time_zone(client, app, pass_id):
+    # The server only knows UTC: localdays.js redraws day headings, the range and older times on the device.
+    post = make_post(app, pass_id, title="Two days back", days_ago=2)
+    body = client.get("/").text
+    assert f'<time class="rel" datetime="{post.created_at}">2 days ago</time>' in body
+    assert '<ol class="list day-list" data-sort="new">' in body
+    assert 'class="range" data-start="' in body
+    assert "localdays.js" in body
