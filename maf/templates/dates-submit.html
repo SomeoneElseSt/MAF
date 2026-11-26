@@ -14,7 +14,7 @@
 <p class="lede">Your profile appears only on the Dates page. People reply with their own profiles, and you can choose to match with them. Matching opens private replies between the two of you in the thread. You can read them only on the computer or phone where you made your profile. You can have one profile at most.</p>
 
 <form action="/dates/submit" method="post">
-  {{ choice_field("region", "Region", choices.region, "Where you're from", values, errors, help="To give people a sense of you.") }}
+  {{ choice_field("region", "From", choices.region, "Where you're from", values, errors, help="To give people a sense of you.") }}
   {{ choice_field("gender", "Gender", choices.gender, "How you identify", values, errors) }}
   {{ choice_field("height", "Height", choices.height, "Pick a range", values, errors) }}
   {{ choice_field("city", "Rotation city", choices.city, "Where you are now", values, errors) }}
