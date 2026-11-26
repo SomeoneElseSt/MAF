@@ -70,11 +70,32 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 ## NSFW
 
 - **Two sides.** Every post is either normal or NSFW (`item.nsfw`). Lists (front page, Pinned, New, hashtag pages, search, the # menu and All hashtags) show one side only: NSFW posts with NSFW on, the rest with it off. A reply follows its post. A direct link to a post opens on either side.
-- **The switch.** "NSFW" in the header, just before Dark (on phones, on the top row with Dark). It's a per-browser setting like Dark: a `maf_nsfw` cookie the page sets, which the server reads to choose the list and never stores. On, the word is #E2805A. The page takes a warm tint while it's on, so you can always tell which side you're on: #f8e8e2 in light mode, #22100c in dark. A post's own page takes its colour from the post, not the switch: an NSFW post is always tinted and a normal one never is, so on a post the switch only changes where lists take you. The first time it's turned on in a browser, a warning asks first ("I understand" / "Cancel"); after that it switches straight away.
+- **The switch.** "NSFW" in the header, just before Dark (on phones, on the top row with Dark), after Dates. It's a per-browser setting like Dark: a `maf_nsfw` cookie, which the server reads to choose the list and never stores. On, the word is #E2805A and lists take a warm tint (#f8e8e2 in light mode, #22100c in dark). Where it leads is in Navigation below; the first time it turns NSFW on in a browser, a warning asks first ("I understand" / "Cancel").
 - **Posting.** The submit form asks "Is NSFW?" (Yes / No, required, from a dropdown like the Hashtags one): "Mark your post appropriately. Inappropriately marked posts will be moved to NSFW." An (i) next to the question opens a card: "NSFW: Not Safe For Work", what counts (sex or hookups, nudity, explicit relationship details, drugs or getting wasted, graphic violence, etc.), and "Not sure? Pick Yes. Mismarked posts get moved." With NSFW on it starts at Yes, with it off at No. Until you answer, flipping the switch on the submit page changes the answer to match; once you've answered, your answer stays. The answer sets both `nsfw` (where it shows) and `nsfw_marked` (what the author said).
 - **Moving posts.** The maintainer moves posts with `maf nsfw` / `maf sfw`. Where `nsfw` and `nsfw_marked` differ, the maintainer corrected the author; posts from before the question have `nsfw_marked` NULL. These are the labels an NSFW classifier can learn from.
 - **Personal pins** remember which side their post is on and show only on that side.
 - **The API and MCP** list the normal side only.
+
+## Dates
+
+Work in progress on the `dates` branch; not live yet.
+
+- **The board.** "Dates" in the header, left of NSFW, with no warning to enter. Its page, `/dates`, has its own Pinned posts (the maintainer moves a post there with `maf board dates <id>`, then `maf pin <id>`) and lists profiles under "Profiles", with the usual sorter. Dates posts (`item.board = 'dates'`) never show on the front page, hashtags, New or search. Rose tint: #fbe9ee / #2e1520 (tint #f1dbe2 / #432633), word #c2456b / #e87d9c while on Dates. Dates and NSFW are never on together: opening the Dates page turns NSFW off.
+- **A profile** is a normal post. Its text is plain lines (`Region: Europe`, `Gender: …`, `Height: …`, `Rotation city: …`, `Looking for: …`), then the optional comment. Its title is `<Rotation city>: <gender>, <region>, <height in cm>` (e.g. "Berlin: Woman, Europe, 160–175 cm"; "under"/"over" lowercase). One profile per pass.
+- **The form** (`/dates/submit`, Submit while on Dates): Region (Africa, East Asia, Europe, Latin America, Middle East, Mixed, North America, Oceania, South Asia; hint "To give people a sense of you."), Gender (Woman, Man, Non-binary), Height (Under 5′3″ (160 cm), 5′3″–5′9″ (160–175 cm), Over 5′9″ (175 cm)), Rotation city (Berlin, Buenos Aires, San Francisco, Tokyo), What are you looking for? (Friend, Relationship, Either, depending on how it goes), Comment (optional). All but Comment required. Lede: "Your profile appears only on the Dates page. People reply with their own profiles, and you can choose to match with them. Matching opens private replies between the two of you in the thread. You can read them only on the computer or phone where you made your profile. You can have one profile at most."
+- **Replying.** A Dates post has no comment box, only **Reply with profile**. Without a profile it opens a notice: "You don't have a profile yet. You need one to reply." with **Make your profile**. With one, it sends your profile as a private (encrypted) reply to the owner, so only they see who replied. On replies, **Match** replaces Reply: a pop-up asks first ("Matching opens private messages between you two in this thread. They show only on this computer and are encrypted, so MAF can't read them." / "Use common sense in messages and when meeting. Take your time before sharing anything that identifies you or your contact details. Meet somewhere public and let a friend know where you'll be."), then opens a private reply.
+- **To build** (the Pi's prompt): saving profiles, sending Reply with profile, refusing public comments on Dates posts, editing a profile through the form, Feed wording ("Someone replied with their profile on your profile", "Someone matched with you").
+
+## Navigation
+
+All in `maf/navigation.py`, one helper every page uses:
+
+- **MAF goes up one level:** from any page to the home of the board you're on; from a board's home (the Dates page, or the front page with NSFW on) to the main home.
+- **Dates and NSFW take you to that board's home;** on that home already, they take you back to the main home.
+- **Submit opens the form for the board you're on.**
+- The board you're on is a post's own, the Dates page and form's, or else the side you're browsing. Links that change the NSFW side go through `/?side=nsfw` or `/?side=main` (which set the cookie and land on `/`, or on `next`); the first time one turns NSFW on in a browser, the warning asks first (`nsfw.js`).
+- **Post addresses carry their board:** `/thread/<id>`, `/nsfw/thread/<id>`, `/dates/thread/<id>` (`thread_url`). Any other address for a post redirects there, so old links and moved posts keep working. A post's hashtags open on the post's side (`tag_url`).
+- **Colour follows the page:** a post's page takes its post's colour (NSFW ember, Dates rose) whichever way the switch is; lists follow the switch.
 
 ## Hashtags
 

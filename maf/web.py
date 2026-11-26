@@ -11,7 +11,7 @@ from starlette.requests import Request
 from starlette.responses import HTMLResponse, RedirectResponse, Response
 from starlette.templating import Jinja2Templates
 
-from . import display, housetags, markdown, store
+from . import display, housetags, markdown, navigation, store
 from .app import App
 from .emoji import PICKER_EMOJI
 from .util import escape, iso, utc_now
@@ -61,6 +61,8 @@ def make_templates(app: App) -> Jinja2Templates:
     env.filters["markdown"] = markdown.render
     env.filters["md_title"] = markdown.title
     env.filters["plain"] = markdown.plain
+    env.filters["thread_url"] = navigation.thread_url
+    env.globals["tag_url"] = navigation.tag_url
     env.globals.update(
         day_label=display.day_label,
         range_label=display.range_label,
@@ -148,6 +150,10 @@ def render(page: Page, template: str, status_code: int = 200, **context: Any) ->
         "nsfw_mode": page.nsfw,
     }
     base.update(context)
+    base["nav"] = navigation.header_links(
+        page.request.url.path, bool(page.request.url.query), page.nsfw,
+        bool(base.get("dates_page")), base.get("post_board"),
+    )
     return page.app.templates.TemplateResponse(
         page.request, template, base, status_code=status_code,
         # Back may reuse the page, but only after checking with the server: an old saved copy would

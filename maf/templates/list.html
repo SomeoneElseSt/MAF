@@ -2,7 +2,7 @@
   list.html: the home page, a tag filter, or search results.
 
   Context:
-    kind          "home" | "tag" | "search"
+    kind          "home" | "tag" | "search" | "dates"
     title         page title (empty for the home page)
     groups        [(day_label, [row, ...]), ...] for the 4-day views
     results       [row, ...] for search and tag pages
@@ -22,6 +22,9 @@
 
 {% from "_rows.html" import row with context %}
 
+{# The sort bar, the same on every list. Laid out like the home page's: where there's no date range (Dates,
+   hashtags, search) an invisible stand-in takes its place, so the bar is the same height and the words sit at
+   the same spot whatever the font. #}
 {% macro sort_row() %}
 <div class="listbar">
   <div class="sort"><span class="sort-label">Sort by:</span>
@@ -35,6 +38,8 @@
     <span class="long-date">{{ date_range }}</span>{% if date_range_short %}<span class="short-date">{{ date_range_short }}</span>{% endif %}
     {% if next_url %}<a class="arrow" href="{{ next_url }}" aria-label="Later 4 days">›</a>{% else %}<span class="arrow" aria-disabled="true">›</span>{% endif %}
   </span>
+  {% else %}
+  <span class="range range-standin" aria-hidden="true"><span class="arrow">‹</span><span class="long-date">&nbsp;</span><span class="arrow">›</span></span>
   {% endif %}
 </div>
 {% endmacro %}
@@ -59,6 +64,24 @@
     {% if pager.prev %}<a href="{{ pager.prev }}">‹ Previous</a>{% else %}<span aria-disabled="true">‹ Previous</span>{% endif %}
     {% if pager.next %}<a href="{{ pager.next }}">Next ›</a>{% else %}<span aria-disabled="true">Next ›</span>{% endif %}
   </nav>
+  {% endif %}
+
+{% elif kind == "dates" %}
+  <h1 class="sr-only">Dates</h1>
+  {% if pinned %}
+  <h2 class="day">Pinned</h2>
+  {# Not .pinned-list: that one also takes this browser's own pins (pins.js), which belong on the front page. #}
+  <ol class="list dates-pinned">
+    {% for post in pinned %}{{ row(post, fixed=true) }}{% endfor %}
+  </ol>
+  {% endif %}
+  <h2 class="day">Profiles</h2>
+  {% if results %}
+  <ol class="list list-flat">
+    {% for post in results %}{{ row(post) }}{% endfor %}
+  </ol>
+  {% else %}
+  <p class="empty">No profiles yet.</p>
   {% endif %}
 
 {% elif kind == "tag" %}

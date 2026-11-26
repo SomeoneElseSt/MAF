@@ -12,18 +12,28 @@ from starlette.responses import JSONResponse, RedirectResponse, Response
 from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 
-from . import auth, housetags, post, reactions, reading, store
+from . import auth, housetags, navigation, post, reactions, reading, store
 from .app import App, build_app
 from .display import day_label, four_day_window, range_label, short_range_label
 from .settings import Settings, load_settings
 from .util import iso, parse_date, today, utc_now
-from .web import make_templates, page_of, redirect, render, sort_param
+from .web import NSFW_COOKIE, make_templates, page_of, redirect, render, sort_param
 
 APP: App = None  # set by create_app
 
 
+NSFW_COOKIE_SECONDS = 31536000  # a year, like the switch sets it (nsfw.js)
+
+
 def home(request: Request) -> Response:
     page = page_of(request)
+    # Header links that change side (navigation.py) come through here: set the switch, then land.
+    side = request.query_params.get("side")
+    if side in (navigation.NSFW, navigation.MAIN):
+        response = redirect(navigation.safe_next(request.query_params.get("next")))
+        response.set_cookie(NSFW_COOKIE, "1" if side == navigation.NSFW else "0", max_age=NSFW_COOKIE_SECONDS, path="/",
+                            samesite="lax", secure=page.settings.base_url.startswith("https"))
+        return response
     sort = sort_param(request)
     tag = request.query_params.get("tag", "").strip().lower()
     if tag:
@@ -31,6 +41,43 @@ def home(request: Request) -> Response:
     before = parse_date(request.query_params.get("before"))
     after = parse_date(request.query_params.get("after"))
     return render_home(page, sort, before, after)
+
+
+# The Dates profile questions. Broad on purpose, so a profile doesn't point at one person.
+PROFILE_CHOICES = {
+    "region": ["Africa", "East Asia", "Europe", "Latin America", "Middle East", "Mixed", "North America",
+               "Oceania", "South Asia"],
+    "gender": ["Woman", "Man", "Non-binary"],
+    "height": ["Under 5′3″ (160 cm)", "5′3″–5′9″ (160–175 cm)", "Over 5′9″ (175 cm)"],
+    "city": ["Berlin", "Buenos Aires", "San Francisco", "Tokyo"],
+    "looking_for": ["Friend", "Relationship", "Either, depending on how it goes"],
+}
+
+
+def render_dates(page, template: str, **context) -> Response:
+    """A Dates page. Dates and NSFW don't mix: opening one turns NSFW off in this browser."""
+    response = render(page, template, board="dates", dates_page=True, nsfw_mode=False,
+                      tags=store.tag_counts(page.conn, False), **context)
+    if page.nsfw:
+        response.delete_cookie(NSFW_COOKIE, path="/")
+    return response
+
+
+def dates(request: Request) -> Response:
+    """The Dates page: its own pinned posts, then people's profiles (to come). No warning to enter."""
+    page = page_of(request)
+    pinned = store.with_comment_counts(page.conn, store.pinned_posts(page.conn, board="dates"))
+    sort = sort_param(request)
+    profiles = store.with_comment_counts(page.conn, store.board_posts(page.conn, "dates", sort))
+    latest = store.latest_comment_times(page.conn, [post.id for post in pinned + profiles], not_by=page.pass_id)
+    return render_dates(page, "list.html", kind="dates", title="Dates", pinned=pinned, results=profiles,
+                        latest_comments=latest, groups=[], sort=sort)
+
+
+def dates_submit(request: Request) -> Response:
+    """The Dates profile form (Submit while on Dates)."""
+    return render_dates(page_of(request), "dates-submit.html", title="Make your profile",
+                        choices=PROFILE_CHOICES, values={}, errors={})
 
 
 def render_tag(page, tag: str, sort: str, page_number: int):
@@ -272,6 +319,8 @@ def create_app(settings: Settings | None = None) -> Starlette:
     routes = [
         Route("/", home),
         Route("/search", search),
+        Route("/dates", dates),
+        Route("/dates/submit", dates_submit),
         Route("/tags", tags_page),
         Route("/about", about),
         Route("/privacy", privacy),

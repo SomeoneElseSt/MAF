@@ -1,0 +1,19 @@
+{#
+  A required pick-one question answered from a dropdown, the same panel as Is NSFW? and the Hashtags
+  suggestions (choice.js). The box is read-only and holds the chosen option, which is what's sent.
+  Uses: name, label, options (list of strings), placeholder, help (optional), values, errors.
+#}
+{% macro choice_field(name, label, options, placeholder, values, errors, help=None) %}
+{% set chosen = values[name] if values[name] in options else "" %}
+<div class="field">
+  <label for="{{ name }}">{{ label }}</label>
+  <div class="tag-field choice-field">
+    <input id="{{ name }}" name="{{ name }}" type="text" class="choice-answer" readonly placeholder="{{ placeholder }}" value="{{ chosen }}" autocomplete="off" aria-haspopup="listbox" aria-expanded="false" aria-controls="{{ name }}-menu"{% if help or errors[name] %} aria-describedby="{% if help %}{{ name }}-help{% endif %}{% if errors[name] %} {{ name }}-error{% endif %}"{% endif %}>
+    <div class="tag-menu tag-suggest" id="{{ name }}-menu" role="listbox" hidden><div class="tag-scroll">
+      {% for option in options %}<button type="button" role="option" data-answer="{{ option }}"><span>{{ option }}</span></button>{% endfor %}
+    </div></div>
+  </div>
+  {% if help %}<p class="help" id="{{ name }}-help">{{ help }}</p>{% endif %}
+  {% if errors[name] %}<p class="help" id="{{ name }}-error">{{ errors[name] }}</p>{% endif %}
+</div>
+{% endmacro %}

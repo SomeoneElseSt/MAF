@@ -40,14 +40,14 @@
 <meta name="twitter:card" content="summary_large_image">
 <script src="{{ static('theme-init.js') }}"></script>
 </head>
-<body class="{{ body_class|default('') }}" data-now="{{ server_now }}"{% set nsfw_tint = post_nsfw if post_nsfw is defined else nsfw_mode %}{% if nsfw_tint %} data-nsfw{% endif %}{% if reply_placeholder is defined and reply_placeholder %} data-reply-placeholder="{{ reply_placeholder|e }}"{% endif %}>
+<body class="{{ body_class|default('') }}" data-now="{{ server_now }}"{% set on_dates = board is defined and board == "dates" %}{% set dates_page = dates_page is defined and dates_page %}{% set nsfw_tint = post_nsfw if post_nsfw is defined else nsfw_mode %}{% if nsfw_tint and not on_dates %} data-nsfw{% endif %}{% if on_dates %} data-board="dates"{% endif %}{% if reply_placeholder is defined and reply_placeholder %} data-reply-placeholder="{{ reply_placeholder|e }}"{% endif %}>
 <a class="skip" href="#main">Skip to content</a>
 <div class="page">
   <header class="top">
-    <a class="brand" href="/">{{ org.site_name }}</a>
+    <a class="brand" href="{{ nav.logo }}">{{ org.site_name }}</a>
     <nav>
       {% if viewer %}
-      <a href="/submit"{% if path == "/submit" %} aria-current="page"{% endif %}>Submit</a>
+      <a class="submit-link" href="{{ nav.submit }}"{% if path in ("/submit", "/dates/submit") %} aria-current="page"{% endif %}>Submit</a>
       {% else %}
       <a href="/sign-in"{% if path == "/sign-in" %} aria-current="page"{% endif %}>Sign in</a>
       {% endif %}
@@ -67,7 +67,10 @@
       <div class="tag-menu bell-menu" id="bell-menu" hidden></div>
     </div>
     {% endif %}
-    {% if viewer %}<button class="nsfw-toggle" type="button" aria-pressed="{{ 'true' if nsfw_mode else 'false' }}">NSFW</button>{% endif %}
+    {# Where the logo, Dates and NSFW lead is worked out in one place: navigation.py (nav). The first time a link
+       turns NSFW on in this browser, a warning asks first (nsfw.js). #}
+    {% if viewer %}<a class="dates-toggle" href="{{ nav.dates }}"{% if nav.on_dates %} aria-current="page"{% endif %}>Dates</a>{% endif %}
+    {% if viewer %}<a class="nsfw-toggle" href="{{ nav.nsfw }}"{% if nav.nsfw_on %} data-on{% endif %}>NSFW</a>{% endif %}
     <button class="theme-toggle" type="button">Dark</button>
   </header>
   {% if viewer %}

@@ -59,11 +59,11 @@ def test_a_direct_link_opens_from_either_side(signed_in, app):
 
 def test_the_header_switch_shows_the_side_youre_on(signed_in):
     off = signed_in.get("/").text
-    assert 'class="nsfw-toggle" type="button" aria-pressed="false"' in off and 'id="nsfw-dialog"' in off
+    assert '<a class="nsfw-toggle" href="/?side=nsfw">NSFW</a>' in off and 'id="nsfw-dialog"' in off
     assert "data-nsfw" not in off.split("<body", 1)[1].split(">", 1)[0]
     signed_in.cookies.update(NSFW_ON)
     on = signed_in.get("/").text
-    assert 'aria-pressed="true">NSFW' in on and "data-nsfw" in on.split("<body", 1)[1].split(">", 1)[0]
+    assert '<a class="nsfw-toggle" href="/?side=main" data-on>NSFW</a>' in on and "data-nsfw" in on.split("<body", 1)[1].split(">", 1)[0]
 
 
 def test_posting_starts_at_no_with_nsfw_off_and_yes_with_it_on(signed_in):
@@ -102,7 +102,13 @@ def test_a_posts_colour_follows_the_post_not_the_switch(signed_in, app):
     assert "data-nsfw" in _body(signed_in.get(f"/thread/{spicy.id}").text)
     signed_in.cookies.update(NSFW_ON)
     page = signed_in.get(f"/thread/{normal.id}").text
-    assert "data-nsfw" not in _body(page) and 'aria-pressed="true">NSFW' in page  # the switch still shows it's on
+    assert "data-nsfw" not in _body(page) and "data-on>NSFW" in page  # the switch still shows it's on
     signed_in.cookies.update({"maf_nsfw": "0"})
     page = signed_in.get(f"/thread/{spicy.id}").text
-    assert "data-nsfw" in _body(page) and 'aria-pressed="false">NSFW' in page
+    assert "data-nsfw" in _body(page) and "data-on>NSFW" not in page
+
+
+def test_side_links_set_the_switch_and_land_on_the_site_only(signed_in):
+    response = signed_in.get("/?side=nsfw&next=/submit", follow_redirects=False)
+    assert response.headers["location"] == "/submit" and "maf_nsfw=1" in response.headers["set-cookie"]
+    assert signed_in.get("/?side=main&next=//evil.example", follow_redirects=False).headers["location"] == "/"

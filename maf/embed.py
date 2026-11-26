@@ -13,7 +13,7 @@ from . import markdown, store
 
 # Up to three cards per item, so one reply can't turn a thread into a list of previews.
 EMBEDS_PER_ITEM = 3
-THREAD_PATH = re.compile(r"^/(?:thread/)?([a-z0-9]+(?:-[a-z0-9]+)*)/?$")
+THREAD_PATH = re.compile(r"^/(?:(?:nsfw/|dates/)?thread/)?([a-z0-9]+(?:-[a-z0-9]+)*)/?$")
 
 
 @dataclass

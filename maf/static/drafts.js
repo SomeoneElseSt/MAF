@@ -35,7 +35,7 @@
   write(sessionStorage, SENT_KEY, null);
   const navigation = performance.getEntriesByType("navigation")[0];
   const arrivedFresh = !navigation || navigation.type === "navigate";
-  const landedOk = location.pathname.startsWith("/thread/") && !new URLSearchParams(location.search).has("notice");
+  const landedOk = /^(\/nsfw|\/dates)?\/thread\//.test(location.pathname) && !new URLSearchParams(location.search).has("notice");
   if (sent && arrivedFresh && landedOk && now - sent.at < SENT_WINDOW_MS) delete drafts[sent.key];
   write(localStorage, STORAGE_KEY, drafts);
 

@@ -20,6 +20,10 @@
   --nsfw-paper: #f8e8e2;
   --nsfw-tint: #efdcd5;
   --nsfw-meta: #626262; /* 4.5:1 on the tinted paper and its boxes */
+  /* Dates page: its own tint, and the Dates word in its accent while you're there. */
+  --dates-paper: #fbe9ee;
+  --dates-tint: #f1dbe2;
+  --dates-accent: #c2456b;
   --visited: #6f6f6f;
   /* New badges: ember orange. In dark mode a shade deeper, so it doesn't glare against black. */
   --new-fill: #E2805A;
@@ -49,6 +53,9 @@
     --nsfw-paper: #22100c;
     --nsfw-tint: #34211c;
     --nsfw-meta: #949494;
+    --dates-paper: #2e1520;
+    --dates-tint: #432633;
+    --dates-accent: #e87d9c;
     --visited: #909090;
     --new-fill: #C4663F;
     --new-ink: #ffffff;
@@ -71,6 +78,9 @@
   --nsfw-paper: #22100c;
   --nsfw-tint: #34211c;
   --nsfw-meta: #949494;
+  --dates-paper: #2e1520;
+  --dates-tint: #432633;
+  --dates-accent: #e87d9c;
   --new-fill: #C4663F;
   --new-ink: #ffffff;
 }
@@ -104,15 +114,15 @@ a:hover { text-decoration: underline; text-decoration-thickness: 1px; text-under
 .top nav a[aria-current] { color: var(--ink); }
 /* Submit is the main thing to do: always underlined, thin and grey like a hovered link; hovering it
    only eases it into full colour (the underline stays where it is). */
-.top nav a[href="/submit"] { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; transition: color .15s ease; }
-.top nav a[href="/submit"]:hover { color: var(--ink); text-underline-offset: 4px; }
+.top nav a.submit-link { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; transition: color .15s ease; }
+.top nav a.submit-link:hover { color: var(--ink); text-underline-offset: 4px; }
 .find { margin-left: auto; }
 .theme-toggle { font: 16px var(--sans); color: var(--soft); background: none; border: none; padding: 0; cursor: pointer; }
 .brand + .theme-toggle { margin-left: auto; }
 .theme-toggle:hover { color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
 .find input {
   font: 15px var(--sans); color: var(--ink); background: var(--tint);
-  border: 1px solid var(--border); border-radius: 4px; padding: 6px 10px; width: 200px;
+  border: 1px solid var(--border); border-radius: 4px; padding: 6px 10px; width: 170px; /* trimmed when Dates joined the header */
 }
 .find input:focus { border-color: var(--ink); background: var(--paper); }
 
@@ -123,6 +133,8 @@ a:hover { text-decoration: underline; text-decoration-thickness: 1px; text-under
   font: 15px var(--sans); color: var(--meta); margin: 12px 0 4px;
 }
 .sort { display: flex; gap: 16px; }
+/* Lists without a date range keep an invisible one (list.html sort_row), so every sort bar lines up like home's. */
+.range-standin { visibility: hidden; }
 .sort a { color: var(--meta); }
 .sort strong { color: var(--ink); font-weight: 600; }
 /* Each option reserves its bold width, so changing the selection doesn't shift its neighbours. */
@@ -402,7 +414,7 @@ li.comment { scroll-margin-top: 24px; }
 main { display: block; }
 
 /* Small controls get an invisible 24x24 px tap area (WCAG 2.5.8) without changing how they look. */
-.info, .arrow, .meta-action, .actions a, .actions button, .tag-menu .tag-more { position: relative; }
+.info, .arrow, .meta-action, .actions a, .actions button { position: relative; } /* .tag-more is already absolute, floating over its list */
 .info::after, .arrow::after, .meta-action::after, .actions a::after, .actions button::after, .tag-menu .tag-more::after {
   content: ""; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
   width: max(100%, 24px); height: max(100%, 24px);
@@ -565,14 +577,25 @@ button.note:disabled { cursor: default; }
 .text hr { border: 0; border-top: 1px solid var(--line); margin: 12px 0; }
 
 /* NSFW: a switch in the header like Dark. On, the word turns ember and lists show only NSFW posts (nsfw.js). */
-.nsfw-toggle { font: 16px var(--sans); color: var(--soft); background: none; border: none; padding: 0; cursor: pointer; }
+.nsfw-toggle { font: 16px var(--sans); color: var(--soft); }
 .nsfw-toggle:hover { color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
-.nsfw-toggle[aria-pressed="true"], .nsfw-toggle[aria-pressed="true"]:hover { color: #E2805A; }
+.nsfw-toggle[data-on], .nsfw-toggle[data-on]:hover { color: #E2805A; }
 /* Clicking a switch twice quickly mustn't select its word. */
-.theme-toggle, .nsfw-toggle { user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
+.theme-toggle, .nsfw-toggle, .dates-toggle { user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
 body[data-nsfw] { --paper: var(--nsfw-paper); --tint: var(--nsfw-tint); --meta: var(--nsfw-meta); --hot-wash: color-mix(in srgb, var(--hot) var(--wash), var(--paper)); }
-#nsfw-dialog .row { display: flex; gap: 14px; align-items: center; }
-.nsfw-answer { cursor: pointer; caret-color: transparent; }
+/* After the NSFW rule, so on the Dates page its colour wins even with NSFW on. */
+body[data-board="dates"] { --paper: var(--dates-paper); --tint: var(--dates-tint); --meta: var(--nsfw-meta); --hot-wash: color-mix(in srgb, var(--hot) var(--wash), var(--paper)); }
+.dates-toggle { font: 16px var(--sans); color: var(--soft); }
+.dates-toggle:hover { color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.dates-toggle[aria-current], .dates-toggle[aria-current]:hover { color: var(--dates-accent); }
+#nsfw-dialog .row, #match-dialog .row { display: flex; gap: 14px; align-items: center; }
+/* Match's notice is longer than the other pop-ups: a little wider, and no word left alone on a line. */
+#match-dialog { max-width: 420px; }
+#match-dialog p { text-wrap: pretty; }
+/* Dates threads: Reply with profile sits where the comment box would start; its notice opens just under it. */
+.profile-reply .row { margin-top: 4px; }
+.notice.need-profile { margin-top: 12px; }
+.nsfw-answer, .choice-answer { cursor: pointer; caret-color: transparent; }
 /* "Is NSFW?" with its (i) beside it; the card opens under the (i). */
 .field .label-row { display: flex; align-items: center; margin-bottom: 6px; }
 .field .label-row label { margin-bottom: 0; }
@@ -583,9 +606,9 @@ body[data-nsfw] { --paper: var(--nsfw-paper); --tint: var(--nsfw-tint); --meta: 
    the row below. Sort and the dates fit on one row: no "Sort by:", short dates. */
 @media (max-width: 560px) {
   .top nav { order: 1; }
-  .top .theme-toggle, .top .nsfw-toggle { order: 2; }
-  .top .theme-toggle, .top .nsfw-toggle { margin-left: auto; }
-  .top .nsfw-toggle + .theme-toggle { margin-left: 0; }
+  .top .dates-toggle, .top .theme-toggle, .top .nsfw-toggle { order: 2; }
+  .top .dates-toggle, .top .theme-toggle, .top .nsfw-toggle { margin-left: auto; }
+  .top .dates-toggle + .nsfw-toggle, .top .nsfw-toggle + .theme-toggle { margin-left: 0; }
   .top .find { order: 3; flex: 1 1 150px; min-width: 0; }
   .top .bell-wrap { order: 4; margin-left: auto; }
   .listbar { justify-content: space-between; }

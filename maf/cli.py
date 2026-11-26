@@ -117,7 +117,7 @@ def cmd_hide(conn: sqlite3.Connection, args) -> int:
     item_id = _id_from(args.id)
     if not store.hide(conn, item_id, args.reason):
         return _missing(item_id)
-    print(f'Hid {item_id}. It now reads: "{args.reason}". Undo with maf unhide {item_id}.')
+    print(f'Hid {item_id}. It now reads: "{args.reason}" Undo with maf unhide {item_id}.')
     return 0
 
 
@@ -190,6 +190,16 @@ def cmd_nsfw(conn: sqlite3.Connection, args, nsfw: bool) -> int:
     return 0
 
 
+def cmd_board(conn: sqlite3.Connection, args) -> int:
+    """Moves a post to the Dates page or back to the front page. Takes an id or the post's address."""
+    post_id = args.id.rstrip("/").rsplit("/", 1)[-1].split("#")[0]
+    if not store.set_board(conn, post_id, args.board):
+        print(f"No post {post_id}")
+        return 1
+    print(f"Moved {post_id} to " + ("Dates." if args.board == "dates" else "the front page."))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="maf", description="MAF maintainer commands")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -229,6 +239,10 @@ def build_parser() -> argparse.ArgumentParser:
     sfw = sub.add_parser("sfw", help="move a post back from NSFW (id or its address)")
     sfw.add_argument("id")
     sfw.set_defaults(func=lambda conn, args: cmd_nsfw(conn, args, False))
+    board = sub.add_parser("board", help="move a post to Dates or back to the front page: maf board dates <id>")
+    board.add_argument("board", choices=store.BOARDS)
+    board.add_argument("id")
+    board.set_defaults(func=cmd_board)
     return parser
 
 

@@ -1,4 +1,4 @@
-"""Reading a thread: /thread/<id>, its view count and the comment tree."""
+"""Reading a thread: /thread/<id> (or /nsfw/… or /dates/…, by its board), its view count and the comment tree."""
 
 import re
 from urllib.parse import urlsplit
@@ -7,7 +7,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response, StreamingResponse
 from starlette.routing import Route
 
-from . import embed, live, markdown, store
+from . import embed, live, markdown, navigation, store
 from .housetags import etiquette, is_hot, reply_placeholder
 from .util import iso, utc_now
 from .web import error_page, page_of, redirect, render
@@ -29,6 +29,12 @@ def item(request: Request) -> Response:
     if root.private_to and page.pass_id not in (root.pass_id, root.private_to):
         return error_page(page, 404, "That post doesn't exist.")
     thread_id = root.thread_id
+    # Each post has one address, under its board (navigation.thread_url); old or other ones redirect there.
+    thread_post = root if root.parent_id is None else store.get_item(page.conn, thread_id)
+    address = navigation.thread_url(thread_post, item_id)
+    if request.url.path != address:
+        query = f"?{request.url.query}" if request.url.query else ""
+        return redirect(address + query, status_code=302)
     if page.pass_id and page.memory.count_view(page.pass_id, thread_id):
         store.increment_views(page.conn, thread_id)
         root = store.get_item(page.conn, item_id)
@@ -49,7 +55,11 @@ def item(request: Request) -> Response:
         "my_key": keys.get(page.pass_id, "") if participant else None,
         "title": markdown.plain(post.title),
         "post": post,
-        "post_nsfw": bool(post.nsfw),  # an NSFW post's page keeps the NSFW colour, whichever way the switch is
+        "board": post.board,  # a Dates post's thread takes the Dates colour
+        "post_nsfw": bool(post.nsfw),
+        "post_board": navigation.post_board_of(post),  # where the header's links lead (navigation.py)
+        # On Dates you answer a profile with your own, so the thread needs to know whether you have one.
+        "has_profile": post.board == "dates" and store.has_profile(page.conn, page.pass_id),  # and an NSFW post's the NSFW one, whichever way the switch is
         "comment_count": store.comment_counts(page.conn, [thread_id]).get(thread_id, 0),
         "now": iso(utc_now()),
         "post_mine": bool(page.pass_id) and post.pass_id == page.pass_id,
@@ -161,6 +171,8 @@ async def bell_events(request: Request) -> Response:
 
 routes = [
     Route("/thread/{id}", item),
+    Route("/nsfw/thread/{id}", item),
+    Route("/dates/thread/{id}", item),
     Route("/thread/{id}/events", events),
     Route("/events", home_events),
     Route("/new-activity", new_activity),

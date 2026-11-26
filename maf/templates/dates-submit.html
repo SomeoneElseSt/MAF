@@ -1,0 +1,35 @@
+{#
+  dates-submit.html: the Dates profile form. Every question but Comment is required; the answers are broad
+  on purpose so a profile doesn't point at one person.
+
+  Context:
+    choices  {field: [options]} for the pick-one questions
+    values   answers to re-fill after an error
+    errors   {field: message}
+#}
+{% extends "base.html" %}
+{% from "_choice_field.html" import choice_field with context %}
+{% block main %}
+<h1 class="heading">Make your profile</h1>
+<p class="lede">Your profile appears only on the Dates page. People reply with their own profiles, and you can choose to match with them. Matching opens private replies between the two of you in the thread. You can read them only on the computer or phone where you made your profile. You can have one profile at most.</p>
+
+<form action="/dates/submit" method="post">
+  {{ choice_field("region", "Region", choices.region, "Where you're from", values, errors, help="To give people a sense of you.") }}
+  {{ choice_field("gender", "Gender", choices.gender, "How you identify", values, errors) }}
+  {{ choice_field("height", "Height", choices.height, "Pick a range", values, errors) }}
+  {{ choice_field("city", "Rotation city", choices.city, "Where you are now", values, errors) }}
+  {{ choice_field("looking_for", "What are you looking for?", choices.looking_for, "Friend or relationship", values, errors) }}
+  <div class="field">
+    <label for="comment">Comment (optional)</label>
+    <textarea id="comment" name="comment" placeholder="What you're into, what a good first hangout looks like…">{{ values.comment|default('') }}</textarea>
+    {% if org.naming_rule %}<p class="help">Please don't name yourself or anyone else.</p>{% endif %}
+  </div>
+  <div class="row">
+    <button class="button" type="submit" data-pending="Posting…">Post profile</button>
+    <a class="note" href="/dates">Cancel</a>
+  </div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script src="{{ static('choice.js') }}"></script>
+{% endblock %}

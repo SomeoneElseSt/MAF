@@ -106,6 +106,7 @@ class Item:
     edited_at: str | None = None
     nsfw: int = 0
     nsfw_marked: int | None = None
+    board: str = "main"
     tags: list[str] = field(default_factory=list)
     comment_count: int = 0
     thread_title: str | None = None
@@ -151,6 +152,7 @@ def _row_to_item(row: sqlite3.Row, tags: list[str] | None = None) -> Item:
         edited_at=row["edited_at"],
         nsfw=row["nsfw"],
         nsfw_marked=row["nsfw_marked"],
+        board=row["board"],
         tags=tags or [],
     )
 
@@ -316,7 +318,7 @@ def new_activity(conn: sqlite3.Connection, viewer_pass: str, since: str, nsfw: b
         "  SELECT i.*, (SELECT MAX(c.created_at) FROM item c WHERE c.thread_id = i.id AND c.parent_id IS NOT NULL"
         "    AND c.private_to IS NULL AND c.removed_reason IS NULL AND c.pass_id IS NOT ?) AS latest_other"
         "  FROM item i WHERE i.parent_id IS NULL AND i.private_to IS NULL AND i.removed_reason IS NULL"
-        "    AND NOT (i.hidden = 1 AND i.restored = 0) AND i.nsfw = ?"
+        "    AND NOT (i.hidden = 1 AND i.restored = 0) AND i.nsfw = ? AND i.board = 'main'"
         ") WHERE (pass_id IS NOT ? AND created_at > ?) OR latest_other > ? "
         "ORDER BY MAX(created_at, COALESCE(latest_other, '')) DESC LIMIT ?",
         (viewer_pass, int(nsfw), viewer_pass, since, since, NEW_ACTIVITY_LIMIT),
@@ -410,9 +412,17 @@ def build_tree(items: list[Item], root_id: str) -> list[dict]:
 # -- listing -------------------------------------------------------------
 
 
-def _post_where(public_only: bool = True, nsfw: bool = False) -> str:
-    """Listed posts on one side: NSFW posts only with NSFW on, the rest only with it off."""
-    clauses = ["parent_id IS NULL", f"nsfw = {int(nsfw)}"]
+MAIN = "main"
+BOARDS = (MAIN, "dates")  # the front page, and the Dates page
+
+
+def _post_where(public_only: bool = True, nsfw: bool = False, board: str = MAIN) -> str:
+    """Listed posts on one page. On the front page, one side: NSFW posts only with NSFW on, the rest only
+    with it off. The Dates page shows its own posts whichever side you're on."""
+    assert board in BOARDS
+    clauses = ["parent_id IS NULL", f"board = '{board}'"]
+    if board == MAIN:
+        clauses.append(f"nsfw = {int(nsfw)}")
     if public_only:
         clauses.append("private_to IS NULL")
         clauses.append("NOT (hidden = 1 AND restored = 0)")
@@ -444,6 +454,26 @@ def posts_between(
     return items
 
 
+def has_profile(conn: sqlite3.Connection, pass_id: str | None) -> bool:
+    """Whether this pass has a profile: a listed Dates post of its own (pinned ones are the maintainer's notes)."""
+    if pass_id is None:
+        return False
+    row = conn.execute(
+        f"SELECT 1 FROM item WHERE {_post_where(board='dates')} AND pinned = 0 AND pass_id = ? LIMIT 1", (pass_id,)
+    ).fetchone()
+    return row is not None
+
+
+def board_posts(conn: sqlite3.Connection, board: str, sort: str = "new", limit: int = PAGE_SIZE) -> list[Item]:
+    """A board's listed posts, newest, oldest or most viewed first, pinned ones left out (they show above)."""
+    order = {"new": "created_at DESC, rowid DESC", "old": "created_at ASC, rowid ASC", "views": "views DESC, created_at DESC"}[sort]
+    rows = conn.execute(
+        f"SELECT * FROM item WHERE {_post_where(board=board)} AND pinned = 0 ORDER BY {order} LIMIT ?",
+        (limit,),
+    ).fetchall()
+    return [_row_to_item(r, item_tags(conn, r["id"])) for r in rows]
+
+
 def day_groups(items: list[Item]) -> list[tuple[date, list[Item]]]:
     """Groups posts by their UTC calendar day, preserving the list's order of days."""
     groups: dict[date, list[Item]] = {}
@@ -452,9 +482,9 @@ def day_groups(items: list[Item]) -> list[tuple[date, list[Item]]]:
     return list(groups.items())
 
 
-def pinned_posts(conn: sqlite3.Connection, nsfw: bool = False) -> list[Item]:
+def pinned_posts(conn: sqlite3.Connection, nsfw: bool = False, board: str = MAIN) -> list[Item]:
     rows = conn.execute(
-        f"SELECT * FROM item WHERE {_post_where(nsfw=nsfw)} AND pinned = 1 ORDER BY created_at DESC"
+        f"SELECT * FROM item WHERE {_post_where(nsfw=nsfw, board=board)} AND pinned = 1 ORDER BY created_at DESC"
     ).fetchall()
     return [_row_to_item(r, item_tags(conn, r["id"])) for r in rows]
 
@@ -474,7 +504,7 @@ def tagged_count(conn: sqlite3.Connection, tag: str, nsfw: bool = False) -> int:
     row = conn.execute(
         "SELECT COUNT(*) AS n FROM item_tag t JOIN item i ON i.id = t.item_id "
         "WHERE t.tag = ? AND i.parent_id IS NULL AND i.private_to IS NULL "
-        "AND NOT (i.hidden = 1 AND i.restored = 0) AND i.nsfw = ?",
+        "AND NOT (i.hidden = 1 AND i.restored = 0) AND i.nsfw = ? AND i.board = 'main'",
         (tag, int(nsfw)),
     ).fetchone()
     return row["n"]
@@ -485,7 +515,7 @@ def tag_counts(conn: sqlite3.Connection, nsfw: bool = False) -> list[tuple[str, 
     rows = conn.execute(
         "SELECT t.tag AS tag, COUNT(*) AS n FROM item_tag t JOIN item i ON i.id = t.item_id "
         "WHERE i.parent_id IS NULL AND i.private_to IS NULL AND NOT (i.hidden = 1 AND i.restored = 0) "
-        "AND i.nsfw = ? GROUP BY t.tag ORDER BY n DESC, t.tag ASC",
+        "AND i.nsfw = ? AND i.board = 'main' GROUP BY t.tag ORDER BY n DESC, t.tag ASC",
         (int(nsfw),),
     ).fetchall()
     return [(r["tag"], r["n"]) for r in rows]
@@ -522,7 +552,7 @@ def search(
     order = {"new": "i.created_at DESC", "old": "i.created_at ASC", "views": "i.views DESC"}[sort]
     sql = (
         "SELECT i.* FROM item_fts f JOIN item i ON i.rowid = f.rowid JOIN item p ON p.id = i.thread_id "
-        "WHERE item_fts MATCH ? AND NOT (i.hidden = 1 AND i.restored = 0) AND p.nsfw = ? "
+        "WHERE item_fts MATCH ? AND NOT (i.hidden = 1 AND i.restored = 0) AND p.nsfw = ? AND p.board = 'main' "
         f"ORDER BY i.parent_id IS NOT NULL, {order} LIMIT ? OFFSET ?"
     )
     try:
@@ -723,6 +753,15 @@ def set_nsfw(conn: sqlite3.Connection, item_id: str, nsfw: bool) -> bool:
     stays on record as a correction. False if there's no such post."""
     with conn:
         cur = conn.execute("UPDATE item SET nsfw = ? WHERE id = ? AND parent_id IS NULL", (int(nsfw), item_id))
+    return cur.rowcount > 0
+
+
+def set_board(conn: sqlite3.Connection, item_id: str, board: str) -> bool:
+    """The maintainer moves a post (its replies follow) to the front page or the Dates page. False if there's
+    no such post."""
+    assert board in BOARDS
+    with conn:
+        cur = conn.execute("UPDATE item SET board = ? WHERE id = ? AND parent_id IS NULL", (board, item_id))
     return cur.rowcount > 0
 
 

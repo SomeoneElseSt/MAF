@@ -7,7 +7,7 @@ so it can be extended later without a migration framework.
 import sqlite3
 from pathlib import Path
 
-SCHEMA_VERSION = 9
+SCHEMA_VERSION = 10
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS pass (
@@ -156,8 +156,14 @@ HIDDEN_REASON = """
 ALTER TABLE item ADD COLUMN hidden_reason TEXT;
 """
 
+# Which page a post lives on: "main" (the front page) or "dates" (the Dates page). Replies follow their post;
+# lists check the post's board. The maintainer moves posts with `maf board`.
+BOARD = """
+ALTER TABLE item ADD COLUMN board TEXT NOT NULL DEFAULT 'main';
+"""
+
 MIGRATIONS = {1: SCHEMA, 2: SEALED_REPLIES, 3: REMOVED_REASON, 4: REPLY_EDITS, 5: REACTION_TIMES, 6: EDITED_AT, 7: SUBSCRIPTIONS,
-              8: NSFW, 9: HIDDEN_REASON}
+              8: NSFW, 9: HIDDEN_REASON, 10: BOARD}
 
 
 def connect(path: Path | str) -> sqlite3.Connection:
