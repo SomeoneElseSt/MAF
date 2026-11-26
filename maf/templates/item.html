@@ -264,8 +264,9 @@
 {% endif %}
 
 {% if is_profile and tree %}
-{# Your profile's replies, set off from it: how many, a line, and a line between each. #}
-<p class="profile-replies-count">{% if post_mine %}{{ tree|length }} {{ "person" if tree|length == 1 else "people" }} replied with {{ "their profile" if tree|length == 1 else "their profiles" }}{% endif %}</p>
+{# Your profile's replies, set off from it: how many (ended matches don't count), a line, and a line between each. #}
+{% set live_replies = tree|rejectattr("item.removed_reason")|list|length %}
+<p class="profile-replies-count">{% if post_mine and live_replies %}{{ live_replies }} {{ "person" if live_replies == 1 else "people" }} replied with {{ "their profile" if live_replies == 1 else "their profiles" }}{% endif %}</p>
 {% endif %}
 <ol class="comments{% if is_profile %} profile-replies{% endif %}">
   {% for node in tree %}{{ comment(node, 0) }}{% endfor %}
