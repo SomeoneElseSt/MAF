@@ -30,7 +30,9 @@
     <label for="comment">Comment (optional)</label>
     <textarea id="comment" name="comment" placeholder="What you're into, what a good first hangout looks like…">{{ values.comment|default('') }}</textarea>
     {% if org.naming_rule %}<p class="help">Please don't name yourself or anyone else.</p>{% endif %}
+    {% if errors.comment %}<p class="help" id="comment-error">{{ errors.comment }}</p>{% endif %}
   </div>
+  {% if errors.form %}<p class="help">{{ errors.form }}</p>{% endif %}
   <div class="row">
     {% if profile %}
     <button class="button" type="submit" data-pending="Saving…">Save profile</button>

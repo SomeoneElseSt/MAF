@@ -216,3 +216,12 @@ async def form_values(request: Request, *names: str) -> dict[str, str]:
 
 def wants_json(request: Request) -> bool:
     return "application/json" in request.headers.get("accept", "")
+
+
+def render_dates(page, template: str, **context) -> Response:
+    """A Dates page. Dates and NSFW don't mix: opening one turns NSFW off in this browser."""
+    response = render(page, template, board="dates", dates_page=True, nsfw_mode=False,
+                      tags=store.tag_counts(page.conn, False), **context)
+    if page.nsfw:
+        response.delete_cookie(NSFW_COOKIE, path="/")
+    return response

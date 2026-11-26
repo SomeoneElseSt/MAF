@@ -9,12 +9,12 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.routing import Route
 
-from . import live, store
+from . import live, profiles, store
 from .email import hidden_reply_email, moderation_email
 from .housetags import submit_placeholder
 from .sealed import parse_sealed, valid_public_key
 from .util import sha256_hex
-from .web import form_values, gone, page_of, redirect, to_thread, render
+from .web import form_values, gone, page_of, redirect, render, render_dates, to_thread
 
 POSTS_PER_MINUTE = 6
 # The thread page shows the name-check warning by the box it belongs to, so the reply or edit stays
@@ -62,6 +62,51 @@ async def submit_post(request: Request) -> Response:
     )
     page.app.live.publish(live.HOME)
     return to_thread(page, post.id)
+
+
+async def save_profile(request: Request) -> Response:
+    """Posts your Dates profile, or saves changes to it: one per pass, written only from its answers (profiles.py)."""
+    page = page_of(request)
+    if page.pass_id is None:
+        return _login(page)
+    values = await form_values(request, *profiles.CHOICES, "comment")
+    profile = store.own_profile(page.conn, page.pass_id)
+    errors = await _profile_errors(page, values)
+    if errors:
+        return render_dates(page, "dates-submit.html", status_code=400, profile=profile, choices=profiles.CHOICES,
+                            title="Edit your profile" if profile else "Make your profile", values=values, errors=errors)
+    title, text = profiles.title_of(values), profiles.text_of(values)
+    if profile is not None:
+        store.edit_item(page.conn, profile.id, text, title=title)
+        return to_thread(page, profile.id)
+    profile = store.create_post(page.conn, page.pass_id, title, text, None, [], board="dates")
+    page.app.live.publish(live.HOME)
+    return to_thread(page, profile.id)
+
+
+async def _profile_errors(page, values: dict[str, str]) -> dict[str, str]:
+    errors = profiles.missing(values)
+    if len(values["comment"]) > store.BODY_MAX:
+        errors["comment"] = "That's too long. Try trimming it."
+    if errors:
+        return errors
+    if values["comment"] and await run_in_threadpool(page.app.name_filter.finds_name, values["comment"]):
+        return {"comment": "It looks like this names someone. Take the name out and save again."}
+    if not _allowed(page, "post", POSTS_PER_MINUTE):
+        return {"form": "You're posting fast. Wait a minute and try again."}
+    return {}
+
+
+async def delete_profile(request: Request) -> Response:
+    """Deletes your profile with everything under it: the profiles people sent you and your conversations."""
+    page = page_of(request)
+    if page.pass_id is None:
+        return _login(page)
+    profile = store.own_profile(page.conn, page.pass_id)
+    if profile is not None:
+        store.delete_own_post(page.conn, profile.id)
+        page.app.live.publish(live.HOME)
+    return redirect("/dates")
 
 
 def _validate_post(values: dict[str, str], too_many: bool) -> dict[str, str]:
@@ -330,6 +375,9 @@ async def revoke_token(request: Request) -> Response:
 routes = [
     Route("/submit", submit_page),
     Route("/submit", submit_post, methods=["POST"]),
+    Route("/dates/submit", save_profile, methods=["POST"]),
+    Route("/dates/edit", save_profile, methods=["POST"]),
+    Route("/dates/delete", delete_profile, methods=["POST"]),
     Route("/comment", comment, methods=["POST"]),
     Route("/edit", edit, methods=["POST"]),
     Route("/subscribe", subscribe, methods=["POST"]),

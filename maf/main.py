@@ -17,7 +17,7 @@ from .app import App, build_app
 from .display import day_label, four_day_window, range_label, short_range_label
 from .settings import Settings, load_settings
 from .util import iso, parse_date, today, utc_now
-from .web import NSFW_COOKIE, make_templates, page_of, redirect, render, sort_param
+from .web import NSFW_COOKIE, make_templates, page_of, redirect, render, render_dates, sort_param
 
 APP: App = None  # set by create_app
 
@@ -44,15 +44,6 @@ def home(request: Request) -> Response:
 
 
 # The Dates profile questions. Broad on purpose, so a profile doesn't point at one person.
-
-
-def render_dates(page, template: str, **context) -> Response:
-    """A Dates page. Dates and NSFW don't mix: opening one turns NSFW off in this browser."""
-    response = render(page, template, board="dates", dates_page=True, nsfw_mode=False,
-                      tags=store.tag_counts(page.conn, False), **context)
-    if page.nsfw:
-        response.delete_cookie(NSFW_COOKIE, path="/")
-    return response
 
 
 def dates(request: Request) -> Response:

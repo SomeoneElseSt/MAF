@@ -259,3 +259,32 @@ def test_the_feed_says_when_someone_sends_their_profile_and_when_they_match(app,
     store.create_comment(app.conn, them, hello, "Friday?", pass_id)
     labels = [n["label"] for n in store.notifications(app.conn, pass_id)]
     assert sorted(labels) == sorted(["Someone replied with their profile", "Someone matched with you", "New message from your match"])
+
+
+PROFILE_FORM = {"region": "Europe", "gender": "Woman", "height": "5′3″–5′9″ (160–175 cm)", "city": "Berlin",
+           "looking_for": "Friend", "comment": "Coffee first."}
+
+
+def test_posting_a_profile_puts_it_on_dates_and_a_second_post_edits_it(signed_in, app, pass_id):
+    response = signed_in.post("/dates/submit", data=PROFILE_FORM, follow_redirects=False)
+    profile = store.own_profile(app.conn, pass_id)
+    assert response.status_code == 303 and response.headers["location"] == f"/dates/thread/{profile.id}"
+    assert profile.board == "dates" and profile.title == "Berlin: Woman, Europe, 160–175 cm"
+    signed_in.post("/dates/submit", data={**PROFILE_FORM, "city": "Tokyo"})
+    assert store.own_profile(app.conn, pass_id).id == profile.id
+    assert store.get_item(app.conn, profile.id).title.startswith("Tokyo:")
+
+
+def test_a_profile_with_a_question_left_blank_says_pick_one(signed_in, app, pass_id):
+    response = signed_in.post("/dates/submit", data={**PROFILE_FORM, "gender": ""})
+    assert response.status_code == 400 and "Pick one." in response.text and 'value="Berlin"' in response.text
+    assert store.own_profile(app.conn, pass_id) is None
+
+
+def test_deleting_your_profile_takes_its_thread_with_it(signed_in, app, pass_id):
+    signed_in.post("/dates/submit", data=PROFILE_FORM)
+    profile = store.own_profile(app.conn, pass_id)
+    reply = store.create_comment(app.conn, store.create_pass(app.conn), profile, None, pass_id, sealed="x")
+    response = signed_in.post("/dates/delete", follow_redirects=False)
+    assert response.headers["location"] == "/dates"
+    assert store.get_item(app.conn, profile.id) is None and store.get_item(app.conn, reply.id) is None

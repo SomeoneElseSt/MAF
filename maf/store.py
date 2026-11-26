@@ -189,15 +189,16 @@ def create_post(
     tags: list[str],
     created_at: str | None = None,
     nsfw: bool = False,
+    board: str = "main",
 ) -> Item:
     """A new post. `nsfw` is the author's answer to "Is NSFW?", kept twice: where it shows, and what was answered."""
     item_id = unused_item_id(conn)
     created_at = created_at or iso(utc_now())
     with conn:
         conn.execute(
-            "INSERT INTO item (id, thread_id, pass_id, title, url, text, created_at, nsfw, nsfw_marked)"
-            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (item_id, item_id, pass_id, title, url, text, created_at, int(nsfw), int(nsfw)),
+            "INSERT INTO item (id, thread_id, pass_id, title, url, text, created_at, nsfw, nsfw_marked, board)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (item_id, item_id, pass_id, title, url, text, created_at, int(nsfw), int(nsfw), board),
         )
         for tag in tags:
             conn.execute("INSERT INTO item_tag (item_id, tag) VALUES (?, ?)", (item_id, tag))
@@ -732,8 +733,9 @@ def delete_own_comment(conn: sqlite3.Connection, item_id: str) -> None:
 # -- edits -----------------------------------------------------------------
 
 
-def edit_item(conn: sqlite3.Connection, item_id: str, text: str | None, sealed: str | None = None) -> None:
-    """Replaces an item's words with the edited ones and notes when. The search index follows."""
+def edit_item(conn: sqlite3.Connection, item_id: str, text: str | None, sealed: str | None = None,
+              title: str | None = None) -> None:
+    """Replaces an item's words (and a post's title, if given) and notes when. The search index follows."""
     item = get_item(conn, item_id)
     if item is None:
         return
@@ -744,11 +746,12 @@ def edit_item(conn: sqlite3.Connection, item_id: str, text: str | None, sealed: 
         if indexed:
             conn.execute("INSERT INTO item_fts (item_fts, rowid, title, text) VALUES ('delete', ?, ?, ?)",
                          (indexed["rowid"], *_fts_values(item.title, item.text)))
-        conn.execute("UPDATE item SET text = ?, sealed = ?, edited_at = ? WHERE id = ?",
-                     (text, sealed, iso(utc_now()), item_id))
+        title = title or item.title
+        conn.execute("UPDATE item SET title = ?, text = ?, sealed = ?, edited_at = ? WHERE id = ?",
+                     (title, text, sealed, iso(utc_now()), item_id))
         if indexed and not item.private_to and text is not None:
             conn.execute("INSERT INTO item_fts (rowid, title, text) VALUES (?, ?, ?)",
-                         (indexed["rowid"], *_fts_values(item.title, text)))
+                         (indexed["rowid"], *_fts_values(title, text)))
 
 
 def dismiss_requests(conn: sqlite3.Connection, item_id: str) -> bool:
@@ -800,6 +803,12 @@ def delete_item(conn: sqlite3.Connection, item_id: str) -> None:
         conn.execute("DELETE FROM item_tag WHERE item_id = ?", (item_id,))
         if item.is_post:
             conn.execute("DELETE FROM thread_key WHERE thread_id = ?", (item.thread_id,))
+
+
+def delete_own_post(conn: sqlite3.Connection, item_id: str) -> None:
+    """The author deletes their post, and its thread with it; the words are overwritten, not just unlinked."""
+    with _secure_delete(conn):
+        delete_item(conn, item_id)
 
 
 def reply_count(conn: sqlite3.Connection, item_id: str) -> int:
