@@ -12,6 +12,7 @@
   <ul>
     <li><strong>Posts, replies and edits.</strong> The words you write, with the thread they belong to and a random name per thread.</li>
     <li><strong>Private replies.</strong> Only the encrypted form. Your browser encrypts them before sending, so the server stores text it can't read.</li>
+    <li><strong>Dates profiles.</strong> Your answers and comment, as a post on the Dates page. A profile you send someone, and the messages after a match, are stored only encrypted, like private replies.</li>
     <li><strong>A sign-in cookie.</strong> It holds your pass, signed. It's what keeps you signed in, and it's the only cookie {{ org.site_name }} sets.</li>
     <li><strong>Counts.</strong> Views, flags and reactions, tied to your pass, not to anything else about you.</li>
   </ul>
@@ -20,17 +21,17 @@
   <ul>
     <li><strong>Your email.</strong> It's used once to send a code and then forgotten. Sign-in codes live in memory and expire.</li>
     <li><strong>IP addresses or request logs.</strong> Neither the app nor the web server in front of it keeps them.</li>
-    <li><strong>Tracking or analytics.</strong> There are none. Your theme, drafts, pins and what you've seen in the Feed stay in your browser.</li>
+    <li><strong>Tracking or analytics.</strong> There are none. Your theme, drafts, pins, what you've seen in the Feed and matches waiting for a first message stay in your browser.</li>
   </ul>
 
   <h2>Why we keep it</h2>
   <p>To run the forum: showing threads, counting views and comments, hiding flagged posts, and keeping you signed in. Nothing is sold, shared with advertisers, or used to build a profile of you.</p>
 
   <h2>How long</h2>
-  <p>Posts and replies stay until they're deleted (yours, or by the maintainer after a moderation request or flags). Deleted words are overwritten on disk, not kept. If you delete your account's content, nothing ties the rest back to you.</p>
+  <p>Posts and replies stay until they're deleted (yours, or by the maintainer after a moderation request or flags). Deleted words are overwritten on disk, not kept. Deleting your Dates profile deletes its whole thread: the profiles people sent you and your conversations. Unmatching erases that conversation for both of you. If you delete your account's content, nothing ties the rest back to you.</p>
 
   <h2>Your choices</h2>
-  <p>You can edit or delete your own replies and edit your own posts at any time. For anything else (a post you want removed, or a question about what's stored), write to <a href="mailto:{{ org.contact_email }}">{{ org.contact_email }}</a>.</p>
+  <p>You can edit or delete your own replies, edit your own posts, and edit or delete your Dates profile at any time. For anything else (a post you want removed, or a question about what's stored), write to <a href="mailto:{{ org.contact_email }}">{{ org.contact_email }}</a>.</p>
 
   <h2>Who runs it</h2>
   <p>{{ org.site_name }} is run by students for {{ org.community }}. Questions go to <a href="mailto:{{ org.contact_email }}">{{ org.contact_email }}</a>.</p>
