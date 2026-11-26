@@ -13,6 +13,7 @@ from .memory import Memory
 from .namefilter import NameFilter
 from .sessions import Sessions
 from .settings import Settings
+from .usage import UsageLog
 
 
 @dataclass
@@ -25,6 +26,7 @@ class App:
     emailer: Emailer
     signing_key: PrivateKey
     live: Notifier = field(default_factory=Notifier)
+    usage: UsageLog = field(default_factory=lambda: UsageLog(None))
     _local: threading.local = field(default_factory=threading.local)
     templates: object = None
     _: tuple = field(default_factory=tuple)
@@ -57,6 +59,7 @@ def build_app(settings: Settings) -> App:
         name_filter=NameFilter(settings),
         emailer=Emailer(settings),
         signing_key=signing_key,
+        usage=UsageLog(settings.usage_log_path),
     )
     db.migrate(app.conn)
     return app

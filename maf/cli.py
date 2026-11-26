@@ -58,6 +58,15 @@ def _missing(item_id: str) -> int:
     return 1
 
 
+def cmd_usage(conn: sqlite3.Connection, args) -> int:
+    """How many times each API endpoint has been called, from the usage log file."""
+    from .usage import usage
+
+    _load_env()
+    print(usage(load_settings().usage_log_path))
+    return 0
+
+
 def cmd_requests(conn: sqlite3.Connection, args) -> int:
     rows = store.open_requests(conn)
     if not rows:
@@ -185,6 +194,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="maf", description="MAF maintainer commands")
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("requests", help="items with open moderation requests").set_defaults(func=cmd_requests)
+    sub.add_parser("usage", help="API request counts per endpoint, from MAF_USAGE_LOG").set_defaults(func=cmd_usage)
     sub.add_parser("hidden", help="hidden items").set_defaults(func=cmd_hidden)
     show = sub.add_parser("show", help="print one item")
     show.add_argument("id")

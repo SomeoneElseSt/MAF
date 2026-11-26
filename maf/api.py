@@ -26,6 +26,7 @@ def _json(payload, status_code: int = 200, headers: dict | None = None) -> JSONR
 def _authorised(request: Request) -> tuple[str | None, Response | None]:
     """Returns (pass_id, None) or (None, the error response)."""
     app = request.state.maf
+    app.usage.record(f"{request.method} {request.url.path}")
     header = request.headers.get("authorization", "")
     if not header.lower().startswith("bearer "):
         return None, _json({"error": "missing bearer token"}, 401, {"WWW-Authenticate": "Bearer"})

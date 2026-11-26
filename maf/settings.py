@@ -50,6 +50,7 @@ class Settings:
     naming_rule: bool = True  # show "Please don't name students or staff."
     hashtags_file: Path | None = None  # JSON of hashtags with templates; the built-in ones if unset
     source_url: str = "https://github.com/SomeoneElseSt/MAF"  # the code this site runs (the AGPL asks forks to link theirs)
+    usage_log_path: Path | None = None  # one line per API request; unset writes nothing
     static_dir: Path = field(default_factory=lambda: Path(__file__).parent / "static")
     templates_dir: Path = field(default_factory=lambda: Path(__file__).parent / "templates")
 
@@ -109,6 +110,7 @@ def load_settings(env: dict[str, str] | None = None) -> Settings:
         email_kind=source.get("MAF_EMAIL_KIND", Settings.email_kind).strip().lower(),
         naming_rule=source.get("MAF_NAMING_RULE", "true").strip().lower() not in ("0", "false", "no", "off"),
         hashtags_file=Path(source["MAF_HASHTAGS_FILE"]) if source.get("MAF_HASHTAGS_FILE") else None,
+        usage_log_path=Path(source["MAF_USAGE_LOG"]) if source.get("MAF_USAGE_LOG") else None,
         source_url=source.get("MAF_SOURCE_URL", Settings.source_url).strip().rstrip("/"),
     )
     if backend not in EMAIL_BACKENDS:
