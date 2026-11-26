@@ -73,6 +73,30 @@
     requestAnimationFrame(() => earliest.scrollIntoView({ block: "start" }));
   }
 
+  // The Dates page: a "New" tag next to profiles posted since your last visit that you haven't opened. Replies
+  // there are private, so there's no "New comments"; inside a profile, the replies above mark themselves.
+  const profiles = document.querySelector("ol[data-dates-profiles]");
+  if (profiles) {
+    markNewProfiles(profiles);
+    return;
+  }
+
+  function markNewProfiles(list) {
+    let since = read(SINCE_KEY);
+    if (!since) write(SINCE_KEY, (since = document.body.dataset.now)); // first visit: nothing is new yet
+    const tagRows = () => {
+      const openedAt = opened();
+      for (const row of list.querySelectorAll("li[data-id][data-created]")) {
+        const isNew = !("mine" in row.dataset) && !openedAt[row.dataset.id] && row.dataset.created > since;
+        const tag = row.querySelector(".new-tag");
+        if (!isNew) tag?.remove();
+        else if (!tag) row.querySelector("a.title")?.after(Object.assign(document.createElement("span"), { className: "new-tag", textContent: "New" }));
+      }
+    };
+    tagRows();
+    window.addEventListener("pageshow", event => event.persisted && tagRows()); // back from opening one
+  }
+
   const newList = document.querySelector(".new-list");
   if (!newList) return;
 

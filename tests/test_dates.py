@@ -303,3 +303,10 @@ def test_a_profiles_comment_shows_under_comment_as_a_quote():
     text = "From: Europe\nGender: Woman\n\nCoffee **first**.\n\nThen we'll see."
     assert profiles.shown(text) == "From: Europe\nGender: Woman\n\nComment:\n\n> Coffee **first**.\n>\n> Then we'll see."
     assert profiles.shown("From: Europe") == "From: Europe"
+
+
+def test_the_dates_page_marks_its_profiles_for_new_tags(signed_in, app):
+    post = _post(app, "A profile")
+    _move(app, post.id, "dates")
+    page = signed_in.get("/dates").text
+    assert "data-dates-profiles" in page and "new.js" in page
