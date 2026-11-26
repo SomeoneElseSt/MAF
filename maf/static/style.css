@@ -435,6 +435,19 @@ main { display: block; }
 }
 .react-add:hover, .actions .react-add:hover, .react-add[aria-expanded="true"] { color: var(--ink); background: var(--tint); }
 
+/* Votes on a post: outlined arrows around the score; the one you cast is filled. */
+.vote { display: inline-flex; align-items: center; gap: 2px; margin-right: 8px; }
+.vote button {
+  display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; padding: 0;
+  border: none; border-radius: 4px; background: none; color: var(--meta); cursor: pointer;
+}
+.vote button:hover { background: var(--tint); color: var(--ink); }
+.vote svg path { fill: none; }
+.vote button[aria-pressed="true"] { color: var(--ink); }
+.vote button[aria-pressed="true"] svg path { fill: currentColor; }
+.vote-down svg { transform: rotate(180deg); }
+.vote-score { min-width: 1.5em; text-align: center; font: 13px var(--sans); color: var(--ink); font-variant-numeric: tabular-nums; }
+
 .emoji-picker {
   position: absolute; z-index: 20; display: grid; grid-template-columns: repeat(8, 32px); gap: 2px; padding: 6px;
   background: var(--paper); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
@@ -453,7 +466,7 @@ main { display: block; }
 /* Real app only: rules for markup the static mockups didn't need. */
 
 /* Flag, reaction and moderation buttons are small POST forms; they lay out as if the button stood alone. */
-.inline-form, .react-form { display: contents; }
+.inline-form, .react-form, .vote-form { display: contents; }
 
 /* Reply boxes start hidden. Reply links to the box, so it opens even without JavaScript. */
 .inline-reply[hidden]:target { display: block; }

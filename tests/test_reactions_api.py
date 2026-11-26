@@ -79,7 +79,7 @@ def test_api_lists_posts(client, app, pass_id):
     titles = [p["title"] for p in body["posts"]]
     assert "API post" in titles
     assert set(body["posts"][0]) == {
-        "id", "title", "url", "text_preview", "created_at", "edited_at", "comment_count", "views", "tags", "pinned",
+        "id", "title", "url", "text_preview", "created_at", "edited_at", "comment_count", "score", "views", "tags", "pinned",
     }
 
 

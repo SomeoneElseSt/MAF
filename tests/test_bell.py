@@ -70,3 +70,21 @@ def test_the_bell_list_needs_sign_in_and_renders(app, client, signed_in, pass_id
     page = signed_in.get("/notifications").text
     assert "New reply to your post" in page and "“Mine”" in page
     assert 'class="bell"' in signed_in.get("/").text
+
+
+def test_upvotes_on_your_post_show_up_but_downvotes_and_your_own_dont(app):
+    me, other, third, post = _setup(app)
+    store.cast_vote(app.conn, other, post.id, 1)
+    store.cast_vote(app.conn, third, post.id, -1)
+    store.cast_vote(app.conn, me, post.id, 1)
+    upvotes = [n for n in store.notifications(app.conn, me) if n["kind"] == "upvotes"]
+    assert len(upvotes) == 1 and len(upvotes[0]["times"]) == 1 and upvotes[0]["about"] == "My post"
+    store.cast_vote(app.conn, other, post.id, 1)  # taken back
+    assert not [n for n in store.notifications(app.conn, me) if n["kind"] == "upvotes"]
+
+
+def test_the_plain_feed_page_says_upvotes(viewer, app):
+    post = store.create_post(app.conn, viewer["pass_id"], "Mine", "text", None, [])
+    for _ in range(2):
+        store.cast_vote(app.conn, store.create_pass(app.conn), post.id, 1)
+    assert "2 upvotes on your post" in viewer["client"].get("/notifications").text

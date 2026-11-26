@@ -7,7 +7,7 @@ so it can be extended later without a migration framework.
 import sqlite3
 from pathlib import Path
 
-SCHEMA_VERSION = 7
+SCHEMA_VERSION = 8
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS pass (
@@ -143,7 +143,20 @@ CREATE TABLE IF NOT EXISTS subscription (
 );
 """
 
-MIGRATIONS = {1: SCHEMA, 2: SEALED_REPLIES, 3: REMOVED_REASON, 4: REPLY_EDITS, 5: REACTION_TIMES, 6: EDITED_AT, 7: SUBSCRIPTIONS}
+# Up and down votes on posts: one per pass per post, so a score is SUM(value). created_at is when
+# the vote was last cast, so the Feed can tell new upvotes from old.
+VOTES = """
+CREATE TABLE IF NOT EXISTS vote (
+    pass_id TEXT NOT NULL,
+    item_id TEXT NOT NULL REFERENCES item(id) ON DELETE CASCADE,
+    value INTEGER NOT NULL CHECK (value IN (-1, 1)),
+    created_at TEXT NOT NULL,
+    PRIMARY KEY (pass_id, item_id)
+);
+"""
+
+MIGRATIONS = {1: SCHEMA, 2: SEALED_REPLIES, 3: REMOVED_REASON, 4: REPLY_EDITS, 5: REACTION_TIMES, 6: EDITED_AT, 7: SUBSCRIPTIONS,
+              8: VOTES}
 
 
 def connect(path: Path | str) -> sqlite3.Connection:

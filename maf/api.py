@@ -67,6 +67,7 @@ def _post_json(post: store.Item) -> dict:
         "created_at": post.created_at,
         "edited_at": post.edited_at,
         "comment_count": post.comment_count,
+        "score": post.score,
         "views": post.views,
         "tags": post.tags,
         "pinned": bool(post.pinned),
@@ -81,14 +82,14 @@ async def posts(request: Request) -> Response:
     if tag:
         page_number = max(1, int(_param(request, "page", "1") or 1))
         rows = store.tagged_posts(conn, tag, sort, store.PAGE_SIZE, (page_number - 1) * store.PAGE_SIZE)
-        return _json({"posts": [_post_json(p) for p in store.with_comment_counts(conn, rows)]})
+        return _json({"posts": [_post_json(p) for p in store.with_counts(conn, rows)]})
     before = parse_date(_param(request, "before"))
     end = before - timedelta(days=1) if before else today()
     start, end = four_day_window(end)
     rows = store.posts_between(conn, start, end, sort)
     return _json({
         "range": {"from": start.isoformat(), "to": end.isoformat()},
-        "posts": [_post_json(p) for p in store.with_comment_counts(conn, rows)],
+        "posts": [_post_json(p) for p in store.with_counts(conn, rows)],
     })
 
 
@@ -111,7 +112,7 @@ async def item(request: Request) -> Response:
     post = next(i for i in items if i.id == thread_id)
     labels = app.labeler
     nodes = _tree(store.build_tree(items, thread_id), thread_id, labels, post.pass_id)
-    post.comment_count = store.comment_count(conn, thread_id)
+    store.with_counts(conn, [post])
     return _json({**_post_json(post), "author_id": labels.label(post.pass_id, thread_id), "op": True,
                   "comments": nodes})
 

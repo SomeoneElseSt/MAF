@@ -102,6 +102,13 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 - **Rules:** any pass, once per emoji per item, toggled. Private items: only the two parties can react or see reactions. Hidden posts keep their reactions. Not shown in lists, not used for sorting, included in the API item response as `{emoji: count}`.
 - **Rate limit:** 60 reaction toggles per minute per pass, in memory.
 
+## Votes
+
+- **What:** an up and a down arrow on each post (not on replies), around its score: upvotes minus downvotes from every pass. A score below 0 isn't shown anywhere on the site (the arrows stay; the API still gives it). Arrows are outlined; the one you cast is filled. Clicking it again takes your vote back; clicking the other arrow switches it.
+- **Storage:** `vote(pass_id, item_id, value ±1, PK(pass_id, item_id))` (schema v8). Scores are `SUM(value)`.
+- **Where:** on the thread page, in the row under the post before its reactions; each arrow is a small form that POSTs `/vote` with `item_id` and `value` (`up` or `down`), sent in place by `votes.js`. In lists the score leads the details line ("5 points, 2 hours ago, …"). In the API post response as `score`. Not used for sorting.
+- **Rate limit:** 60 votes per minute per pass, in memory. Upvotes reach the post author's Feed (see Feed); downvotes never do. No live banner in the thread for votes.
+
 ## Name filter
 
 - Run Presidio `PERSON` detection on titles, bodies and comments **before** saving.
@@ -115,7 +122,7 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 ## Feed (notifications)
 
 - **Feed** sits in the header between the search box and the Light/Dark toggle, signed-in only, with a small count tag that's always there (a muted "0" when nothing's new; the number brightens otherwise) so the header never shifts. Each page starts with the last count this browser saw, so it doesn't flash.
-- **What counts:** a reply to your post, a reply to your comment, and reactions on either, from anyone but you. Private replies count only for their recipient. Removed or in-review replies, and reactions from before reaction times were stored, never show.
+- **What counts:** a reply to your post, a reply to your comment, reactions on either, and upvotes on your post (never downvotes), from anyone but you. Upvotes are grouped per post: "3 upvotes on your post"; taking one back takes it out of the count. Private replies count only for their recipient. Removed or in-review replies, and reactions from before reaction times were stored, never show.
 - **The list:** opens under "Feed" (300px, centred, slid left or right to stay on screen), newest first, scrolling like the # menu (faded edges and chevrons, no scrollbar). Rows: "New reply to your post/comment" or "<emoji> N reactions on your post/comment" (reactions grouped per post or comment), then "“<your title or first words>”, <time ago>". New rows get a "New" tag; opening the list counts everything as seen. Clicking a row goes to the reply (or post); a row for the page you're on reloads it in place so Back still goes where you came from.
 - **Privacy:** "seen" lives in the browser only (`maf.bell-seen`, the newest time you've seen). The server stores nothing about when you check; it only adds `reaction.created_at` (schema v5). Live updates use an in-memory ping per pass (`bell:<pass>`), like the thread banners. `/notifications` is the same list as a plain page without JavaScript; `/notifications.json` feeds the dropdown.
 
@@ -158,7 +165,7 @@ No admin roles, codes or buttons. Moderation is community flags plus the maintai
 
   | Endpoint | Returns |
   |---|---|
-  | `GET /api/v1/posts?before=YYYY-MM-DD&sort=new\|old\|views&tag=...` | Four days of posts (or, with `tag`, that tag's posts 30 per page): `id, title, url, text_preview, created_at, comment_count, views, tags, pinned` |
+  | `GET /api/v1/posts?before=YYYY-MM-DD&sort=new\|old\|views&tag=...` | Four days of posts (or, with `tag`, that tag's posts 30 per page): `id, title, url, text_preview, created_at, comment_count, score, views, tags, pinned` |
   | `GET /api/v1/tags` | Every tag with its post count |
   | `GET /api/v1/threads/<id>` | A post with its comment tree; each item carries its per-thread `author_id` and an `op` flag |
   | `GET /api/v1/search?q=...&page=N` | Matching posts and comments, 30 per page |
@@ -177,6 +184,7 @@ item_tag(item_id, tag, PK both)  -- index on tag
 item_fts  -- FTS5 virtual table over item(title, text) for public items only, kept in sync with triggers
 flag(pass_id, item_id, PK both)
 reaction(pass_id, item_id, emoji, PK all)
+vote(pass_id, item_id, value, created_at, PK(pass_id, item_id))  -- value: 1 or -1, posts only; created_at: when last cast, for the Feed
 moderation_request(pass_id, item_id, kind, PK all)  -- kind: unhide | nuke
 api_token(token_hash PK, pass_id)
 ```
@@ -208,7 +216,7 @@ Target: everything on the [A11Y Project checklist](https://www.a11yproject.com/c
 
 ## Out of scope for v1
 
-Votes, uploads/images, DMs outside threads, notifications, karma, profiles, editing titles, links or hashtags, mobile app.
+Uploads/images, DMs outside threads, notifications, karma, profiles, editing titles, links or hashtags, mobile app.
 
 ## Deploy
 

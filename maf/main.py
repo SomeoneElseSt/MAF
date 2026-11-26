@@ -12,7 +12,7 @@ from starlette.responses import JSONResponse, RedirectResponse, Response
 from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 
-from . import auth, housetags, post, reactions, reading, store
+from . import auth, housetags, post, reactions, reading, store, votes
 from .app import App, build_app
 from .display import day_label, four_day_window, range_label
 from .settings import Settings, load_settings
@@ -39,7 +39,7 @@ def render_tag(page, tag: str, sort: str, page_number: int):
     offset = (page_number - 1) * store.PAGE_SIZE
     rows = store.tagged_posts(conn, tag, sort, store.PAGE_SIZE + 1, offset)
     has_next = len(rows) > store.PAGE_SIZE
-    results = store.with_comment_counts(conn, rows[: store.PAGE_SIZE])
+    results = store.with_counts(conn, rows[: store.PAGE_SIZE])
     pager = {
         "prev": _tag_url(tag, sort, page_number - 1) if page_number > 1 else None,
         "next": _tag_url(tag, sort, page_number + 1) if has_next else None,
@@ -72,9 +72,9 @@ def render_home(page, sort, before, after):
     pinned: list = []
     exclude_pinned = False
     if sort == "new" and before is None:
-        pinned = store.with_comment_counts(conn, store.pinned_posts(conn))
+        pinned = store.with_counts(conn, store.pinned_posts(conn))
         exclude_pinned = True
-    posts = store.with_comment_counts(conn, store.posts_between(conn, start, end, sort, exclude_pinned=exclude_pinned))
+    posts = store.with_counts(conn, store.posts_between(conn, start, end, sort, exclude_pinned=exclude_pinned))
     latest = store.latest_comment_times(conn, [post.thread_id for post in pinned + posts], not_by=page.pass_id)
     groups = [(day_label(day), rows) for day, rows in store.day_groups(posts)]
     # The ‹ arrow stops at the window holding the first post.
@@ -125,7 +125,7 @@ def search(request: Request) -> Response:
     sort = sort_param(request)
     page_number = max(1, int(request.query_params.get("page", "1") or 1))
     offset = (page_number - 1) * store.PAGE_SIZE
-    results = store.with_comment_counts(
+    results = store.with_counts(
         page.conn, store.search(page.conn, query, sort, store.PAGE_SIZE + 1, offset)
     ) if query else []
     has_next = len(results) > store.PAGE_SIZE
@@ -281,6 +281,7 @@ def create_app(settings: Settings | None = None) -> Starlette:
         *auth.routes,
         *api.routes,
         *reactions.routes,
+        *votes.routes,
         # Mounts last: a Mount matches any path under its prefix.
         Mount("/static", StaticFiles(directory=str(settings.static_dir)), name="static"),
     ]

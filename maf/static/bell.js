@@ -52,6 +52,7 @@
   function label(item) {
     if (item.kind === "activity") return "New activity on a post you subscribed to";
     if (item.kind === "reply") return `New reply to your ${item.on}`;
+    if (item.kind === "upvotes") return `${plural(item.times.length, "upvote")} on your post`;
     return `${item.emoji.join(" ")} ${plural(item.times.length, "reaction")} on your ${item.on}`;
   }
 
@@ -107,7 +108,7 @@
     if (!items.length) {
       const empty = document.createElement("p");
       empty.className = "bell-empty";
-      empty.textContent = "Replies and reactions to your posts and comments show up here.";
+      empty.textContent = "Replies, reactions and upvotes on your posts and comments show up here.";
       menu.replaceChildren(empty);
       return;
     }

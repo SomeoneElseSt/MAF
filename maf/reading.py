@@ -62,6 +62,8 @@ def item(request: Request) -> Response:
         "etiquette_banner": etiquette(tags),
         "reply_placeholder": reply_placeholder(tags) if tags else "",
         "reactions": _reactions(page, items),
+        "score": store.vote_scores(page.conn, [post.id]).get(post.id, 0),
+        "my_vote": store.my_vote(page.conn, page.pass_id, post.id),
         "embeds": embeds,
         "flags": _flags(page, items),
         "flags_to_hide": store.FLAGS_TO_HIDE,
@@ -102,7 +104,7 @@ def new_activity(request: Request) -> Response:
     since = request.query_params.get("since", "")
     if not page.pass_id or not MOMENT.fullmatch(since):
         return Response(status_code=400)
-    posts = store.with_comment_counts(page.conn, store.new_activity(page.conn, page.pass_id, since))
+    posts = store.with_counts(page.conn, store.new_activity(page.conn, page.pass_id, since))
     latest = store.latest_comment_times(page.conn, [p.id for p in posts], not_by=page.pass_id)
     return render(page, "new-rows.html", posts=posts, latest_comments=latest)
 

@@ -24,7 +24,7 @@ v1 is a working forum with real anonymity and as little friction as possible. Gr
 
 **Non-goals for v1**
 
-- Votes or rankings (emoji reactions exist, but nothing is sorted by them).
+- Rankings (posts have votes and emoji reactions, but nothing is sorted by them).
 - Image or file uploads, DMs outside a thread, notifications, karma, profiles, editing posts, a mobile app.
 - Bans or an admin dashboard.
 - Recovery keys or passwords.
@@ -238,7 +238,7 @@ Everything runs on AWS using existing credits: one small server, a domain, and A
 | --- | --- | --- |
 | Login method | Email code via AWS SES | Google sign-in would show the app in Minerva's admin console |
 | Limiting extra passes | No cap; 30-second in-memory cooldown | Any record that catches repeat sign-ups lets the operator check membership |
-| Votes | None | Removes the main thing extra passes could abuse |
+| Votes | Up/down on posts, net score shown in threads and lists, not used for sorting | Quick public signal; extra passes can inflate scores, accepted like reactions |
 | Ordering | Newest (default), oldest, or most viewed | Recency first; views are an opt-in sort |
 | View counts | Total only; per-pass dedupe in memory for 24 h | Counts stay honest without storing reading history |
 | Search | Built-in SQLite full-text search, queries not logged | No extra dependency, nothing about readers saved |

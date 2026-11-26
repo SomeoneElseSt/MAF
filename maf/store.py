@@ -105,6 +105,7 @@ class Item:
     edited_at: str | None = None
     tags: list[str] = field(default_factory=list)
     comment_count: int = 0
+    score: int = 0
     thread_title: str | None = None
 
     @property
@@ -339,10 +340,13 @@ def subscribers(conn: sqlite3.Connection, thread_id: str) -> list[str]:
     return [r["pass_id"] for r in rows]
 
 
-def with_comment_counts(conn: sqlite3.Connection, items: list[Item]) -> list[Item]:
+def with_counts(conn: sqlite3.Connection, items: list[Item]) -> list[Item]:
+    """Fills in each item's public comment count and vote score."""
     counts = comment_counts(conn, [i.thread_id for i in items])
+    scores = vote_scores(conn, [i.id for i in items])
     for item in items:
         item.comment_count = counts.get(item.thread_id, 0)
+        item.score = scores.get(item.id, 0)
     return items
 
 
@@ -750,6 +754,43 @@ def toggle_reaction(conn: sqlite3.Connection, pass_id: str, item_id: str, emoji:
     return True
 
 
+# -- votes ---------------------------------------------------------------
+
+
+def cast_vote(conn: sqlite3.Connection, pass_id: str, item_id: str, value: int) -> int:
+    """Sets this pass's vote on an item to `value` (1 up, -1 down). Casting the same vote again takes it
+    back. Returns the vote now in place: 1, -1, or 0 for none."""
+    row = conn.execute("SELECT value FROM vote WHERE pass_id = ? AND item_id = ?", (pass_id, item_id)).fetchone()
+    with conn:
+        if row and row["value"] == value:
+            conn.execute("DELETE FROM vote WHERE pass_id = ? AND item_id = ?", (pass_id, item_id))
+            return 0
+        conn.execute(
+            "INSERT INTO vote (pass_id, item_id, value, created_at) VALUES (?, ?, ?, ?) "
+            "ON CONFLICT (pass_id, item_id) DO UPDATE SET value = excluded.value, created_at = excluded.created_at",
+            (pass_id, item_id, value, iso(utc_now())),
+        )
+    return value
+
+
+def vote_scores(conn: sqlite3.Connection, item_ids: list[str]) -> dict[str, int]:
+    """Upvotes minus downvotes, for many items at once. Items nobody voted on are left out."""
+    if not item_ids:
+        return {}
+    marks = ",".join("?" * len(item_ids))
+    rows = conn.execute(
+        f"SELECT item_id, SUM(value) AS score FROM vote WHERE item_id IN ({marks}) GROUP BY item_id", item_ids
+    ).fetchall()
+    return {r["item_id"]: r["score"] for r in rows}
+
+
+def my_vote(conn: sqlite3.Connection, pass_id: str | None, item_id: str) -> int:
+    if not pass_id:
+        return 0
+    row = conn.execute("SELECT value FROM vote WHERE pass_id = ? AND item_id = ?", (pass_id, item_id)).fetchone()
+    return row["value"] if row else 0
+
+
 # -- notifications ---------------------------------------------------------
 
 NOTIFICATIONS_SHOWN = 30
@@ -768,8 +809,9 @@ def _snippet(row: sqlite3.Row) -> str:
 
 def notifications(conn: sqlite3.Connection, pass_id: str) -> list[dict]:
     """What's new on your posts and replies, newest first: replies from others, others' reactions
-    (grouped per post or reply, with each reaction's time so the browser can count the new ones), and
-    everything new on posts you subscribed to. Replies you can't see, removed or in-review replies,
+    (grouped per post or reply, with each reaction's time so the browser can count the new ones), others'
+    upvotes on your posts (grouped the same way; downvotes never show), and everything new on posts you
+    subscribed to. Replies you can't see, removed or in-review replies,
     and your own activity never appear."""
     replies = conn.execute(
         "SELECT c.id, c.thread_id, c.created_at, t.parent_id IS NULL AS on_post, "
@@ -786,6 +828,14 @@ def notifications(conn: sqlite3.Connection, pass_id: str) -> list[dict]:
         "MAX(r.created_at) AS latest "
         "FROM reaction r JOIN item t ON t.id = r.item_id "
         "WHERE t.pass_id = ? AND r.pass_id != ? AND r.created_at IS NOT NULL AND t.removed_reason IS NULL "
+        "GROUP BY t.id ORDER BY latest DESC LIMIT ?",
+        (pass_id, pass_id, NOTIFICATIONS_SHOWN),
+    ).fetchall()
+    upvotes = conn.execute(
+        "SELECT t.id, t.thread_id, t.title AS t_title, t.text AS t_text, t.sealed AS t_sealed, "
+        "GROUP_CONCAT(v.created_at, ' ') AS times, MAX(v.created_at) AS latest "
+        "FROM vote v JOIN item t ON t.id = v.item_id "
+        "WHERE t.pass_id = ? AND v.pass_id != ? AND v.value = 1 AND t.removed_reason IS NULL "
         "GROUP BY t.id ORDER BY latest DESC LIMIT ?",
         (pass_id, pass_id, NOTIFICATIONS_SHOWN),
     ).fetchall()
@@ -810,6 +860,10 @@ def notifications(conn: sqlite3.Connection, pass_id: str) -> list[dict]:
          "url": f"/thread/{r['thread_id']}" + ("" if r["on_post"] else f"#{r['id']}"), "at": r["latest"],
          "times": r["times"].split(" "), "emoji": list(dict.fromkeys(r["emoji"].split(" ")))}
         for r in reactions
+    ] + [
+        {"kind": "upvotes", "on": "post", "about": _snippet(u), "url": f"/thread/{u['thread_id']}",
+         "at": u["latest"], "times": u["times"].split(" ")}
+        for u in upvotes
     ]
     found.sort(key=lambda n: n["at"], reverse=True)
     return found[:NOTIFICATIONS_SHOWN]
