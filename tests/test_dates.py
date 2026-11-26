@@ -160,3 +160,12 @@ def test_profile_replies_show_match_hide_sent_and_unmatch_without_flag(signed_in
 
 def _post_by(app, pass_id, title):
     return store.create_post(app.conn, pass_id, title, None, None, ["help"])
+
+
+def test_profiles_have_no_reactions_but_pinned_dates_posts_do(signed_in, app):
+    note, profile = _post(app, "How Dates works"), _post(app, "A profile")
+    for post in (note, profile):
+        _move(app, post.id, "dates")
+    store.set_pinned(app.conn, note.id, True)
+    assert "react-add" in signed_in.get(f"/dates/thread/{note.id}").text
+    assert "react-add" not in signed_in.get(f"/dates/thread/{profile.id}").text
