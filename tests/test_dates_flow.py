@@ -127,3 +127,10 @@ def test_reply_with_profile_waits_for_the_owners_device_key(client, app):
     _profile(app, sender)
     sign_in_as(client, app, sender)
     assert "once they open theirs on their device" in client.get(f"/dates/thread/{profile.id}").text
+
+
+def test_the_send_form_comes_before_the_script_that_encrypts_it(client, app):
+    owner, sender, profile, *_ = _people(app, client)
+    sign_in_as(client, app, sender)
+    page = client.get(f"/dates/thread/{profile.id}").text
+    assert page.index('id="send-dialog"') < page.index("private.js")

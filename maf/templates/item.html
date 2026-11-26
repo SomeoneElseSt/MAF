@@ -286,15 +286,7 @@
   <p>Names are unique per thread to maintain anonymity.</p>
   <button class="button" type="button">OK</button>
 </dialog>
-<script src="{{ static('ids.js') }}"></script>
-<script src="{{ static('replies.js') }}"></script>
-<script src="{{ static('counts.js') }}"></script>
-<script src="{{ static('new.js') }}"></script>
-<script src="{{ static('namecheck.js') }}"></script>
-<script src="{{ static('markdown-it.min.js') }}"></script>
-<script src="{{ static('markdown.js') }}"></script>
-<script src="{{ static('private.js') }}"></script>
-{% if viewer %}<script src="{{ static('live.js') }}"></script>{% endif %}
+{# Before the scripts: private.js sets up the send pop-up's form when it loads. #}
 {% if is_profile %}
 <dialog id="match-dialog">
   <p>Matching opens private messages between you two in this thread. They show only on this computer and are encrypted, so MAF can't read them.</p>
@@ -322,6 +314,17 @@
     <div class="row"><button class="button" type="submit" data-hide-yes data-pending="Hiding…">Hide</button><button class="button plain" type="button" data-hide-no>Cancel</button></div>
   </form>
 </dialog>
+{% endif %}
+<script src="{{ static('ids.js') }}"></script>
+<script src="{{ static('replies.js') }}"></script>
+<script src="{{ static('counts.js') }}"></script>
+<script src="{{ static('new.js') }}"></script>
+<script src="{{ static('namecheck.js') }}"></script>
+<script src="{{ static('markdown-it.min.js') }}"></script>
+<script src="{{ static('markdown.js') }}"></script>
+<script src="{{ static('private.js') }}"></script>
+{% if viewer %}<script src="{{ static('live.js') }}"></script>{% endif %}
+{% if is_profile %}
 <script src="{{ static('dates-thread.js') }}"></script>
 {% endif %}
 <script src="{{ static('info.js') }}"></script>
