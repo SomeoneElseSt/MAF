@@ -91,3 +91,18 @@ def test_phones_get_short_dates(signed_in, app):
     _post(app, "Any", nsfw=False)
     page = signed_in.get("/").text
     assert 'class="long-date"' in page and 'class="short-date"' in page
+
+
+def _body(page):
+    return page.split("<body", 1)[1].split(">", 1)[0]
+
+
+def test_a_posts_colour_follows_the_post_not_the_switch(signed_in, app):
+    spicy, normal = _post(app, "Spicy", nsfw=True), _post(app, "Normal", nsfw=False)
+    assert "data-nsfw" in _body(signed_in.get(f"/thread/{spicy.id}").text)
+    signed_in.cookies.update(NSFW_ON)
+    page = signed_in.get(f"/thread/{normal.id}").text
+    assert "data-nsfw" not in _body(page) and 'aria-pressed="true">NSFW' in page  # the switch still shows it's on
+    signed_in.cookies.update({"maf_nsfw": "0"})
+    page = signed_in.get(f"/thread/{spicy.id}").text
+    assert "data-nsfw" in _body(page) and 'aria-pressed="false">NSFW' in page

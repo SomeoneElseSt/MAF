@@ -1,6 +1,7 @@
 // The NSFW switch in the header. On, lists show only NSFW posts; off, only the rest. It's a setting for
 // this browser (a cookie the server reads to pick the list), like Dark. The first time it's turned on
-// here, a warning asks first; after that it switches straight away.
+// here, a warning asks first; after that it switches straight away. The page's colour follows what's on it
+// (an NSFW post stays tinted either way), so on a post the switch only changes where lists take you.
 (function () {
   const toggle = document.querySelector(".nsfw-toggle");
   const dialog = document.getElementById("nsfw-dialog");
@@ -47,6 +48,6 @@
 
   // Back to a page from before a switch (e.g. turned on in another tab): show this page for the current side.
   window.addEventListener("pageshow", () => {
-    if (document.body.hasAttribute("data-nsfw") !== isOn()) location.reload();
+    if ((toggle.getAttribute("aria-pressed") === "true") !== isOn()) location.reload();
   });
 })();

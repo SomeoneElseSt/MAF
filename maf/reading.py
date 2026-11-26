@@ -49,6 +49,7 @@ def item(request: Request) -> Response:
         "my_key": keys.get(page.pass_id, "") if participant else None,
         "title": markdown.plain(post.title),
         "post": post,
+        "post_nsfw": bool(post.nsfw),  # an NSFW post's page keeps the NSFW colour, whichever way the switch is
         "comment_count": store.comment_counts(page.conn, [thread_id]).get(thread_id, 0),
         "now": iso(utc_now()),
         "post_mine": bool(page.pass_id) and post.pass_id == page.pass_id,

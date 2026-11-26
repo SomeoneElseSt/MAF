@@ -40,7 +40,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <script src="{{ static('theme-init.js') }}"></script>
 </head>
-<body class="{{ body_class|default('') }}" data-now="{{ server_now }}"{% if nsfw_mode %} data-nsfw{% endif %}{% if reply_placeholder is defined and reply_placeholder %} data-reply-placeholder="{{ reply_placeholder|e }}"{% endif %}>
+<body class="{{ body_class|default('') }}" data-now="{{ server_now }}"{% set nsfw_tint = post_nsfw if post_nsfw is defined else nsfw_mode %}{% if nsfw_tint %} data-nsfw{% endif %}{% if reply_placeholder is defined and reply_placeholder %} data-reply-placeholder="{{ reply_placeholder|e }}"{% endif %}>
 <a class="skip" href="#main">Skip to content</a>
 <div class="page">
   <header class="top">
