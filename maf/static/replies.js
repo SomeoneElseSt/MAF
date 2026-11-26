@@ -20,15 +20,21 @@
   function openEdit(button) {
     const form = document.getElementById(button.dataset.edit);
     if (!form || !form.hidden) return;
-    const target = form.previousElementSibling;
-    if (!target || !target.classList.contains("text")) return;
-    editState.set(form.id, { target });
-    target.hidden = true;
-    form.hidden = false;
+    if (!swapIn(form)) return;
     button.setAttribute("aria-expanded", "true");
     const box = form.querySelector("textarea");
     box.focus();
     box.selectionStart = box.selectionEnd = box.value.length;
+  }
+
+  // The words make way for the box. Returns false when there are no words to swap.
+  function swapIn(form) {
+    const target = form.previousElementSibling;
+    if (!target || !target.classList.contains("text")) return false;
+    editState.set(form.id, { target });
+    target.hidden = true;
+    form.hidden = false;
+    return true;
   }
 
   function closeEdit(form) {
@@ -53,6 +59,13 @@
 
   document.querySelectorAll("[data-edit]").forEach(button => {
     button.addEventListener("click", () => openEdit(button));
+  });
+
+  // A box the page arrives with open (the name check sent it back with its warning): open it properly,
+  // so the old words don't show above it and Save or Cancel can close it.
+  document.querySelectorAll("form.edit-in-place:not([hidden])").forEach(form => {
+    if (!swapIn(form)) return;
+    document.querySelector(`[data-edit="${CSS.escape(form.id)}"]`)?.setAttribute("aria-expanded", "true");
   });
 
   document.querySelectorAll(".edit-in-place .cancel").forEach(cancel => {
@@ -113,6 +126,8 @@
     const saved = !target.searchParams.has("notice");
     // An edit saved in place: show the saved words right there, no reload.
     if (saved && form.classList.contains("edit-in-place") && target.pathname === location.pathname) {
+      // Drop what a name-check warning left in the address (its notice and the words), so a reload is clean.
+      history.replaceState(history.state, "", target.pathname + location.hash);
       showSavedEdit(form);
       return;
     }
@@ -150,6 +165,7 @@
   }
 
   function showSavedEdit(form) {
+    form.querySelector(".name-warning")?.remove();
     const box = form.querySelector("textarea");
     const words = renderSaved(form);
     // The box keeps the saved words as its default, so opening Edit again, Cancel and the

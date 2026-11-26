@@ -27,6 +27,8 @@
     window.addEventListener("pageshow", reset);
     // Sent by other scripts when they stop a send themselves (e.g. a private reply that couldn't be encrypted).
     form.addEventListener("maf:not-sent", reset);
+    // Saved without leaving the page (an edit in place): the button is ready for the next time.
+    form.addEventListener("maf:sent", reset);
     sync();
   });
 })();
