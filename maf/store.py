@@ -26,6 +26,9 @@ TEXT_PREVIEW = 240
 TITLE_MAX = 200
 BODY_MAX = 20_000
 DELETED_BY_AUTHOR = "Deleted by its author."
+# A profile reply that's closed: Unmatch shows MATCH_ENDED to both; Hide leaves the owner nothing to see.
+MATCH_ENDED = "This match ended."
+HIDDEN_BY_OWNER = "Hidden by the profile's owner."
 
 
 # -- passes and tokens ----------------------------------------------------
@@ -803,6 +806,29 @@ def delete_item(conn: sqlite3.Connection, item_id: str) -> None:
         conn.execute("DELETE FROM item_tag WHERE item_id = ?", (item_id,))
         if item.is_post:
             conn.execute("DELETE FROM thread_key WHERE thread_id = ?", (item.thread_id,))
+
+
+def close_profile_reply(conn: sqlite3.Connection, reply_id: str, reason: str) -> None:
+    """Unmatch or Hide: the conversation under a profile reply is erased for good, and `reason` takes the
+    reply's place. The reply stays (without its words) so its sender can't send their profile again."""
+    under = [row["id"] for row in conn.execute(
+        "WITH RECURSIVE below(id) AS (SELECT id FROM item WHERE parent_id = ?"
+        " UNION ALL SELECT i.id FROM item i JOIN below ON i.parent_id = below.id) SELECT id FROM below", (reply_id,))]
+    with _secure_delete(conn), conn:
+        for item_id in under:
+            conn.execute("DELETE FROM item WHERE id = ?", (item_id,))
+            conn.execute("DELETE FROM reaction WHERE item_id = ?", (item_id,))
+    remove_comment(conn, reply_id, reason)
+
+
+def close_sent_profiles(conn: sqlite3.Connection, pass_id: str) -> None:
+    """Deleting your profile takes back the copies you sent: a match ends, one not yet matched just goes."""
+    rows = conn.execute(
+        "SELECT r.id, EXISTS (SELECT 1 FROM item c WHERE c.parent_id = r.id) AS matched FROM item r"
+        " JOIN item p ON p.id = r.parent_id WHERE r.pass_id = ? AND p.board = 'dates' AND p.pinned = 0"
+        " AND p.parent_id IS NULL AND r.removed_reason IS NULL", (pass_id,)).fetchall()
+    for row in rows:
+        close_profile_reply(conn, row["id"], MATCH_ENDED if row["matched"] else HIDDEN_BY_OWNER)
 
 
 def delete_own_post(conn: sqlite3.Connection, item_id: str) -> None:

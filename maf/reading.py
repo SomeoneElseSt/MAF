@@ -42,6 +42,8 @@ def item(request: Request) -> Response:
     items = store.thread_items(page.conn, thread_id, page.pass_id)
     post = next((i for i in items if i.id == thread_id), root)
     tree = store.build_tree(items, thread_id)
+    dates = _dates_context(page, post, tree)
+    tree = dates.pop("tree")
     host = urlsplit(page.settings.base_url).netloc
     embeds = {i.id: embed.embeds_in(page.conn, i.text, page.app.labeler, thread_id, host) for i in items}
     op_pass = post.pass_id
@@ -59,8 +61,7 @@ def item(request: Request) -> Response:
         "post_nsfw": bool(post.nsfw),  # an NSFW post keeps the NSFW tint, whichever way the switch is
         "post_board": navigation.post_board_of(post),  # where the header's links lead (navigation.py)
         # A profile is answered with your own profile and Match instead of comments (store.is_profile).
-        "is_profile": store.is_profile(post),
-        "has_profile": store.is_profile(post) and store.has_profile(page.conn, page.pass_id),
+        **dates,
         "comment_count": store.comment_counts(page.conn, [thread_id]).get(thread_id, 0),
         "now": iso(utc_now()),
         "post_mine": bool(page.pass_id) and post.pass_id == page.pass_id,
@@ -181,3 +182,24 @@ routes = [
     Route("/notifications.json", notifications_json),
     Route("/notifications/events", bell_events),
 ]
+
+
+def _dates_context(page, post, tree) -> dict:
+    """A profile's thread: whether you have a profile (and its words, to send), and your reply on it, if any.
+    Replies the owner hid are left out of the owner's own view."""
+    if not store.is_profile(post):
+        return {"tree": tree, "is_profile": False, "has_profile": False}
+    own = store.own_profile(page.conn, page.pass_id) if page.pass_id else None
+    mine = post.pass_id == page.pass_id
+    if mine:
+        tree = [node for node in tree if node["item"].removed_reason != store.HIDDEN_BY_OWNER]
+    my_reply = None if mine else next((n["item"] for n in tree if n["item"].pass_id == page.pass_id), None)
+    return {
+        "tree": tree,
+        "is_profile": True,
+        "has_profile": own is not None,
+        "my_profile_text": store.get_item(page.conn, own.id).text if own and not mine else "",
+        "replied": my_reply is not None,
+        "reply_closed": bool(my_reply and my_reply.removed_reason),
+        "match_ended": bool(my_reply and my_reply.removed_reason == store.MATCH_ENDED),
+    }

@@ -220,16 +220,17 @@
 {% if viewer and is_profile %}
 {# A profile: no comments. You answer someone's profile with your own. Your own has Edit profile instead, which
    opens its form, so only its answers can change. #}
-{# Your reply to someone else's profile, once they unmatched or you did: only "Match ended" shows, no line or reply. #}
-{% set match_ended = not post_mine and tree|selectattr("item.pass_id", "equalto", viewer)|selectattr("item.removed_reason")|list|length > 0 %}
 {% if post_mine %}
 <div class="reply profile-reply"><div class="row"><a class="button" href="/dates/edit">Edit profile</a></div></div>
 {% else %}
-{% set replied = tree|selectattr("item.pass_id", "equalto", viewer)|list|length > 0 %}
 <div class="reply profile-reply">
   {% if replied %}
   {# You can send your profile once per profile; then it shows here, under the line, marked Sent. #}
   <div class="row"><button class="button" type="button" disabled>{{ "Match ended" if match_ended else "Replied" }}</button></div>
+  {% elif has_profile and not thread_keys.get(post.pass_id) %}
+  {# Your profile is encrypted for the owner's device, so it waits until they've opened their profile on one. #}
+  <div class="row"><button class="button" type="button" disabled>Reply with profile</button></div>
+  <p class="help">You can send your profile once they open theirs on their device.</p>
   {% else %}
   <div class="row"><button class="button" type="button" id="reply-with-profile"{% if not has_profile %} aria-controls="need-profile" aria-expanded="false"{% else %} data-send-profile{% endif %}>Reply with profile</button></div>
   {% endif %}
@@ -265,12 +266,13 @@
 {% endif %}
 {% endif %}
 
-{% if is_profile and tree and not match_ended %}
+{% if is_profile and tree and not reply_closed %}
 {# Your profile's replies, set off from it: how many (ended matches don't count), a line, and a line between each. #}
 {% set live_replies = tree|rejectattr("item.removed_reason")|list|length %}
 <p class="profile-replies-count">{% if post_mine and live_replies %}{{ live_replies }} {{ "person" if live_replies == 1 else "people" }} replied with {{ "their profile" if live_replies == 1 else "their profiles" }}{% endif %}</p>
 {% endif %}
-{% if not match_ended %}
+{# Your reply to someone else's profile once it's closed (match ended, or hidden): only the button shows. #}
+{% if not reply_closed %}
 <ol class="comments{% if is_profile %} profile-replies{% endif %}">
   {% for node in tree %}{{ comment(node, 0) }}{% endfor %}
 </ol>
@@ -300,16 +302,25 @@
   <div class="row"><button class="button" type="button" data-match-yes>Match</button><button class="button plain" type="button" data-match-no>Cancel</button></div>
 </dialog>
 <dialog id="send-dialog">
-  <p>Send your profile to {{ label_of[post.pass_id] }}? Only they will see it, and if they match with you, you can message each other here.</p>
-  <div class="row"><button class="button" type="button" data-send-yes>Send profile</button><button class="button plain" type="button" data-send-no>Cancel</button></div>
+  {# Your profile goes as a private reply, encrypted in this browser for the owner (private.js) like any other. #}
+  <form action="/comment" method="post" data-peer-key="{{ thread_keys.get(post.pass_id, '') }}" data-always-private>
+    <input type="hidden" name="parent_id" value="{{ post.id }}"><input type="hidden" name="thread_id" value="{{ post.id }}"><input type="hidden" name="private" value="on">
+    <textarea name="text" hidden aria-hidden="true">{{ my_profile_text }}</textarea>
+    <p>Send your profile to {{ label_of[post.pass_id] }}? Only they will see it, and if they match with you, you can message each other here.</p>
+    <div class="row"><button class="button" type="submit" data-send-yes data-pending="Sending…">Send profile</button><button class="button plain" type="button" data-send-no>Cancel</button></div>
+  </form>
 </dialog>
 <dialog id="unmatch-dialog">
-  <p>Unmatch? Your messages are erased for both of you, and you can't match again.</p>
-  <div class="row"><button class="button" type="button" data-unmatch-yes>Unmatch</button><button class="button plain" type="button" data-unmatch-no>Cancel</button></div>
+  <form action="/dates/unmatch" method="post"><input type="hidden" name="reply_id">
+    <p>Unmatch? Your messages are erased for both of you, and you can't match again.</p>
+    <div class="row"><button class="button" type="submit" data-unmatch-yes data-pending="Unmatching…">Unmatch</button><button class="button plain" type="button" data-unmatch-no>Cancel</button></div>
+  </form>
 </dialog>
 <dialog id="hide-dialog">
-  <p>Hide this profile? It goes away for good, and they can't reply to your profile again.</p>
-  <div class="row"><button class="button" type="button" data-hide-yes>Hide</button><button class="button plain" type="button" data-hide-no>Cancel</button></div>
+  <form action="/dates/hide" method="post"><input type="hidden" name="reply_id">
+    <p>Hide this profile? It goes away for good, and they can't reply to your profile again.</p>
+    <div class="row"><button class="button" type="submit" data-hide-yes data-pending="Hiding…">Hide</button><button class="button plain" type="button" data-hide-no>Cancel</button></div>
+  </form>
 </dialog>
 <script src="{{ static('dates-thread.js') }}"></script>
 {% endif %}

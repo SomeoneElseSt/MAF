@@ -105,6 +105,7 @@ async def delete_profile(request: Request) -> Response:
     profile = store.own_profile(page.conn, page.pass_id)
     if profile is not None:
         store.delete_own_post(page.conn, profile.id)
+        store.close_sent_profiles(page.conn, page.pass_id)
         page.app.live.publish(live.HOME)
     return redirect("/dates")
 
@@ -148,6 +149,9 @@ async def comment(request: Request) -> Response:
     if page.pass_id is None or parent is None:
         return gone(page, values["thread_id"])
     private_to = _private_recipient(page, parent, values["private"] == "on")
+    refusal = _profile_refusal(page, parent, private_to)
+    if refusal:
+        return to_thread(page, parent.thread_id, f"?notice={quote_plus(refusal)}")
     if private_to is not None:
         return _private_comment(page, parent, private_to, values["sealed"])
     if not values["text"]:
@@ -192,6 +196,66 @@ def _private_comment(page, parent: store.Item, private_to: str, raw_sealed: str)
     if parent.pass_id == private_to:
         _ring(page, private_to)
     return to_thread(page, thread_id, f"#{reply.id}")
+
+
+def _profile_refusal(page, parent: store.Item, private_to: str | None) -> str | None:
+    """On a profile, replies are only private: your profile sent to its owner once, then messages in a match."""
+    post = parent if parent.is_post else store.get_item(page.conn, parent.thread_id)
+    if not store.is_profile(post):
+        return None
+    if private_to is None:
+        return "Replies on a profile are private."
+    if not parent.is_post:
+        top = parent if parent.parent_id == post.id else _top_reply(page, parent, post)
+        if top.removed_reason:
+            return "This match ended."
+        # The owner's first message is the match; until then the sender can't write.
+        waiting = page.pass_id == top.pass_id and not store.reply_count(page.conn, top.id)
+        return "You can write once they match with you." if waiting else None
+    if not store.has_profile(page.conn, page.pass_id):
+        return "You need a profile to reply."
+    already = page.conn.execute("SELECT 1 FROM item WHERE parent_id = ? AND pass_id = ?", (post.id, page.pass_id)).fetchone()
+    return "You've already sent your profile." if already else None
+
+
+def _top_reply(page, item: store.Item, post: store.Item) -> store.Item:
+    while item.parent_id != post.id:
+        item = store.get_item(page.conn, item.parent_id)
+    return item
+
+
+async def unmatch(request: Request) -> Response:
+    """Either of the two ends a match: the messages are erased for both, and "This match ended." stays."""
+    page = page_of(request)
+    reply, post = await _profile_reply_of(request, page)
+    if reply is None or page.pass_id not in (post.pass_id, reply.pass_id):
+        return gone(page, post.id if post else "")
+    store.close_profile_reply(page.conn, reply.id, store.MATCH_ENDED)
+    page.app.live.publish(post.id)
+    return to_thread(page, post.id, "?notice=Unmatched.+Your+messages+are+erased+for+both+of+you.")
+
+
+async def hide_profile_reply(request: Request) -> Response:
+    """The profile's owner hides a profile someone sent: it goes, and that person can't send it again."""
+    page = page_of(request)
+    reply, post = await _profile_reply_of(request, page)
+    if reply is None or page.pass_id != post.pass_id:
+        return gone(page, post.id if post else "")
+    store.close_profile_reply(page.conn, reply.id, store.HIDDEN_BY_OWNER)
+    page.app.live.publish(post.id)
+    return to_thread(page, post.id)
+
+
+async def _profile_reply_of(request: Request, page) -> tuple[store.Item | None, store.Item | None]:
+    """The open profile reply a form names, with its profile; (None, profile or None) if it isn't one."""
+    values = await form_values(request, "reply_id")
+    reply = store.get_item(page.conn, values["reply_id"])
+    post = store.get_item(page.conn, reply.thread_id) if reply else None
+    if page.pass_id is None or post is None or not store.is_profile(post):
+        return None, post
+    if reply.parent_id != post.id or reply.removed_reason:
+        return None, post
+    return reply, post
 
 
 def _ring(page, owner: str) -> None:
@@ -378,6 +442,8 @@ routes = [
     Route("/dates/submit", save_profile, methods=["POST"]),
     Route("/dates/edit", save_profile, methods=["POST"]),
     Route("/dates/delete", delete_profile, methods=["POST"]),
+    Route("/dates/unmatch", unmatch, methods=["POST"]),
+    Route("/dates/hide", hide_profile_reply, methods=["POST"]),
     Route("/comment", comment, methods=["POST"]),
     Route("/edit", edit, methods=["POST"]),
     Route("/subscribe", subscribe, methods=["POST"]),

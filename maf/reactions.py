@@ -21,6 +21,8 @@ async def react(request: Request) -> Response:
         return to_thread(page, item.id)
     if item.private_to and page.pass_id not in (item.pass_id, item.private_to):
         return to_thread(page, item.id)
+    if store.is_profile(store.get_item(page.conn, item.thread_id)):  # profiles take no reactions
+        return to_thread(page, item.id)
     if not page.memory.allow(f"react:{page.pass_id}", REACTIONS_PER_MINUTE):
         return to_thread(page, item.id, "?notice=Slow+down+a+little.+Try+again+in+a+minute.")
     added = store.toggle_reaction(page.conn, page.pass_id, item.id, values["emoji"])
