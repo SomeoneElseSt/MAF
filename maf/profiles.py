@@ -15,7 +15,7 @@ QUESTIONS = [
     ("interested_in", "Interested in", ["Men", "Women", "Everyone"]),
     ("height", "Height", ["Under 5′3″ (160 cm)", "5′3″–5′9″ (160–175 cm)", "Over 5′9″ (175 cm)"]),
     ("city", "Rotation city", ["Berlin", "Buenos Aires", "San Francisco", "Tokyo"]),
-    ("looking_for", "Looking for", ["Friend", "Relationship", "Either a friend or a relationship, depending on how it goes"]),
+    ("looking_for", "Looking for", ["Friend", "Relationship", "Friend or relationship, depending on how it goes"]),
 ]
 CHOICES = {field: choices for field, _, choices in QUESTIONS}
 LABEL = {field: label for field, label, _ in QUESTIONS}
