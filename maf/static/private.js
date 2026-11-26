@@ -99,6 +99,9 @@
         if (window.mafMarkdown) item.innerHTML = window.mafMarkdown(text, item.dataset.label);
         else item.textContent = text;
         item.classList.add("open");
+        // The server can't read it, so its edit box arrives empty: give it the words opened here.
+        const editBox = item.nextElementSibling?.matches("form.edit-in-place") ? item.nextElementSibling.querySelector("textarea") : null;
+        if (editBox && !editBox.value) editBox.value = editBox.defaultValue = text;
       } catch {
         // Sealed for a key this browser doesn't have: the "only on the device" text stays.
       }
