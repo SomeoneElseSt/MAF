@@ -21,6 +21,7 @@ POSTS_PER_MINUTE = 6
 # open with its words (drafts.js refills them). This line just says what happened.
 NAMES_NOTICE = "That+wasn't+sent:+it+looks+like+it+names+someone."
 COMMENTS_PER_MINUTE = 12
+NSFW_YES, NSFW_NO = "Yes", "No"  # the answers to "Is NSFW?" on the submit form
 TOKEN_BYTES = 32
 MAX_TOKENS_PER_PASS = 5  # the Create token button greys out at this many
 
@@ -46,7 +47,7 @@ async def submit_post(request: Request) -> Response:
     page = page_of(request)
     if page.pass_id is None:
         return _login(page)
-    values = await form_values(request, "title", "url", "text", "tags", "confirm_names")
+    values = await form_values(request, "title", "url", "text", "tags", "nsfw", "confirm_names")
     tags, too_many = store.normalise_tags(values["tags"])
     errors = _validate_post(values, too_many)
     if errors:
@@ -56,7 +57,8 @@ async def submit_post(request: Request) -> Response:
     if not _allowed(page, "post", POSTS_PER_MINUTE):
         return _form_error(page, values, tags, {"form": "You're posting fast. Wait a minute and try again."})
     post = store.create_post(
-        page.conn, page.pass_id, values["title"], values["text"] or None, values["url"] or None, tags
+        page.conn, page.pass_id, values["title"], values["text"] or None, values["url"] or None, tags,
+        nsfw=values["nsfw"] == NSFW_YES,
     )
     page.app.live.publish(live.HOME)
     return redirect(f"/thread/{post.id}")
@@ -74,6 +76,8 @@ def _validate_post(values: dict[str, str], too_many: bool) -> dict[str, str]:
         errors["text"] = "That's too long. Try trimming it."
     if too_many:
         errors["tags"] = "Use at most 3 hashtags."
+    if values["nsfw"] not in (NSFW_YES, NSFW_NO):
+        errors["nsfw"] = "Choose Yes or No."
     return errors
 
 

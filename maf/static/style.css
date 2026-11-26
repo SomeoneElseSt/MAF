@@ -15,6 +15,11 @@
   --hot: #b4441c;
   --danger: #8a0303;
   --hot-wash: color-mix(in srgb, var(--hot) 7%, var(--paper));
+  --wash: 7%;
+  /* NSFW on: the page takes a warm tint, so you can always tell which side you're on. */
+  --nsfw-paper: #f8e8e2;
+  --nsfw-tint: #efdcd5;
+  --nsfw-meta: #626262; /* 4.5:1 on the tinted paper and its boxes */
   --visited: #6f6f6f;
   /* New badges: ember orange. In dark mode a shade deeper, so it doesn't glare against black. */
   --new-fill: #E2805A;
@@ -40,6 +45,10 @@
     --hot: #e2805a;
     --danger: #ff6b6b;
     --hot-wash: color-mix(in srgb, var(--hot) 15%, var(--paper));
+    --wash: 15%;
+    --nsfw-paper: #22100c;
+    --nsfw-tint: #34211c;
+    --nsfw-meta: #949494;
     --visited: #909090;
     --new-fill: #C4663F;
     --new-ink: #ffffff;
@@ -58,6 +67,10 @@
   --hot: #e2805a;
   --danger: #ff6b6b;
   --hot-wash: color-mix(in srgb, var(--hot) 15%, var(--paper));
+  --wash: 15%;
+  --nsfw-paper: #22100c;
+  --nsfw-tint: #34211c;
+  --nsfw-meta: #949494;
   --new-fill: #C4663F;
   --new-ink: #ffffff;
 }
@@ -549,3 +562,34 @@ button.note:disabled { cursor: default; }
 .text pre { background: var(--tint); border-radius: 4px; padding: 10px 12px; margin: 6px 0 10px; white-space: pre-wrap; font: 14px/1.5 var(--mono); }
 .text pre code { background: none; padding: 0; font: inherit; }
 .text hr { border: 0; border-top: 1px solid var(--line); margin: 12px 0; }
+
+/* NSFW: a switch in the header like Dark. On, the word turns ember and lists show only NSFW posts (nsfw.js). */
+.nsfw-toggle { font: 16px var(--sans); color: var(--soft); background: none; border: none; padding: 0; cursor: pointer; }
+.nsfw-toggle:hover { color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.nsfw-toggle[aria-pressed="true"], .nsfw-toggle[aria-pressed="true"]:hover { color: #E2805A; }
+/* Clicking a switch twice quickly mustn't select its word. */
+.theme-toggle, .nsfw-toggle { user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
+body[data-nsfw] { --paper: var(--nsfw-paper); --tint: var(--nsfw-tint); --meta: var(--nsfw-meta); --hot-wash: color-mix(in srgb, var(--hot) var(--wash), var(--paper)); }
+#nsfw-dialog .row { display: flex; gap: 14px; align-items: center; }
+.nsfw-answer { cursor: pointer; caret-color: transparent; }
+.short-date { display: none; }
+
+/* Phones: NSFW and Dark join MAF and Submit on the top row, at the right above Feed; Search and Feed share
+   the row below. Sort and the dates fit on one row: no "Sort by:", short dates. */
+@media (max-width: 560px) {
+  .top nav { order: 1; }
+  .top .theme-toggle, .top .nsfw-toggle { order: 2; }
+  .top .theme-toggle, .top .nsfw-toggle { margin-left: auto; }
+  .top .nsfw-toggle + .theme-toggle { margin-left: 0; }
+  .top .find { order: 3; flex: 1 1 150px; min-width: 0; }
+  .top .bell-wrap { order: 4; margin-left: auto; }
+  .listbar { justify-content: space-between; }
+  .sort a, .sort strong, .range { white-space: nowrap; }
+  .range { margin-left: auto; } /* if it must wrap (the smallest phones), the dates keep to the right */
+  .sort-label, .long-date { display: none; }
+  .short-date { display: inline; }
+}
+@media (max-width: 380px) {
+  .sort { gap: 12px; }
+  .range { gap: 6px; }
+}

@@ -82,6 +82,9 @@ def make_templates(app: App) -> Jinja2Templates:
     return templates
 
 
+NSFW_COOKIE = "maf_nsfw"
+
+
 @dataclass
 class Page:
     """One request's context: the app, the connection and the viewer's pass."""
@@ -102,6 +105,12 @@ class Page:
     def memory(self):
         return self.app.memory
 
+    @property
+    def nsfw(self) -> bool:
+        """Whether this browser has NSFW on: lists then show only NSFW posts. A cookie the page sets (nsfw.js),
+        so it's a per-browser setting like Dark; the server never stores it."""
+        return self.request.cookies.get(NSFW_COOKIE) == "1"
+
     def labeler_label(self, thread_id: str, pass_id: str) -> str:
         return self.app.labeler.label(pass_id, thread_id)
 
@@ -115,7 +124,7 @@ def page_of(request: Request) -> Page:
 def render(page: Page, template: str, status_code: int = 200, **context: Any) -> HTMLResponse:
     """Renders a template with the shared layout context."""
     # Signed-out visitors get nothing from the forum, not even tag names in the # menu.
-    tags = store.tag_counts(page.conn) if page.pass_id else []
+    tags = store.tag_counts(page.conn, page.nsfw) if page.pass_id else []
     params = dict(page.request.query_params)
 
     def sort_url(key: str) -> str:
@@ -136,6 +145,7 @@ def render(page: Page, template: str, status_code: int = 200, **context: Any) ->
         "sort": sort_param(page.request),
         "path": page.request.url.path,
         "server_now": iso(utc_now()),
+        "nsfw_mode": page.nsfw,
     }
     base.update(context)
     return page.app.templates.TemplateResponse(

@@ -69,7 +69,7 @@ def test_submit_requires_sign_in(starlette_app):
 def test_submit_creates_a_post(signed_in, app, pass_id):
     response = signed_in.post(
         "/submit",
-        data={"title": "My title", "text": "My text", "tags": "#berlin, help"},
+        data={"nsfw": "No", "title": "My title", "text": "My text", "tags": "#berlin, help"},
         follow_redirects=False,
     )
     assert response.status_code == 303
@@ -78,12 +78,12 @@ def test_submit_creates_a_post(signed_in, app, pass_id):
 
 
 def test_submit_needs_a_title(signed_in):
-    body = signed_in.post("/submit", data={"title": "", "text": ""}).text
+    body = signed_in.post("/submit", data={"nsfw": "No", "title": "", "text": ""}).text
     assert "Add a title." in body
 
 
 def test_a_title_alone_is_a_post(signed_in, app):
-    response = signed_in.post("/submit", data={"title": "Is the library open on Sundays?"}, follow_redirects=False)
+    response = signed_in.post("/submit", data={"nsfw": "No", "title": "Is the library open on Sundays?"}, follow_redirects=False)
     assert response.status_code == 303
     post = store.get_item(app.conn, response.headers["location"].rsplit("/", 1)[-1])
     assert post.title == "Is the library open on Sundays?" and post.text is None and post.url is None
@@ -91,17 +91,17 @@ def test_a_title_alone_is_a_post(signed_in, app):
 
 
 def test_submit_rejects_a_bad_url(signed_in):
-    body = signed_in.post("/submit", data={"title": "T", "url": "not a url"}).text
+    body = signed_in.post("/submit", data={"nsfw": "No", "title": "T", "url": "not a url"}).text
     assert "look like a web address" in body  # rendered HTML-escaped
 
 
 def test_submit_rejects_more_than_three_tags(signed_in):
-    body = signed_in.post("/submit", data={"title": "T", "text": "x", "tags": "a, b, c, d"}).text
+    body = signed_in.post("/submit", data={"nsfw": "No", "title": "T", "text": "x", "tags": "a, b, c, d"}).text
     assert "Use at most 3 hashtags." in body
 
 
 def test_submit_keeps_the_text_when_it_fails(signed_in):
-    body = signed_in.post("/submit", data={"title": "", "text": "keep me please"}).text
+    body = signed_in.post("/submit", data={"nsfw": "No", "title": "", "text": "keep me please"}).text
     assert "keep me please" in body
 
 
@@ -148,7 +148,7 @@ def test_private_reply_is_hidden_from_other_viewers(client, app, pass_id):
 
 def test_the_hashtag_menu_works_on_the_submit_page(signed_in, app, pass_id):
     store.create_post(app.conn, pass_id, "Tagged", "text", None, ["berlin"])
-    for body in (signed_in.get("/submit").text, signed_in.post("/submit", data={"title": ""}).text):
+    for body in (signed_in.get("/submit").text, signed_in.post("/submit", data={"nsfw": "No", "title": ""}).text):
         assert 'id="tag-data"' in body and '"berlin"' in body
 
 

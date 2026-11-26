@@ -7,7 +7,7 @@ so it can be extended later without a migration framework.
 import sqlite3
 from pathlib import Path
 
-SCHEMA_VERSION = 7
+SCHEMA_VERSION = 8
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS pass (
@@ -143,7 +143,16 @@ CREATE TABLE IF NOT EXISTS subscription (
 );
 """
 
-MIGRATIONS = {1: SCHEMA, 2: SEALED_REPLIES, 3: REMOVED_REASON, 4: REPLY_EDITS, 5: REACTION_TIMES, 6: EDITED_AT, 7: SUBSCRIPTIONS}
+# NSFW posts show only to people who turned NSFW on. nsfw is where the post is now; nsfw_marked is what its
+# author answered (NULL for posts from before the question). Where the two differ, the maintainer moved it:
+# those corrections are what a classifier can learn from. Replies follow their post and are never marked.
+NSFW = """
+ALTER TABLE item ADD COLUMN nsfw INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE item ADD COLUMN nsfw_marked INTEGER;
+"""
+
+MIGRATIONS = {1: SCHEMA, 2: SEALED_REPLIES, 3: REMOVED_REASON, 4: REPLY_EDITS, 5: REACTION_TIMES, 6: EDITED_AT, 7: SUBSCRIPTIONS,
+              8: NSFW}
 
 
 def connect(path: Path | str) -> sqlite3.Connection:

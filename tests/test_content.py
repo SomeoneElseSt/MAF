@@ -284,7 +284,7 @@ def test_sort_links_reset_to_each_sorts_starting_page(client, app, pass_id):
 
 def test_line_breaks_survive_from_the_browser_to_the_page(signed_in, app):
     text = "- First point\r\n- Second point\r\n\r\nNew paragraph"
-    signed_in.post("/submit", data={"title": "Lines", "text": text, "tags": "help"})
+    signed_in.post("/submit", data={"nsfw": "No", "title": "Lines", "text": text, "tags": "help"})
     post = app.conn.execute("SELECT id, text FROM item WHERE title = 'Lines'").fetchone()
     assert post["text"] == "- First point\n- Second point\n\nNew paragraph"
     page = signed_in.get(f"/thread/{post['id']}").text
@@ -352,7 +352,7 @@ def test_a_new_post_pings_the_front_page(signed_in, app):
     from maf import live
 
     watching = app.live.subscribe(live.HOME)
-    signed_in.post("/submit", data={"title": "Is the gym open late?"}, follow_redirects=False)
+    signed_in.post("/submit", data={"nsfw": "No", "title": "Is the gym open late?"}, follow_redirects=False)
     assert watching.qsize() == 1
 
 

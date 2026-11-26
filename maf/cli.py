@@ -152,6 +152,18 @@ def cmd_pin(conn: sqlite3.Connection, args, pinned: bool) -> int:
     return 0
 
 
+def cmd_nsfw(conn: sqlite3.Connection, args, nsfw: bool) -> int:
+    """Moves a post to NSFW or back. Takes an id or the post's address (https://…/thread/<id>)."""
+    post_id = args.id.rstrip("/").rsplit("/", 1)[-1].split("#")[0]
+    item = store.get_item(conn, post_id)
+    if item is None or not item.is_post:
+        print(f"No post {post_id}")
+        return 1
+    store.set_nsfw(conn, post_id, nsfw)
+    print(f"Moved {post_id} to " + ("NSFW." if nsfw else "the normal list."))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="maf", description="MAF maintainer commands")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -180,6 +192,12 @@ def build_parser() -> argparse.ArgumentParser:
     unpin = sub.add_parser("unpin", help="unpin a post")
     unpin.add_argument("id")
     unpin.set_defaults(func=lambda conn, args: cmd_pin(conn, args, False))
+    nsfw = sub.add_parser("nsfw", help="move a post to NSFW (id or its address)")
+    nsfw.add_argument("id")
+    nsfw.set_defaults(func=lambda conn, args: cmd_nsfw(conn, args, True))
+    sfw = sub.add_parser("sfw", help="move a post back from NSFW (id or its address)")
+    sfw.add_argument("id")
+    sfw.set_defaults(func=lambda conn, args: cmd_nsfw(conn, args, False))
     return parser
 
 

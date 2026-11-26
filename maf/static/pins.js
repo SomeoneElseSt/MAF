@@ -27,7 +27,10 @@ const snapshotOf = row => ({
   title: row.dataset.title,
   host: row.dataset.host ?? "",
   tags: (row.dataset.tags ?? "").split(" ").filter(Boolean),
+  nsfw: row.hasAttribute("data-nsfw"),
 });
+// Pinned shows only the side you're on: NSFW pins with NSFW on, the rest with it off.
+const nsfwSide = document.body.hasAttribute("data-nsfw");
 
 function setPinned(row, pinned) {
   const button = row.querySelector(".pin");
@@ -118,7 +121,7 @@ const fixedIds = new Set([...document.querySelectorAll(".pinned-list li.fixed")]
 readPins().slice().reverse().forEach(pin => {
   const row = rowsById.get(pin.id);
   if (row) setPinned(row, true);
-  if (!pinnedList || fixedIds.has(pin.id)) return;
+  if (!pinnedList || fixedIds.has(pin.id) || Boolean(pin.nsfw) !== nsfwSide) return;
   const pinnedRow = row ?? rowFromSnapshot(pin);
   setPinned(pinnedRow, true);
   moveToPinned(pinnedRow);

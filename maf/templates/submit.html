@@ -7,6 +7,7 @@
     errors      {field: message} plus an optional "form" entry
 #}
 {% extends "base.html" %}
+{% from "_nsfw_field.html" import nsfw_field with context %}
 {% block main %}
 <h1 class="heading">Submit a post</h1>
 <p class="lede">A title is enough. Add a link or some text if you like. You'll get a random name for this thread.</p>
@@ -42,6 +43,7 @@
     <p class="help" id="tags-help">Up to 3, separated by commas.</p>
     {% if errors.tags %}<p class="help" id="tags-error">{{ errors.tags }}</p>{% endif %}
   </div>
+  {{ nsfw_field(values, errors) }}
   <div class="field">
     <label for="text">Text (optional)</label>
     <textarea id="text" name="text" placeholder="{{ placeholder }}">{{ values.text|default('') }}</textarea>
@@ -55,4 +57,5 @@
 {% endblock %}
 {% block scripts %}
 <script src="{{ static('submit.js') }}"></script>
+<script src="{{ static('nsfw-field.js') }}"></script>
 {% endblock %}

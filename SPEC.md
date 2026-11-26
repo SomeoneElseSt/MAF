@@ -67,6 +67,15 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 - **Empty state:** when there are no posts at all, `/` keeps the sort row and shows "No posts yet." near the top.
 - **Pages:** `/` (four days of posts with search bar and sorter), `/thread/<id>`, `/submit`, `/about`, `/guide` (User Guide), `/guide/use-this-data` (Use this data), `/sign-in`
 
+## NSFW
+
+- **Two sides.** Every post is either normal or NSFW (`item.nsfw`). Lists (front page, Pinned, New, hashtag pages, search, the # menu and All hashtags) show one side only: NSFW posts with NSFW on, the rest with it off. A reply follows its post. A direct link to a post opens on either side.
+- **The switch.** "NSFW" in the header, just before Dark (on phones, on the top row with Dark). It's a per-browser setting like Dark: a `maf_nsfw` cookie the page sets, which the server reads to choose the list and never stores. On, the word is #E2805A. The page takes a warm tint while it's on, so you can always tell which side you're on: #f8e8e2 in light mode, #22100c in dark. The first time it's turned on in a browser, a warning asks first ("Show NSFW" / "Cancel"); after that it switches straight away.
+- **Posting.** The submit form asks "Is NSFW?" (Yes / No, required, from a dropdown like the Hashtags one): "Mark your post appropriately. Inappropriately marked posts will be moved to NSFW." With NSFW on it starts at Yes. The answer sets both `nsfw` (where it shows) and `nsfw_marked` (what the author said).
+- **Moving posts.** The maintainer moves posts with `maf nsfw` / `maf sfw`. Where `nsfw` and `nsfw_marked` differ, the maintainer corrected the author; posts from before the question have `nsfw_marked` NULL. These are the labels an NSFW classifier can learn from.
+- **Personal pins** remember which side their post is on and show only on that side.
+- **The API and MCP** list the normal side only.
+
 ## Hashtags
 
 - **Input:** the submit form's Hashtags field, "Up to 3, separated by commas." Normalise each tag: strip a leading `#`, lowercase, keep `[a-z0-9-]`, 1–24 characters, dedupe. More than 3 re-renders the form with an error on that field. Tags are free-form; there's no fixed list. Clicking into the field drops down suggested tags (the house tags and #minerva); picking one adds it. The list skips tags already in the box, narrows as you type, and hides once there are 3.
@@ -145,6 +154,8 @@ No admin roles, codes or buttons. Moderation is community flags plus the maintai
   | `maf dismiss <id>` | Clears its requests without changing anything |
   | `maf pin <id>` | Sets `pinned = 1` on a post (not a comment). Pinned posts show above Today under Newest |
   | `maf unpin <id>` | Sets `pinned = 0` |
+  | `maf nsfw <id or address>` | Moves a post to NSFW (`nsfw = 1`). Its author's answer stays in `nsfw_marked`, so the move is on record as a correction |
+  | `maf sfw <id or address>` | Moves a post back to the normal side (`nsfw = 0`) |
 
   An unknown id prints `No item #<id>` and exits non-zero.
 - **No bans.**

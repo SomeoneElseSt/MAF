@@ -103,6 +103,8 @@ class Item:
     sealed: str | None = None
     removed_reason: str | None = None
     edited_at: str | None = None
+    nsfw: int = 0
+    nsfw_marked: int | None = None
     tags: list[str] = field(default_factory=list)
     comment_count: int = 0
     thread_title: str | None = None
@@ -145,6 +147,8 @@ def _row_to_item(row: sqlite3.Row, tags: list[str] | None = None) -> Item:
         sealed=row["sealed"],
         removed_reason=row["removed_reason"],
         edited_at=row["edited_at"],
+        nsfw=row["nsfw"],
+        nsfw_marked=row["nsfw_marked"],
         tags=tags or [],
     )
 
@@ -180,13 +184,16 @@ def create_post(
     url: str | None,
     tags: list[str],
     created_at: str | None = None,
+    nsfw: bool = False,
 ) -> Item:
+    """A new post. `nsfw` is the author's answer to "Is NSFW?", kept twice: where it shows, and what was answered."""
     item_id = unused_item_id(conn)
     created_at = created_at or iso(utc_now())
     with conn:
         conn.execute(
-            "INSERT INTO item (id, thread_id, pass_id, title, url, text, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (item_id, item_id, pass_id, title, url, text, created_at),
+            "INSERT INTO item (id, thread_id, pass_id, title, url, text, created_at, nsfw, nsfw_marked)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (item_id, item_id, pass_id, title, url, text, created_at, int(nsfw), int(nsfw)),
         )
         for tag in tags:
             conn.execute("INSERT INTO item_tag (item_id, tag) VALUES (?, ?)", (item_id, tag))
@@ -298,19 +305,19 @@ def latest_comment_times(conn: sqlite3.Connection, thread_ids: list[str], not_by
 NEW_ACTIVITY_LIMIT = 100
 
 
-def new_activity(conn: sqlite3.Connection, viewer_pass: str, since: str) -> list[Item]:
+def new_activity(conn: sqlite3.Connection, viewer_pass: str, since: str, nsfw: bool = False) -> list[Item]:
     """Listed posts with something new since `since` for this pass: posted by someone else after it, or
-    commented on by someone else after it. Newest activity first. The browser decides which of these the
+    commented on by someone else after it. Pinned posts never count (they have their own section). Newest activity first. The browser decides which of these the
     person has already opened (that stays in the browser)."""
     rows = conn.execute(
         "SELECT * FROM ("
         "  SELECT i.*, (SELECT MAX(c.created_at) FROM item c WHERE c.thread_id = i.id AND c.parent_id IS NOT NULL"
         "    AND c.private_to IS NULL AND c.removed_reason IS NULL AND c.pass_id IS NOT ?) AS latest_other"
         "  FROM item i WHERE i.parent_id IS NULL AND i.private_to IS NULL AND i.removed_reason IS NULL"
-        "    AND NOT (i.hidden = 1 AND i.restored = 0)"
+        "    AND NOT (i.hidden = 1 AND i.restored = 0) AND i.nsfw = ?"
         ") WHERE (pass_id IS NOT ? AND created_at > ?) OR latest_other > ? "
         "ORDER BY MAX(created_at, COALESCE(latest_other, '')) DESC LIMIT ?",
-        (viewer_pass, viewer_pass, since, since, NEW_ACTIVITY_LIMIT),
+        (viewer_pass, int(nsfw), viewer_pass, since, since, NEW_ACTIVITY_LIMIT),
     ).fetchall()
     return [_row_to_item(r) for r in rows]
 
@@ -401,8 +408,9 @@ def build_tree(items: list[Item], root_id: str) -> list[dict]:
 # -- listing -------------------------------------------------------------
 
 
-def _post_where(public_only: bool = True) -> str:
-    clauses = ["parent_id IS NULL"]
+def _post_where(public_only: bool = True, nsfw: bool = False) -> str:
+    """Listed posts on one side: NSFW posts only with NSFW on, the rest only with it off."""
+    clauses = ["parent_id IS NULL", f"nsfw = {int(nsfw)}"]
     if public_only:
         clauses.append("private_to IS NULL")
         clauses.append("NOT (hidden = 1 AND restored = 0)")
@@ -417,11 +425,12 @@ def posts_between(
     limit: int | None = None,
     offset: int = 0,
     exclude_pinned: bool = False,
+    nsfw: bool = False,
 ) -> list[Item]:
     """Posts in the 4-day window start..end inclusive, newest/oldest/most viewed."""
     order = {"new": "created_at DESC, rowid DESC", "old": "created_at ASC, rowid ASC", "views": "views DESC, created_at DESC"}[sort]
     lo, hi = iso(day_start(start)), iso(day_start(end + timedelta(days=1)))
-    where = _post_where() + " AND created_at >= ? AND created_at < ?"
+    where = _post_where(nsfw=nsfw) + " AND created_at >= ? AND created_at < ?"
     params: list = [lo, hi]
     if exclude_pinned:
         where += " AND pinned = 0"
@@ -441,55 +450,57 @@ def day_groups(items: list[Item]) -> list[tuple[date, list[Item]]]:
     return list(groups.items())
 
 
-def pinned_posts(conn: sqlite3.Connection) -> list[Item]:
+def pinned_posts(conn: sqlite3.Connection, nsfw: bool = False) -> list[Item]:
     rows = conn.execute(
-        f"SELECT * FROM item WHERE {_post_where()} AND pinned = 1 ORDER BY created_at DESC"
+        f"SELECT * FROM item WHERE {_post_where(nsfw=nsfw)} AND pinned = 1 ORDER BY created_at DESC"
     ).fetchall()
     return [_row_to_item(r, item_tags(conn, r["id"])) for r in rows]
 
 
-def tagged_posts(conn: sqlite3.Connection, tag: str, sort: str, limit: int = PAGE_SIZE, offset: int = 0) -> list[Item]:
+def tagged_posts(conn: sqlite3.Connection, tag: str, sort: str, limit: int = PAGE_SIZE, offset: int = 0,
+                 nsfw: bool = False) -> list[Item]:
     order = {"new": "i.created_at DESC, i.rowid DESC", "old": "i.created_at ASC, i.rowid ASC", "views": "i.views DESC, i.created_at DESC"}[sort]
     sql = (
         "SELECT i.* FROM item i JOIN item_tag t ON t.item_id = i.id "
-        f"WHERE t.tag = ? AND {_post_where()} ORDER BY {order} LIMIT ? OFFSET ?"
+        f"WHERE t.tag = ? AND {_post_where(nsfw=nsfw)} ORDER BY {order} LIMIT ? OFFSET ?"
     )
     rows = conn.execute(sql, (tag, limit, offset)).fetchall()
     return [_row_to_item(r, item_tags(conn, r["id"])) for r in rows]
 
 
-def tagged_count(conn: sqlite3.Connection, tag: str) -> int:
+def tagged_count(conn: sqlite3.Connection, tag: str, nsfw: bool = False) -> int:
     row = conn.execute(
         "SELECT COUNT(*) AS n FROM item_tag t JOIN item i ON i.id = t.item_id "
         "WHERE t.tag = ? AND i.parent_id IS NULL AND i.private_to IS NULL "
-        "AND NOT (i.hidden = 1 AND i.restored = 0)",
-        (tag,),
+        "AND NOT (i.hidden = 1 AND i.restored = 0) AND i.nsfw = ?",
+        (tag, int(nsfw)),
     ).fetchone()
     return row["n"]
 
 
-def tag_counts(conn: sqlite3.Connection) -> list[tuple[str, int]]:
-    """Every tag on a visible public post, most used first then alphabetical."""
+def tag_counts(conn: sqlite3.Connection, nsfw: bool = False) -> list[tuple[str, int]]:
+    """Every tag on a visible public post on this side, most used first then alphabetical."""
     rows = conn.execute(
         "SELECT t.tag AS tag, COUNT(*) AS n FROM item_tag t JOIN item i ON i.id = t.item_id "
         "WHERE i.parent_id IS NULL AND i.private_to IS NULL AND NOT (i.hidden = 1 AND i.restored = 0) "
-        "GROUP BY t.tag ORDER BY n DESC, t.tag ASC"
+        "AND i.nsfw = ? GROUP BY t.tag ORDER BY n DESC, t.tag ASC",
+        (int(nsfw),),
     ).fetchall()
     return [(r["tag"], r["n"]) for r in rows]
 
 
-def has_any_posts(conn: sqlite3.Connection) -> bool:
-    row = conn.execute(f"SELECT 1 FROM item WHERE {_post_where()} LIMIT 1").fetchone()
+def has_any_posts(conn: sqlite3.Connection, nsfw: bool = False) -> bool:
+    row = conn.execute(f"SELECT 1 FROM item WHERE {_post_where(nsfw=nsfw)} LIMIT 1").fetchone()
     return row is not None
 
 
-def first_post_day(conn: sqlite3.Connection) -> date | None:
-    row = conn.execute(f"SELECT MIN(created_at) AS m FROM item WHERE {_post_where()}").fetchone()
+def first_post_day(conn: sqlite3.Connection, nsfw: bool = False) -> date | None:
+    row = conn.execute(f"SELECT MIN(created_at) AS m FROM item WHERE {_post_where(nsfw=nsfw)}").fetchone()
     return parse_iso(row["m"]).date() if row and row["m"] else None
 
 
-def latest_post_day(conn: sqlite3.Connection) -> date | None:
-    row = conn.execute(f"SELECT MAX(created_at) AS m FROM item WHERE {_post_where()}").fetchone()
+def latest_post_day(conn: sqlite3.Connection, nsfw: bool = False) -> date | None:
+    row = conn.execute(f"SELECT MAX(created_at) AS m FROM item WHERE {_post_where(nsfw=nsfw)}").fetchone()
     return parse_iso(row["m"]).date() if row and row["m"] else None
 
 
@@ -499,20 +510,21 @@ def search(
     sort: str = "new",
     limit: int = PAGE_SIZE,
     offset: int = 0,
+    nsfw: bool = False,
 ) -> list[Item]:
-    """FTS5 over public titles, text and comments; hidden items excluded.
+    """FTS5 over public titles, text and comments on this side (a comment's side is its post's); hidden items excluded.
     Matching posts come first, then matching comments, each in the chosen order."""
     match = _fts_query(query)
     if not match:
         return []
     order = {"new": "i.created_at DESC", "old": "i.created_at ASC", "views": "i.views DESC"}[sort]
     sql = (
-        "SELECT i.* FROM item_fts f JOIN item i ON i.rowid = f.rowid "
-        "WHERE item_fts MATCH ? AND NOT (i.hidden = 1 AND i.restored = 0) "
+        "SELECT i.* FROM item_fts f JOIN item i ON i.rowid = f.rowid JOIN item p ON p.id = i.thread_id "
+        "WHERE item_fts MATCH ? AND NOT (i.hidden = 1 AND i.restored = 0) AND p.nsfw = ? "
         f"ORDER BY i.parent_id IS NOT NULL, {order} LIMIT ? OFFSET ?"
     )
     try:
-        rows = conn.execute(sql, (match, limit, offset)).fetchall()
+        rows = conn.execute(sql, (match, int(nsfw), limit, offset)).fetchall()
     except sqlite3.OperationalError:
         return []
     items = [_row_to_item(r, item_tags(conn, r["id"])) for r in rows]
@@ -693,6 +705,14 @@ def edit_item(conn: sqlite3.Connection, item_id: str, text: str | None, sealed: 
 def dismiss_requests(conn: sqlite3.Connection, item_id: str) -> bool:
     cur = conn.execute("DELETE FROM moderation_request WHERE item_id = ?", (item_id,))
     conn.commit()
+    return cur.rowcount > 0
+
+
+def set_nsfw(conn: sqlite3.Connection, item_id: str, nsfw: bool) -> bool:
+    """The maintainer moves a post to NSFW or back. Its author's answer (nsfw_marked) is kept, so the move
+    stays on record as a correction. False if there's no such post."""
+    with conn:
+        cur = conn.execute("UPDATE item SET nsfw = ? WHERE id = ? AND parent_id IS NULL", (int(nsfw), item_id))
     return cur.rowcount > 0
 
 

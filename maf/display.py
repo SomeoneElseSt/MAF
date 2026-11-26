@@ -62,6 +62,13 @@ def range_label(start: date, end: date) -> str:
     return f"{short_date(start)} to {short_date(end)}"
 
 
+def short_range_label(start: date, end: date) -> str:
+    """For phones: '19–22 Nov', or '28 Oct–1 Nov' across months."""
+    if start.month == end.month:
+        return f"{start.day}–{end.day} {MONTH_NAMES[end.month - 1][:3]}"
+    return f"{start.day} {MONTH_NAMES[start.month - 1][:3]}–{end.day} {MONTH_NAMES[end.month - 1][:3]}"
+
+
 def four_day_window(end: date) -> tuple[date, date]:
     return end - timedelta(days=3), end
 

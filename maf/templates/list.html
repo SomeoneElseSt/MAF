@@ -24,7 +24,7 @@
 
 {% macro sort_row() %}
 <div class="listbar">
-  <div class="sort"><span>Sort by:</span>
+  <div class="sort"><span class="sort-label">Sort by:</span>
     {% for key, label in sort_keys.items() %}
       {% if key == sort %}<strong data-text="{{ label }}" aria-current="true">{{ label }}</strong>{% else %}<a href="{{ sort_links[key] if sort_links else sort_url(key) }}" data-text="{{ label }}">{{ label }}</a>{% endif %}
     {% endfor %}
@@ -32,7 +32,7 @@
   {% if date_range %}
   <span class="range"{% if range_start %} data-start="{{ range_start }}" data-end="{{ range_end }}"{% endif %}>
     {% if prev_url %}<a class="arrow" href="{{ prev_url }}" aria-label="Earlier 4 days">‹</a>{% else %}<span class="arrow" aria-disabled="true">‹</span>{% endif %}
-    <span>{{ date_range }}</span>
+    <span class="long-date">{{ date_range }}</span>{% if date_range_short %}<span class="short-date">{{ date_range_short }}</span>{% endif %}
     {% if next_url %}<a class="arrow" href="{{ next_url }}" aria-label="Later 4 days">›</a>{% else %}<span class="arrow" aria-disabled="true">›</span>{% endif %}
   </span>
   {% endif %}

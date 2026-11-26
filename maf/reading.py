@@ -102,7 +102,7 @@ def new_activity(request: Request) -> Response:
     since = request.query_params.get("since", "")
     if not page.pass_id or not MOMENT.fullmatch(since):
         return Response(status_code=400)
-    posts = store.with_comment_counts(page.conn, store.new_activity(page.conn, page.pass_id, since))
+    posts = store.with_comment_counts(page.conn, store.new_activity(page.conn, page.pass_id, since, page.nsfw))
     latest = store.latest_comment_times(page.conn, [p.id for p in posts], not_by=page.pass_id)
     return render(page, "new-rows.html", posts=posts, latest_comments=latest)
 

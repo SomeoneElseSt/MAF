@@ -6,6 +6,7 @@
     placeholder the Text box hint
 #}
 {% extends "base.html" %}
+{% from "_nsfw_field.html" import nsfw_field with context %}
 {% block main %}
 <h1 class="heading">Submit a post</h1>
 
@@ -18,6 +19,7 @@
       <input type="hidden" name="url" value="{{ values.url }}">
       <input type="hidden" name="text" value="{{ values.text }}">
       <input type="hidden" name="tags" value="{{ values.tags }}">
+      <input type="hidden" name="nsfw" value="{{ values.nsfw }}">
       <input type="hidden" name="confirm_names" value="1">
       <button class="button" type="submit" data-pending="Submitting…">Post anyway</button>
     </form>
@@ -38,6 +40,7 @@
     <input id="tags" name="tags" type="text" value="{{ values.tags }}">
     <p class="help">Up to 3, separated by commas.</p>
   </div>
+  {{ nsfw_field(values, {}) }}
   <div class="field">
     <label for="text">Text (optional)</label>
     <textarea id="text" name="text" placeholder="{{ placeholder }}">{{ values.text }}</textarea>
@@ -47,4 +50,7 @@
     <a class="note" href="/">Cancel</a>
   </div>
 </form>
+{% endblock %}
+{% block scripts %}
+<script src="{{ static('nsfw-field.js') }}"></script>
 {% endblock %}

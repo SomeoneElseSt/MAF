@@ -39,7 +39,7 @@ def test_edit_label_goes_in_the_first_paragraph():
 
 
 def test_reply_markdown_shows_on_the_thread(signed_in, app):
-    signed_in.post("/submit", data={"title": "Md", "text": "**strong post**", "tags": "help"})
+    signed_in.post("/submit", data={"nsfw": "No", "title": "Md", "text": "**strong post**", "tags": "help"})
     post = app.conn.execute("SELECT id FROM item WHERE title = 'Md'").fetchone()
     signed_in.post("/comment", data={"parent_id": post["id"], "thread_id": post["id"], "text": "> quoted"})
     page = signed_in.get(f"/thread/{post['id']}").text
@@ -64,7 +64,7 @@ def test_plain_drops_the_symbols():
 
 
 def test_title_markdown_on_the_thread_and_plain_in_the_tab(signed_in, app):
-    signed_in.post("/submit", data={"title": "A **bold** title", "tags": "help"})
+    signed_in.post("/submit", data={"nsfw": "No", "title": "A **bold** title", "tags": "help"})
     post = app.conn.execute("SELECT id FROM item WHERE title = 'A **bold** title'").fetchone()
     page = signed_in.get(f"/thread/{post['id']}").text
     assert "<h1>A <strong>bold</strong> title</h1>" in page

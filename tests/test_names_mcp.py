@@ -84,7 +84,7 @@ def test_chat_abbreviations_are_taken_out_as_whole_words_only():
 def test_warning_keeps_the_text_and_offers_post_anyway(filtering_app):
     app, client = filtering_app
     sign_in(client, app)
-    body = client.post("/submit", data={"title": "What Ben Nelson got right", "text": "Reading the essays"}).text
+    body = client.post("/submit", data={"nsfw": "No", "title": "What Ben Nelson got right", "text": "Reading the essays"}).text
     assert "This looks like it names someone" in body
     assert "Reading the essays" in body
     assert "Post anyway" in body and "Edit post" in body
@@ -95,7 +95,7 @@ def test_confirm_names_posts_anyway(filtering_app):
     sign_in(client, app)
     response = client.post(
         "/submit",
-        data={"title": "What Ben Nelson got right", "text": "Reading", "confirm_names": "1"},
+        data={"nsfw": "No", "title": "What Ben Nelson got right", "text": "Reading", "confirm_names": "1"},
         follow_redirects=False,
     )
     assert response.status_code == 303

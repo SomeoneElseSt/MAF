@@ -1,0 +1,21 @@
+{#
+  The "Is NSFW?" question on the submit form (and its name-warning copy). Answered from a dropdown like the
+  Hashtags one (nsfw-field.js); the box itself holds "Yes" or "No" and is what's sent. Required: the
+  server says so with the form's other errors.
+  Uses: values.nsfw (to re-fill), errors.nsfw, nsfw_mode (posting with NSFW on starts at Yes).
+#}
+{% macro nsfw_field(values, errors) %}
+{% set answer = values.nsfw if values.nsfw in ("Yes", "No") else ("Yes" if nsfw_mode else "") %}
+<div class="field">
+  <label for="nsfw">Is NSFW?</label>
+  <div class="tag-field">
+    <input id="nsfw" name="nsfw" type="text" class="nsfw-answer" readonly placeholder="Yes or No" value="{{ answer }}" autocomplete="off" aria-haspopup="listbox" aria-expanded="false" aria-controls="nsfw-menu" aria-describedby="nsfw-help{% if errors and errors.nsfw %} nsfw-error{% endif %}">
+    <div class="tag-menu tag-suggest" id="nsfw-menu" role="listbox" hidden><div class="tag-scroll">
+      <button type="button" role="option" data-answer="Yes"><span>Yes</span></button>
+      <button type="button" role="option" data-answer="No"><span>No</span></button>
+    </div></div>
+  </div>
+  <p class="help" id="nsfw-help">Mark your post appropriately. Inappropriately marked posts will be moved to NSFW.</p>
+  {% if errors and errors.nsfw %}<p class="help" id="nsfw-error">{{ errors.nsfw }}</p>{% endif %}
+</div>
+{% endmacro %}

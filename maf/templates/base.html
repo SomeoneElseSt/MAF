@@ -40,7 +40,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <script src="{{ static('theme-init.js') }}"></script>
 </head>
-<body class="{{ body_class|default('') }}" data-now="{{ server_now }}"{% if reply_placeholder is defined and reply_placeholder %} data-reply-placeholder="{{ reply_placeholder|e }}"{% endif %}>
+<body class="{{ body_class|default('') }}" data-now="{{ server_now }}"{% if nsfw_mode %} data-nsfw{% endif %}{% if reply_placeholder is defined and reply_placeholder %} data-reply-placeholder="{{ reply_placeholder|e }}"{% endif %}>
 <a class="skip" href="#main">Skip to content</a>
 <div class="page">
   <header class="top">
@@ -67,8 +67,16 @@
       <div class="tag-menu bell-menu" id="bell-menu" hidden></div>
     </div>
     {% endif %}
+    {% if viewer %}<button class="nsfw-toggle" type="button" aria-pressed="{{ 'true' if nsfw_mode else 'false' }}">NSFW</button>{% endif %}
     <button class="theme-toggle" type="button">Dark</button>
   </header>
+  {% if viewer %}
+  {# The first time NSFW is turned on in this browser, it asks first (nsfw.js). #}
+  <dialog id="nsfw-dialog">
+    <p>NSFW posts are about sex and other things you might not want on your screen in class or at work.</p>
+    <div class="row"><button class="button" type="button" data-nsfw-yes>Show NSFW</button><button class="button plain" type="button" data-nsfw-no>Cancel</button></div>
+  </dialog>
+  {% endif %}
   <main id="main">
 {% block main %}{% endblock %}
   </main>
@@ -84,7 +92,7 @@
 <script src="{{ static('grow.js') }}"></script>
 {% if tags %}<script type="application/json" id="tag-data">{{ tags|tojson }}</script>{% endif %}
 <script src="{{ static('tags.js') }}"></script>
-{% if viewer %}<script src="{{ static('bell.js') }}"></script>{% endif %}
+{% if viewer %}<script src="{{ static('bell.js') }}"></script><script src="{{ static('nsfw.js') }}"></script>{% endif %}
 {% block scripts %}{% endblock %}
 </body>
 </html>

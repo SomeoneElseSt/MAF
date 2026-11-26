@@ -14,7 +14,7 @@ from starlette.staticfiles import StaticFiles
 
 from . import auth, housetags, post, reactions, reading, store
 from .app import App, build_app
-from .display import day_label, four_day_window, range_label
+from .display import day_label, four_day_window, range_label, short_range_label
 from .settings import Settings, load_settings
 from .util import iso, parse_date, today, utc_now
 from .web import make_templates, page_of, redirect, render, sort_param
@@ -37,7 +37,7 @@ def render_tag(page, tag: str, sort: str, page_number: int):
     """Posts with one tag, across all time, 30 per page (SPEC Hashtags)."""
     conn = page.conn
     offset = (page_number - 1) * store.PAGE_SIZE
-    rows = store.tagged_posts(conn, tag, sort, store.PAGE_SIZE + 1, offset)
+    rows = store.tagged_posts(conn, tag, sort, store.PAGE_SIZE + 1, offset, nsfw=page.nsfw)
     has_next = len(rows) > store.PAGE_SIZE
     results = store.with_comment_counts(conn, rows[: store.PAGE_SIZE])
     pager = {
@@ -58,13 +58,15 @@ def _tag_url(tag: str, sort: str, page_number: int) -> str:
 
 def render_home(page, sort, before, after):
     conn = page.conn
-    if not store.has_any_posts(conn):
+    nsfw = page.nsfw
+    if not store.has_any_posts(conn, nsfw):
         return render(page, "list.html", kind="home", title="", empty=True,
                       groups=[], pinned=[], date_range=range_label(*four_day_window(today())),
+                      date_range_short=short_range_label(*four_day_window(today())),
                       sort_links=HOME_SORT_LINKS, prev_url=None, next_url=None)
 
-    first_day = store.first_post_day(conn)
-    window_end = _window_end(conn, sort, before, after)
+    first_day = store.first_post_day(conn, nsfw)
+    window_end = _window_end(conn, sort, before, after, nsfw)
     # Nothing to show before the first post: a window ending earlier opens the earliest one instead.
     if first_day and window_end < first_day:
         window_end = first_day + timedelta(days=3)
@@ -72,29 +74,29 @@ def render_home(page, sort, before, after):
     pinned: list = []
     exclude_pinned = False
     if sort == "new" and before is None:
-        pinned = store.with_comment_counts(conn, store.pinned_posts(conn))
+        pinned = store.with_comment_counts(conn, store.pinned_posts(conn, nsfw))
         exclude_pinned = True
-    posts = store.with_comment_counts(conn, store.posts_between(conn, start, end, sort, exclude_pinned=exclude_pinned))
+    posts = store.with_comment_counts(conn, store.posts_between(conn, start, end, sort, exclude_pinned=exclude_pinned, nsfw=nsfw))
     latest = store.latest_comment_times(conn, [post.thread_id for post in pinned + posts], not_by=page.pass_id)
     groups = [(day_label(day), rows) for day, rows in store.day_groups(posts)]
     # The ‹ arrow stops at the window holding the first post.
     prev_url = _page_url(sort, (start - timedelta(days=1)).isoformat()) if first_day and start > first_day else None
     next_url = _next_url(sort, end)
     return render(page, "list.html", kind="home", title="", empty=False,
-                  groups=groups, pinned=pinned, latest_comments=latest, date_range=range_label(start, end),
+                  groups=groups, pinned=pinned, latest_comments=latest, date_range=range_label(start, end), date_range_short=short_range_label(start, end),
                   prev_url=prev_url, next_url=next_url, sort_links=HOME_SORT_LINKS,
                   day_param=end.isoformat(), now=iso(utc_now()),
                   range_start=start.isoformat(), range_end=end.isoformat())
 
 
-def _window_end(conn, sort, before, after):
+def _window_end(conn, sort, before, after, nsfw=False):
     """The last day of the 4-day window, so the range label always matches the posts."""
     if before:
         return before - timedelta(days=1)
     if after:
         return after + timedelta(days=3)
     if sort == "old":
-        first = store.first_post_day(conn) or today()
+        first = store.first_post_day(conn, nsfw) or today()
         return first + timedelta(days=3)
     return today()
 
@@ -126,7 +128,7 @@ def search(request: Request) -> Response:
     page_number = max(1, int(request.query_params.get("page", "1") or 1))
     offset = (page_number - 1) * store.PAGE_SIZE
     results = store.with_comment_counts(
-        page.conn, store.search(page.conn, query, sort, store.PAGE_SIZE + 1, offset)
+        page.conn, store.search(page.conn, query, sort, store.PAGE_SIZE + 1, offset, nsfw=page.nsfw)
     ) if query else []
     has_next = len(results) > store.PAGE_SIZE
     results = results[: store.PAGE_SIZE]
@@ -149,7 +151,7 @@ def _search_url(query: str, sort: str, page_number: int) -> str:
 
 def tags_page(request: Request) -> Response:
     page = page_of(request)
-    return render(page, "tags.html", title="Hashtags", tag_list=store.tag_counts(page.conn))
+    return render(page, "tags.html", title="Hashtags", tag_list=store.tag_counts(page.conn, page.nsfw))
 
 
 def about(request: Request) -> Response:

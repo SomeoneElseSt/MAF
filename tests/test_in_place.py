@@ -2,7 +2,7 @@
 
 
 def _post(signed_in, app):
-    signed_in.post("/submit", data={"title": "In place", "tags": "help"})
+    signed_in.post("/submit", data={"nsfw": "No", "title": "In place", "tags": "help"})
     return app.conn.execute("SELECT id FROM item WHERE title = 'In place'").fetchone()["id"]
 
 

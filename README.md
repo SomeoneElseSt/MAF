@@ -103,7 +103,7 @@ HTTPS certificates are automatic. To ship updates later, `deploy/release.sh` run
 
 ### Moderating
 
-There are no admin pages. You moderate with the `maf` command on the server: `maf requests` and `maf hidden` list what needs a look, then `maf unhide`, `maf remove` or `maf nuke`. See the Moderation section of [SPEC.md](SPEC.md).
+There are no admin pages. You moderate with the `maf` command on the server: `maf requests` and `maf hidden` list what needs a look, then `maf unhide`, `maf remove` or `maf nuke`. `maf nsfw` and `maf sfw` move a post to the NSFW side and back. See the Moderation section of [SPEC.md](SPEC.md).
 
 ## Contributing
 
