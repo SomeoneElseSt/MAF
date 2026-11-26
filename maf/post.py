@@ -69,9 +69,11 @@ async def save_profile(request: Request) -> Response:
     page = page_of(request)
     if page.pass_id is None:
         return _login(page)
-    values = await form_values(request, *profiles.CHOICES, "comment")
+    values = await form_values(request, *profiles.CHOICES, "comment", "can_encrypt")
     profile = store.own_profile(page.conn, page.pass_id)
     errors = await _profile_errors(page, values)
+    if profile is None and values["can_encrypt"] != "1":  # replies are encrypted for this device (dates-form.js)
+        errors = {**errors, "form": "Your browser doesn't seem to support JavaScript. Turn it on, or use another browser."}
     if errors:
         return render_dates(page, "dates-submit.html", status_code=400, profile=profile, choices=profiles.CHOICES,
                             title="Edit your profile" if profile else "Make your profile", values=values, errors=errors)

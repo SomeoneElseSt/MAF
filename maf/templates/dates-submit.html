@@ -21,6 +21,7 @@
 {% endif %}
 
 <form action="{{ '/dates/edit' if profile else '/dates/submit' }}" method="post" data-full-page>
+  {% if not profile %}<input type="hidden" name="can_encrypt" value="">{% endif %}
   {{ choice_field("region", "From", choices.region, "Where you're from", values, errors, help="To give people a sense of you.") }}
   {{ choice_field("gender", "Gender", choices.gender, "How you identify", values, errors) }}
   {{ choice_field("height", "Height", choices.height, "Pick a range", values, errors) }}
@@ -56,5 +57,6 @@
 {% endblock %}
 {% block scripts %}
 <script src="{{ static('choice.js') }}"></script>
+<script src="{{ static('dates-form.js') }}"></script>
 {% if profile %}<script src="{{ static('dates-thread.js') }}"></script>{% endif %}
 {% endblock %}
