@@ -155,7 +155,8 @@ def test_profile_replies_show_match_hide_sent_and_unmatch_without_flag(signed_in
     theirs = _post(app, "Their profile post")
     _move(app, theirs.id, "dates")
     store.create_comment(app.conn, pass_id, store.get_item(app.conn, theirs.id), "My profile", None)
-    assert '<span class="sent">Sent</span>' in signed_in.get(f"/dates/thread/{theirs.id}").text
+    sender_view = signed_in.get(f"/dates/thread/{theirs.id}").text
+    assert 'class="sent"' not in sender_view and 'aria-controls="delete-' in sender_view
 
 
 def _post_by(app, pass_id, title):

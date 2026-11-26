@@ -595,7 +595,6 @@ body[data-board="dates"] { --paper: var(--dates-paper); --tint: var(--dates-tint
 /* Dates threads: Reply with profile sits where the comment box would start; its notice opens just under it. */
 .profile-reply .row { margin-top: 4px; }
 .notice.need-profile { margin-top: 12px; }
-.actions .sent { color: var(--meta); }
 /* A profile's replies: a grey count, then a line, and the same line between each reply profile. */
 :root { --divider: color-mix(in srgb, var(--ink) 18%, transparent); }
 .profile-replies-count { margin: 4px 0 0; padding-bottom: 10px; border-bottom: 1px solid var(--divider); color: var(--meta); font: 15px var(--sans); }

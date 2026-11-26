@@ -144,11 +144,11 @@
     {% if profile_reply %}
     {# A reply to a profile is the sender's profile, seen only by the two of them, so there's no Flag. The owner
        answers it with Match (asks first, then opens private messages) or Hide (asks first; it's gone for good);
-       the sender sees that it's Sent. Once they're talking (messages under it), either one can Unmatch. #}
+       the sender sees only Delete. Once they're talking (messages under it), either one can Unmatch. #}
     {% set matched = node.children|length > 0 %}
     {% if matched and (post_mine or mine) %}<button class="unmatch" type="button" data-unmatch="{{ entry.id }}">Unmatch</button>
     {% elif post_mine and not mine %}<button class="match" type="button" data-reply="reply-{{ entry.id }}">Match</button><button class="hide-profile" type="button" data-hide="{{ entry.id }}">Hide</button>
-    {% elif mine %}<span class="sent">Sent</span>{% endif %}
+    {% endif %}
     {% else %}
     <a class="reply-toggle" href="#reply-{{ entry.id }}" aria-controls="reply-{{ entry.id }}" aria-expanded="false">Reply</a>
     {% if not entry.private_to %}<form action="/flag" method="post" class="inline-form"><input type="hidden" name="item_id" value="{{ entry.id }}"><input type="hidden" name="thread_id" value="{{ post.id }}"><button type="submit"{% if flags.get(entry.id) %} class="flagged"{% endif %} aria-pressed="{{ 'true' if flags.get(entry.id) else 'false' }}">{% if flags.get(entry.id) %}Flagged{% else %}Flag{% endif %}{{ flag_count(entry) }}</button></form>{% if flags.get(entry.id) %}<span class="flag-note">5 flags hide a comment. Urgent? Email <a href="mailto:{{ org.contact_email }}">{{ org.contact_email }}</a>.</span>{% endif %}{% endif %}
