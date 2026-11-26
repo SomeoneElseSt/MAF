@@ -244,3 +244,18 @@ def test_after_sending_your_profile_the_button_says_replied(signed_in, app, pass
     store.create_comment(app.conn, pass_id, store.get_item(app.conn, theirs.id), "My profile", None)
     page = signed_in.get(f"/dates/thread/{theirs.id}").text
     assert ">Replied</button>" in page and "Reply with profile" not in page
+
+
+def test_the_feed_says_when_someone_sends_their_profile_and_when_they_match(app, pass_id):
+    mine = _post_by(app, pass_id, "My profile")
+    _move(app, mine.id, "dates")
+    them = store.create_pass(app.conn)
+    store.create_comment(app.conn, them, mine, "Their profile", None)
+    theirs = _post_by(app, them, "Their profile post")
+    _move(app, theirs.id, "dates")
+    sent = store.create_comment(app.conn, pass_id, store.get_item(app.conn, theirs.id), "My profile", None)
+    first = store.create_comment(app.conn, them, sent, "Hi!", pass_id)
+    hello = store.create_comment(app.conn, pass_id, first, "Hello", them)
+    store.create_comment(app.conn, them, hello, "Friday?", pass_id)
+    labels = [n["label"] for n in store.notifications(app.conn, pass_id)]
+    assert sorted(labels) == sorted(["Someone replied with their profile", "Someone matched with you", "New message from your match"])

@@ -49,12 +49,6 @@
     return days === 1 ? "Yesterday" : `${days} days ago`;
   }
 
-  function label(item) {
-    if (item.kind === "activity") return "New activity on a post you subscribed to";
-    if (item.kind === "reply") return `New reply to your ${item.on}`;
-    return `${item.emoji.join(" ")} ${plural(item.times.length, "reaction")} on your ${item.on}`;
-  }
-
   function paint(count) {
     badge.textContent = count > MAX_SHOWN_COUNT ? `${MAX_SHOWN_COUNT}+` : String(count);
     bell.classList.toggle("has-new", count > 0);
@@ -89,7 +83,7 @@
     link.addEventListener("click", event => follow(event, item.url));
     const what = document.createElement("span");
     what.className = "bell-what";
-    what.textContent = label(item);
+    what.textContent = item.label; // worded by the server (store.notifications), same as the Feed page
     if (isNew(item)) {
       const tag = document.createElement("span");
       tag.className = "new-tag";

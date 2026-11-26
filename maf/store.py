@@ -844,6 +844,23 @@ def _snippet(row: sqlite3.Row) -> str:
     return text if len(text) <= SNIPPET_LENGTH else text[:SNIPPET_LENGTH].rstrip() + "…"
 
 
+def _reply_label(row: sqlite3.Row) -> str:
+    """What a reply says in the Feed. On Dates: someone's profile sent to yours, or a match (the owner's first
+    message under the profile you sent)."""
+    if row["on_profile"] and row["on_post"]:
+        return "Someone replied with their profile"
+    if row["on_profile"] and row["first_from_owner"]:
+        return "Someone matched with you"
+    if row["on_profile"]:
+        return "New message from your match"
+    return f"New reply to your {'post' if row['on_post'] else 'comment'}"
+
+
+def _reply_about(row: sqlite3.Row) -> str:
+    """Which post or reply it's about. On Dates, the profile's title: a profile reply's own words are its answers."""
+    return markdown.plain(row["p_title"]) if row["on_profile"] else _snippet(row)
+
+
 def notifications(conn: sqlite3.Connection, pass_id: str) -> list[dict]:
     """What's new on your posts and replies, newest first: replies from others, others' reactions
     (grouped per post or reply, with each reaction's time so the browser can count the new ones), and
@@ -851,8 +868,12 @@ def notifications(conn: sqlite3.Connection, pass_id: str) -> list[dict]:
     and your own activity never appear."""
     replies = conn.execute(
         "SELECT c.id, c.thread_id, c.created_at, t.parent_id IS NULL AS on_post, "
-        "t.title AS t_title, t.text AS t_text, t.sealed AS t_sealed "
-        "FROM item c JOIN item t ON t.id = c.parent_id "
+        "t.title AS t_title, t.text AS t_text, t.sealed AS t_sealed, "
+        # Dates: the profile it's on, and whether this is the profile's owner first answering your profile (a match)
+        "p.title AS p_title, p.board = 'dates' AND p.pinned = 0 AS on_profile, "
+        "c.pass_id = p.pass_id AND t.parent_id = p.id AND c.id = (SELECT f.id FROM item f WHERE f.parent_id = t.id "
+        "  AND f.pass_id = p.pass_id ORDER BY f.created_at, f.id LIMIT 1) AS first_from_owner "
+        "FROM item c JOIN item t ON t.id = c.parent_id JOIN item p ON p.id = c.thread_id "
         "WHERE t.pass_id = ? AND c.pass_id != ? AND (c.private_to IS NULL OR c.private_to = ?) "
         "AND c.removed_reason IS NULL AND NOT (c.hidden = 1 AND c.restored = 0) AND t.removed_reason IS NULL "
         "ORDER BY c.created_at DESC LIMIT ?",
@@ -877,10 +898,11 @@ def notifications(conn: sqlite3.Connection, pass_id: str) -> list[dict]:
     ).fetchall()
     found = [
         {"kind": "activity", "on": "post" if not f["parent_id"] else "comment", "about": _snippet(f),
+         "label": "New activity on a post you subscribed to",
          "url": f"/thread/{f['thread_id']}#{f['id']}", "at": f["created_at"], "times": [f["created_at"]]}
         for f in followed
     ] + [
-        {"kind": "reply", "on": "post" if r["on_post"] else "comment", "about": _snippet(r),
+        {"kind": "reply", "on": "post" if r["on_post"] else "comment", "about": _reply_about(r), "label": _reply_label(r),
          "url": f"/thread/{r['thread_id']}#{r['id']}", "at": r["created_at"], "times": [r["created_at"]]}
         for r in replies
     ] + [
@@ -889,6 +911,10 @@ def notifications(conn: sqlite3.Connection, pass_id: str) -> list[dict]:
          "times": r["times"].split(" "), "emoji": list(dict.fromkeys(r["emoji"].split(" ")))}
         for r in reactions
     ]
+    for n in found:
+        if n["kind"] == "reactions":
+            count = len(n["times"])
+            n["label"] = f"{' '.join(n['emoji'])} {count} reaction{'' if count == 1 else 's'} on your {n['on']}"
     found.sort(key=lambda n: n["at"], reverse=True)
     return found[:NOTIFICATIONS_SHOWN]
 
