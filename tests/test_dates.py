@@ -191,3 +191,15 @@ def test_your_profile_counts_its_replies_above_a_line(signed_in, app, pass_id):
     page = signed_in.get(f"/dates/thread/{mine.id}").text
     assert '<p class="profile-replies-count">2 people replied with their profiles</p>' in page
     assert 'class="comments profile-replies"' in page
+
+
+def test_a_match_box_waits_until_the_other_person_has_a_device_key(signed_in, app, pass_id):
+    mine = _post_by(app, pass_id, "My profile")
+    _move(app, mine.id, "dates")
+    them = store.create_pass(app.conn)
+    store.create_comment(app.conn, them, mine, "Their profile", None)
+    page = signed_in.get(f"/dates/thread/{mine.id}").text
+    assert "once they open this thread on their device" in page
+    app.conn.execute("INSERT INTO thread_key (pass_id, thread_id, public_key) VALUES (?, ?, 'k')", (them, mine.id))
+    app.conn.commit()
+    assert "once they open this thread on their device" not in signed_in.get(f"/dates/thread/{mine.id}").text

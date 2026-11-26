@@ -51,12 +51,16 @@
 {% macro reply_fields(entry) %}
 {# A refused reply's words come back even if this browser kept no draft. #}
 <input type="hidden" name="parent_id" value="{{ entry.id }}"><input type="hidden" name="thread_id" value="{{ post.id }}">
-<textarea name="text" aria-label="Write a reply" placeholder="{{ reply_placeholder or 'Write a reply' }}">{% if names_form == 'reply-' ~ entry.id %}{{ names_text }}{% endif %}</textarea>
+{% set peer = peer_of(entry)|trim %}
+{% set unreachable = is_profile and not thread_keys.get(peer) %}
+<textarea name="text" aria-label="Write a reply" placeholder="{{ reply_placeholder or 'Write a reply' }}"{% if unreachable %} disabled{% endif %}>{% if names_form == 'reply-' ~ entry.id %}{{ names_text }}{% endif %}</textarea>
 <p class="help">Replying as: <button class="id" type="button">{{ my_label }}</button>{% if org.naming_rule %} <span class="dot">·</span> Please don't name students or staff.{% endif %}
-  {% if is_profile %}{# On a profile everything you write is between the two of you, so it always says so. #}<input type="hidden" name="private" value="on"> <span class="dot">·</span> <span class="private-note">Only visible to {{ label_of[peer_of(entry)|trim] }}</span>
+  {% if is_profile %}{# On a profile everything you write is between the two of you, so it always says so. #}<input type="hidden" name="private" value="on"> <span class="dot">·</span> <span class="private-note">Only visible to {{ label_of[peer] }}</span>
   {% elif entry.pass_id != viewer %}{{ private_toggle(label_of[entry.pass_id], entry.private_to) }}{% endif %}
 </p>
-<div class="row"><button class="button" type="submit" data-pending="Replying…" data-needs-text>Reply</button><a class="button plain cancel" href="#{{ entry.id }}">Cancel</a></div>
+{# Messages are encrypted to the device the other person used here; until they've opened this thread there's none. #}
+{% if unreachable %}<p class="help">You can message {{ label_of[peer] }} once they open this thread on their device.</p>{% endif %}
+<div class="row">{% if unreachable %}<button class="button" type="submit" disabled>Reply</button>{% else %}<button class="button" type="submit" data-pending="Replying…" data-needs-text>Reply</button>{% endif %}<a class="button plain cancel" href="#{{ entry.id }}">Cancel</a></div>
 {% endmacro %}
 
 {% macro reactions_box(entry) %}
