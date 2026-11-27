@@ -67,6 +67,26 @@ def cmd_usage(conn: sqlite3.Connection, args) -> int:
     return 0
 
 
+STATS_DELTA_HOURS = 12
+
+
+def _signed(n: int) -> str:
+    return f"+{n}" if n > 0 else ("0" if n == 0 else str(n))
+
+
+def cmd_stats(conn: sqlite3.Connection, args) -> int:
+    """Descriptive counts of the site, with how much of each is new in the last 12 hours."""
+    from datetime import UTC, datetime, timedelta
+
+    from .util import iso
+
+    since = iso(datetime.now(UTC) - timedelta(hours=STATS_DELTA_HOURS))
+    rows = [[m.name, str(m.total), "-" if m.recent is None else _signed(m.recent)]
+            for m in store.site_stats(conn, since)]
+    print(_table(rows, ["metric", "total", f"last {STATS_DELTA_HOURS}h"]))
+    return 0
+
+
 def cmd_requests(conn: sqlite3.Connection, args) -> int:
     rows = store.open_requests(conn)
     if not rows:
@@ -205,6 +225,7 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("requests", help="items with open moderation requests").set_defaults(func=cmd_requests)
     sub.add_parser("usage", help="API request counts per endpoint, from MAF_USAGE_LOG").set_defaults(func=cmd_usage)
+    sub.add_parser("stats", help=f"site totals, with the change in the last {STATS_DELTA_HOURS} hours").set_defaults(func=cmd_stats)
     sub.add_parser("hidden", help="hidden items").set_defaults(func=cmd_hidden)
     show = sub.add_parser("show", help="print one item")
     show.add_argument("id")

@@ -851,6 +851,51 @@ def reply_count(conn: sqlite3.Connection, item_id: str) -> int:
     return row["n"]
 
 
+# -- descriptive statistics ----------------------------------------------
+
+
+@dataclass
+class Metric:
+    """One number about the site, plus how much of it is new since a moment (None when unknown)."""
+
+    name: str
+    total: int
+    recent: int | None = None
+
+
+def _count(conn: sqlite3.Connection, sql: str, params: tuple = ()) -> int:
+    return conn.execute(sql, params).fetchone()[0]
+
+
+def site_stats(conn: sqlite3.Connection, since: str) -> list[Metric]:
+    """Descriptive counts of the site. Only rows that carry a time can have a delta (`since`):
+    passes have none, and a reaction from before reaction times were kept has none either."""
+
+    def metric(name: str, sql: str, recent_sql: str | None = None) -> Metric:
+        recent = _count(conn, recent_sql, (since,)) if recent_sql else None
+        return Metric(name, _count(conn, sql), recent)
+
+    public = "parent_id IS NULL AND private_to IS NULL AND removed_reason IS NULL"
+    reply = "parent_id IS NOT NULL AND private_to IS NULL AND removed_reason IS NULL"
+    return [
+        metric("passes", "SELECT COUNT(*) FROM pass"),
+        metric("people with a post", "SELECT COUNT(DISTINCT pass_id) FROM item WHERE parent_id IS NULL"),
+        metric("posts", f"SELECT COUNT(*) FROM item WHERE {public}",
+               f"SELECT COUNT(*) FROM item WHERE {public} AND created_at >= ?"),
+        metric("replies", f"SELECT COUNT(*) FROM item WHERE {reply}",
+               f"SELECT COUNT(*) FROM item WHERE {reply} AND created_at >= ?"),
+        metric("private replies", "SELECT COUNT(*) FROM item WHERE private_to IS NOT NULL",
+               "SELECT COUNT(*) FROM item WHERE private_to IS NOT NULL AND created_at >= ?"),
+        metric("reactions", "SELECT COUNT(*) FROM reaction",
+               "SELECT COUNT(*) FROM reaction WHERE created_at >= ?"),
+        metric("tags", "SELECT COUNT(*) FROM item_tag"),
+        metric("subscriptions", "SELECT COUNT(*) FROM subscription"),
+        metric("push devices", "SELECT COUNT(*) FROM push_device"),
+        metric("hidden", "SELECT COUNT(*) FROM item WHERE hidden = 1 AND restored = 0"),
+        metric("open requests", "SELECT COUNT(*) FROM moderation_request"),
+    ]
+
+
 # -- reactions -----------------------------------------------------------
 
 

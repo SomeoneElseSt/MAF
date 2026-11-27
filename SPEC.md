@@ -173,6 +173,8 @@ No admin roles, codes or buttons. Moderation is community flags plus the maintai
   | Command | Effect |
   |---|---|
   | `maf requests` | Table of items with open `moderation_request` rows: id, title or first 60 chars, kind, count |
+  | `maf usage` | API request counts per endpoint pattern, from `MAF_USAGE_LOG` (nothing about who asked) |
+  | `maf stats` | Totals for the site (passes, posts, replies, private replies, reactions, tags, hidden items, open requests…), each with a `last 12h` column: how many arrived since then. Only rows that carry a time get a delta (`-` otherwise: passes, tags and subscriptions keep none). Counts only, never content |
   | `maf hidden` | Table of items with `hidden = 1` |
   | `maf show <id>` | Prints the item's title, URL or text, flags, hidden/restored state and request counts |
   | `maf hide <id or address> [--reason]` | Hides a post or reply itself: unlisted like 5 flags, with the reason in its place (default "Hidden because it mentioned someone."; a hidden post's banner starts with it). Unflagging doesn't bring it back; `maf unhide` does. Doesn't print the item |
@@ -194,6 +196,7 @@ No admin roles, codes or buttons. Moderation is community flags plus the maintai
 - **Auth:** `Authorization: Bearer <token>`. Tokens are read-only and can't post, comment, flag or request.
 - **Rate limit:** 60 requests per minute per token, kept in memory. Over the limit returns `429` with `Retry-After`.
 - **Usage counts:** with `MAF_USAGE_LOG` set, the API keeps daily totals per endpoint pattern in that JSON file (`{"2026-11-26": {"GET /api/v1/threads/{id}": 17}}`), printed by `maf usage`. No post ids, no times finer than the day, no token, pass or IP: a tally, not a request log (`maf/usage.py`).
+- **Site stats from your machine:** `bash deploy/stats.sh` SSHes to the server (the same `MAF_SERVER`/`MAF_SSH_KEY` as `release.sh`) and runs `maf stats` there, so the numbers come from the live database.
 - **Endpoints** (JSON; hidden items excluded, same as the site):
 
   | Endpoint | Returns |
