@@ -48,7 +48,7 @@ Design plan (source of truth for decisions): [PLAN.md](PLAN.md)
 ## Content
 
 - **Post:** a title, plus an optional URL and/or text (a title alone is a post). Text and links only; no uploads or images.
-- **Comments:** nested.
+- **Comments:** nested. **Folding:** `[–]` after a comment's time (after a centred dot) folds it and its replies to its details line, "[+] (N replies hidden)"; `[+]` opens it. Folds stay in this browser per post (`localStorage["maf.folded.<post id>"]`). Folding a comment yourself counts as reading it and everything under it: their New labels go and stay gone (`localStorage["maf.read-by-folding.<post id>"]`). A branch folded on an earlier visit shows one New badge counting what's new inside it (and the comment itself, if new). A link to a reply inside a fold opens the fold; opening the post at the earliest new reply starts at its folded comment instead. Not on Dates profiles. Without JS nothing folds. See `maf/static/fold.js`.
 - **No votes.** Comments within a thread are ordered by `created_at`.
 - **Search bar** at the top of every page. Uses SQLite's built-in FTS5 full-text index over post titles, post text and comments, so there's no extra dependency. Hidden items are excluded. Search queries are never logged.
 - **Sorter** next to the search bar, applied to the post list and to search results: `newest` (default), `oldest`, `most viewed`. Passed as a query param (`?sort=new|old|views`).

@@ -70,7 +70,8 @@
     // Opening the post (not a reload, Back, or a link to a particular reply): start at the earliest new reply.
     if (sameVisit || location.hash || !newReplies.length) return;
     const earliest = newReplies.reduce((first, reply) => (reply.dataset.created < first.dataset.created ? reply : first));
-    requestAnimationFrame(() => earliest.scrollIntoView({ block: "start" }));
+    // fold.js: if it's folded away, start at the folded comment that holds it.
+    requestAnimationFrame(() => (window.mafVisibleComment?.(earliest) ?? earliest).scrollIntoView({ block: "start" }));
   }
 
   // The Dates page: a "New" tag next to profiles posted since your last visit that you haven't opened. Replies
