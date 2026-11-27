@@ -1,0 +1,92 @@
+/* Layout for design/index.html only. Colours, fonts and components come from ../maf/static/style.css. */
+
+.ds-page { max-width: 760px; }
+.ds-page.wide { max-width: 1240px; }
+
+.ds-tabs a { color: var(--soft); }
+.ds-tabs a[aria-current] { color: var(--ink); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; }
+.ds-find { margin-left: auto; }
+.ds-find + .theme-toggle { margin-left: 0; }
+kbd { font: 13px var(--sans); color: var(--meta); background: var(--tint); border-radius: 3px; padding: 1px 5px; margin-left: 4px; }
+
+.ds-section { margin: 0 0 44px; scroll-margin-top: 16px; }
+.ds-section h2 { font: 600 24px/1.3 var(--serif); margin: 0 0 10px; }
+.ds-section h3 { font: 600 18px var(--serif); color: var(--soft); margin: 30px 0 8px; scroll-margin-top: 16px; }
+.ds-section > p { margin: 0 0 12px; }
+.ds-section code, .lede code, .notice code { font: 14px var(--mono); background: var(--tint); border-radius: 3px; padding: 1px 5px; }
+.notice code { background: var(--paper); }
+.rules { margin: 12px 0 0; padding-left: 22px; }
+.rules li { margin: 0 0 10px; scroll-margin-top: 16px; }
+.note code { font-size: 13px; }
+
+.tokens { width: 100%; border-collapse: collapse; margin: 14px 0; font: 15px/1.4 var(--sans); }
+.tokens th { text-align: left; font-weight: 600; color: var(--meta); padding: 0 10px 8px 0; border-bottom: 1px solid var(--line); }
+.tokens td { padding: 10px 10px 10px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+.tokens tr { scroll-margin-top: 16px; }
+.tokens code { font-size: 13px; }
+.swatch { display: inline-block; width: 28px; height: 28px; border-radius: 4px; background: var(--s); box-shadow: inset 0 0 0 1px var(--line); vertical-align: middle; }
+.type-scale td:first-child { white-space: nowrap; }
+
+/* A live example sits in a quiet frame so it reads as a sample, not as part of this page. */
+.example { border: 1px solid var(--line); border-radius: 6px; padding: 16px 20px; margin: 0 0 8px; }
+.example .notice:first-child, .example .list li:first-child { margin-top: 0; }
+.example .inline-reply { margin-left: 0; }
+.example .list li.hot { margin: 4px 0 0; }
+.ds-static-dialog { position: static; display: block; margin: 0; }
+.ds-gap { display: inline-block; width: 24px; }
+
+/* Something the search opened: a ring that fades. */
+.ds-hit { outline: 2px solid var(--new-fill); outline-offset: 4px; border-radius: 4px; transition: outline-color 2s ease 1s; }
+.ds-hit.fade { outline-color: transparent; }
+
+/* Search: the site's tag-menu look inside a pop-up. */
+.ds-palette { width: min(560px, calc(100vw - 32px)); max-width: none; padding: 14px; margin-top: 12vh; }
+.ds-palette input { width: 100%; font: 16px var(--sans); color: var(--ink); background: var(--tint); border: 1px solid var(--border); border-radius: 4px; padding: 8px 12px; outline: none; }
+.ds-palette input:focus { border-color: var(--ink); background: var(--paper); }
+.ds-palette .help { margin-top: 10px; }
+.ds-results { max-height: 52vh; overflow-y: auto; margin-top: 8px; }
+.ds-results button { display: block; width: 100%; text-align: left; padding: 8px 10px; border: none; border-radius: 4px; background: none; color: var(--ink); cursor: pointer; font: 15px/1.4 var(--sans); }
+.ds-results button[aria-selected="true"], .ds-results button:hover { background: var(--tint); }
+.ds-results .kind { color: var(--meta); font-size: 13px; margin-left: 6px; }
+.ds-results .snippet { display: block; color: var(--meta); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ds-results .empty { margin: 16px 0; }
+
+/* Screens */
+.ds-toolbar { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 28px; font: 15px var(--sans); margin: 0 0 10px; }
+.ds-variant button, .ds-groups button { font: 15px var(--sans); color: var(--meta); background: none; border: none; padding: 0; cursor: pointer; }
+.ds-variant button[aria-pressed="true"], .ds-groups button[aria-pressed="true"] { color: var(--ink); font-weight: 600; }
+.ds-variant button:hover, .ds-groups button:hover { color: var(--ink); }
+.ds-groups { flex-wrap: wrap; margin: 0 0 8px; }
+.ds-group-title { font: 600 18px var(--serif); color: var(--soft); margin: 26px 0 10px; }
+.ds-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 28px 24px; }
+.ds-grid.phone { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+.ds-card { scroll-margin-top: 16px; border-radius: 6px; }
+.ds-card button.shot { display: block; width: 100%; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: var(--tint); cursor: zoom-in; overflow: hidden; aspect-ratio: 4 / 3; }
+.ds-grid.phone .ds-card button.shot { aspect-ratio: 9 / 16; }
+.ds-card img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+/* Computer shots are mostly margin: the thumbnail shows the 700px column in the middle, the viewer shows it all. */
+.ds-grid.desktop .ds-card img { width: 168%; max-width: none; height: auto; margin-left: -34%; }
+.ds-card .missing { display: flex; align-items: center; justify-content: center; height: 100%; font: 13px var(--sans); color: var(--meta); }
+.ds-card h3 { font: 16px/1.35 var(--serif); margin: 8px 0 2px; }
+.ds-card p { margin: 0; font: 13px/1.45 var(--sans); color: var(--meta); }
+.ds-card .ds-id { font: 12px var(--mono); color: var(--meta); }
+.ds-card .ds-errors { color: var(--danger); }
+
+.ds-viewer { width: calc(100vw - 40px); max-width: 1500px; height: calc(100vh - 40px); max-height: none; padding: 16px 20px; }
+.ds-viewer[open] { display: flex; flex-direction: column; }
+.ds-viewer-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px 20px; font: 15px var(--sans); }
+.ds-viewer-head .row { margin-top: 0; }
+.ds-viewer-shots { flex: 1; min-height: 0; overflow: auto; display: grid; grid-template-columns: 2.2fr 1fr 2.2fr 1fr; gap: 14px; margin-top: 12px; align-items: start; }
+.ds-viewer-shots figure { margin: 0; }
+.ds-viewer-shots figcaption { font: 13px var(--sans); color: var(--meta); margin-bottom: 4px; }
+.ds-viewer-shots img { width: 100%; border: 1px solid var(--line); border-radius: 4px; display: block; }
+.ds-viewer .ds-detail { font: 13px/1.5 var(--sans); color: var(--meta); margin: 6px 0 0; }
+
+@media (max-width: 900px) {
+  .ds-viewer-shots { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 560px) {
+  .ds-find kbd { display: none; }
+  .tokens td:nth-child(3), .tokens td:nth-child(4), .tokens th:nth-child(3), .tokens th:nth-child(4) { display: none; }
+  .ds-viewer-shots { grid-template-columns: 1fr; }
+}

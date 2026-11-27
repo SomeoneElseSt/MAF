@@ -11,6 +11,13 @@ MAF is an anonymous forum. Nobody building or maintaining it, human or agent, re
 - **Debug with the local test server and its sample data instead.** It behaves like production. See the local development notes.
 - **If a task seems to need what students wrote, stop and ask the maintainer.** Don't work around this rule.
 
+## Before changing anything people see: read design/index.html
+
+`design/index.html` is MAF's design system and its development flow. Read its Design system tab (the HTML is plain
+text on purpose) before touching templates, CSS, JavaScript or wording. When a change is visible, update its screen in
+`design/screens.py`, run `uv run --with playwright python design/screens.py`, and open the Screens tab for the
+maintainer's sign-off before releasing.
+
 ## Other notes
 
 - Design docs: `PLAN.md` and `SPEC.md`. Privacy claims and where they're implemented: the "Auditing privacy" table in `README.md`.

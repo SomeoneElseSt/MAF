@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MAF Design</title>
+<!-- The site's own stylesheet: every colour, size and component below is the real one, so this page can't drift
+     from the site. design.css only lays out this page. -->
+<link rel="stylesheet" href="../maf/static/style.css">
+<link rel="stylesheet" href="design.css">
+<script>try { const t = localStorage.getItem("theme"); if (t) document.documentElement.dataset.theme = t; } catch {}</script>
+</head>
+<body>
+<div class="page ds-page">
+  <header class="top">
+    <a class="brand" href="#design">MAF</a>
+    <nav class="ds-tabs" aria-label="Sections">
+      <a href="#design" data-tab="design">Design system</a>
+      <a href="#screens" data-tab="screens">Screens</a>
+    </nav>
+    <button class="theme-toggle ds-find" type="button" aria-haspopup="dialog" aria-keyshortcuts="Meta+K Control+K">Search <kbd>⌘K</kbd></button>
+    <button class="theme-toggle" type="button" data-theme-toggle>Dark</button>
+  </header>
+
+<main id="main">
+
+<!-- ============================================================================================================
+     DESIGN SYSTEM. Plain HTML on purpose: agents read this file directly. Every rule is text, not a picture.
+     ============================================================================================================ -->
+<section id="design" data-panel="design">
+
+<h1 class="heading">Design system</h1>
+<p class="lede">How MAF looks, reads and behaves, and how to change it without it going haywire.</p>
+
+<section id="agents" class="ds-section">
+  <h2>For agents: read this first</h2>
+  <div class="notice">
+    <p><strong>Every agent working on MAF reads this page before changing anything people see</strong>: templates, CSS, JavaScript, wording, or a new screen. If something here disagrees with the code, the code is what's live: say so, and ask the maintainer which one is right.</p>
+  </div>
+  <ol class="rules">
+    <li id="rule-privacy"><strong>The hard rule comes first.</strong> Never read what students wrote on the live site (see <code>AGENTS.md</code>). Design and debug only with the local server and made-up sample data. The Screens tab is made entirely from made-up data.</li>
+    <li id="rule-reuse"><strong>Use what's here.</strong> Colours come from the tokens, sizes from the type scale, pieces from Components. No new colour, font, size, shadow or component without the maintainer's OK.</li>
+    <li id="rule-propose"><strong>Propose before building a design.</strong> While something is still being decided, describe it in chat and wait for an explicit yes. When the maintainer wants to choose, make a local HTML page with up to 5 variations, each showing every state (empty, some, many; light and dark).</li>
+    <li id="rule-wording"><strong>Wording is agreed first, on its own.</strong> Offer 3 options in plain text, no mock-up, and change every place the words appear (the form, the page, the Feed line, the guide).</li>
+    <li id="rule-local"><strong>Show it locally before anything ships.</strong> Restart the local server after any Python, template, CSS or JS change (static files are fingerprinted at startup), check the page yourself signed in, then send the maintainer a link.</li>
+    <li id="rule-screens"><strong>Update the screens.</strong> If people will see a change, add or update its entry in <code>design/screens.py</code>, run it, open this page's Screens tab for the maintainer, and wait for their sign-off. A headless browser seeing it doesn't count as the maintainer seeing it.</li>
+    <li id="rule-tests"><strong>Tests stay fast.</strong> <code>uv run pytest -q</code> runs in about 6 seconds. Add a test for the behaviour, not a long one; keep the whole suite near 10 seconds.</li>
+    <li id="rule-release"><strong>Release only when the maintainer says so</strong> ("release", "send it", "ship it"), one change per release, with <code>SPEC.md</code>, <code>README.md</code> and the guide or privacy page updated when what they say changed.</li>
+    <li id="rule-plain"><strong>Talk to the maintainer in plain language.</strong> What changed or what needs deciding first, one thing at a time, how only when asked.</li>
+  </ol>
+</section>
+
+<section id="principles" class="ds-section">
+  <h2>Principles</h2>
+  <p>Each one comes from the maintainer's feedback while MAF was built. When two pull against each other, the earlier one wins.</p>
+  <ol class="rules">
+    <li id="p-anonymous"><strong>Anonymity shapes the design.</strong> No usernames in lists, no profiles to follow. People appear as a two-word name that changes per thread. Nothing on a screen should help guess who wrote something.</li>
+    <li id="p-quiet"><strong>Quiet and text-first, never "vibecoded".</strong> It should read like a well-set page of text (think Hacker News or LessWrong), not an app template. No cards, gradients, pill buttons, icon rows, hero sections, decorative emoji or drop shadows (floating menus excepted). If it looks like every other generated site, it's wrong.</li>
+    <li id="p-consistent"><strong>Consistency over novelty.</strong> Reuse an existing pattern (the grey notice, the centred pop-up, a meta-line action, the soft button) before inventing one. The same relationship gets the same gap everywhere: if Pinned sits 26px above its rows, so do Today, New and Profiles.</li>
+    <li id="p-still"><strong>Nothing jumps.</strong> Changing a selection, a count or a state must not move anything around it. Sort options reserve their bold width; the Feed count always has room for two digits; dates keep their place.</li>
+    <li id="p-feedback"><strong>Always show it's working.</strong> A button that sends something greys out and says what it's doing ("Posting…", "Replying…", "Sending…") until the page answers.</li>
+    <li id="p-back"><strong>Never break Back.</strong> Back and Forward (including mouse buttons) go to the previous page, never to a previous state of the same page. Forms on a thread send in the background and stay out of the history unless marked as an exception.</li>
+    <li id="p-mirror"><strong>Light and dark mirror each other.</strong> Each dark colour is 255 minus its light value, so every tone keeps the same distance from the background. Exceptions are listed under Colour.</li>
+    <li id="p-one-accent"><strong>One accent.</strong> Ember (<code>--hot</code>) marks #hottakes, New and NSFW. The Dates rose is the only other colour, and only on Dates. Colour is never the only signal: the hot tag is also underlined.</li>
+    <li id="p-plain"><strong>Plain words, few of them.</strong> See Writing. "Too verbose" is the most common correction.</li>
+    <li id="p-works-without"><strong>Works without JavaScript</strong>, except sign-in, private replies and Dates (they need encryption in the browser).</li>
+  </ol>
+</section>
+
+<section id="colour" class="ds-section">
+  <h2>Colour</h2>
+  <p>Use the variable, never the hex. The swatches show the current theme; switch Dark/Light at the top to compare.</p>
+  <table class="tokens">
+    <thead><tr><th scope="col"></th><th scope="col">Token</th><th scope="col">Light</th><th scope="col">Dark</th><th scope="col">Used for</th></tr></thead>
+    <tbody>
+      <tr id="t-paper"><td><span class="swatch" style="--s: var(--paper)"></span></td><td><code>--paper</code></td><td>#ffffff</td><td>#000000</td><td>Page background, pop-ups, menus.</td></tr>
+      <tr id="t-ink"><td><span class="swatch" style="--s: var(--ink)"></span></td><td><code>--ink</code></td><td>#000000</td><td>#ffffff</td><td>Body text, titles, selected things, focus ring.</td></tr>
+      <tr id="t-soft"><td><span class="swatch" style="--s: var(--soft)"></span></td><td><code>--soft</code></td><td>#555555</td><td>#aaaaaa</td><td>Header words, day headings, quotes, plain buttons, the lede.</td></tr>
+      <tr id="t-meta"><td><span class="swatch" style="--s: var(--meta)"></span></td><td><code>--meta</code></td><td>#6b6b6b</td><td>#949494</td><td>Details lines, notes, help text, empty states. 4.5:1 on paper and tint.</td></tr>
+      <tr id="t-line"><td><span class="swatch" style="--s: var(--line)"></span></td><td><code>--line</code></td><td>#e4e4e4</td><td>#1b1b1b</td><td>Hairlines, menu borders, quote rule, a dead arrow.</td></tr>
+      <tr id="t-border"><td><span class="swatch" style="--s: var(--border)"></span></td><td><code>--border</code></td><td>#949494</td><td>#6b6b6b</td><td>Input borders (3:1), a button's hover border.</td></tr>
+      <tr id="t-tint"><td><span class="swatch" style="--s: var(--tint)"></span></td><td><code>--tint</code></td><td>#f5f5f3</td><td>#1c1c1c</td><td>Notices, buttons, the search box, code. Dark is lifted (a 4% shade vanishes on black).</td></tr>
+      <tr id="t-divider"><td><span class="swatch" style="--s: var(--divider)"></span></td><td><code>--divider</code></td><td colspan="2">ink at 18%</td><td>Lines between profiles sent on Dates.</td></tr>
+      <tr id="t-hot"><td><span class="swatch" style="--s: var(--hot)"></span></td><td><code>--hot</code></td><td>#b4441c</td><td>#e2805a</td><td>Ember, the one accent: #hottakes tag and etiquette. Hand-tuned per theme.</td></tr>
+      <tr id="t-hot-wash"><td><span class="swatch" style="--s: var(--hot-wash)"></span></td><td><code>--hot-wash</code></td><td>ember 7%</td><td>ember 15%</td><td>#hottakes rows and the etiquette banner.</td></tr>
+      <tr id="t-new"><td><span class="swatch" style="--s: var(--new-fill)"></span></td><td><code>--new-fill</code></td><td>#E2805A</td><td>#C4663F</td><td>New badges and new emoji, with white text. Deeper in dark so it doesn't glare.</td></tr>
+      <tr id="t-danger"><td><span class="swatch" style="--s: var(--danger)"></span></td><td><code>--danger</code></td><td>#8a0303</td><td>#ff6b6b</td><td>Only a flag you've placed ("Flagged").</td></tr>
+      <tr id="t-visited"><td><span class="swatch" style="--s: var(--visited)"></span></td><td><code>--visited</code></td><td>#6f6f6f</td><td>#909090</td><td>Visited titles.</td></tr>
+      <tr id="t-nsfw"><td><span class="swatch" style="--s: var(--nsfw-paper)"></span></td><td><code>--nsfw-paper</code>, <code>--nsfw-tint</code></td><td>#f8e8e2, #efdcd5</td><td>#22100c, #34211c</td><td>The NSFW side takes this tint on every page, so you always know where you are. The NSFW word turns #E2805A.</td></tr>
+      <tr id="t-dates"><td><span class="swatch" style="--s: var(--dates-paper)"></span></td><td><code>--dates-paper</code>, <code>--dates-tint</code>, <code>--dates-accent</code></td><td>#fbe9ee, #f1dbe2, #c2456b</td><td>#2e1520, #432633, #e87d9c</td><td>Dates only: its tint, and the Dates word in rose while you're there.</td></tr>
+    </tbody>
+  </table>
+  <p class="note">Surfaces are switched with <code>body[data-nsfw]</code> and <code>body[data-board="dates"]</code>, which swap <code>--paper</code>, <code>--tint</code> and <code>--meta</code>. Components never need to know which side they're on.</p>
+</section>
+
+<section id="type" class="ds-section">
+  <h2>Type</h2>
+  <p><strong>Serif for reading, sans for the interface.</strong> Titles, post text, replies, headings and pop-up text are serif. Everything you operate or that describes something (header, buttons, details lines, labels, help, notes, errors, empty states, notices about a reply) is sans. Using the serif for an interface note is the classic mistake here. No web fonts: system stacks only.</p>
+  <table class="tokens type-scale">
+    <thead><tr><th scope="col">Sample</th><th scope="col">Size</th><th scope="col">Used for</th></tr></thead>
+    <tbody>
+      <tr id="type-32"><td><span style="font: 600 32px/1.2 var(--serif)">A page title</span></td><td>Serif 32, 600 (26 on phones)</td><td>Thread title, page heading.</td></tr>
+      <tr id="type-24"><td><span style="font: 700 24px var(--serif)">MAF</span></td><td>Serif 24, 700</td><td>The wordmark only.</td></tr>
+      <tr id="type-20"><td><span style="font: 20px/1.35 var(--serif)">A post title in a list</span></td><td>Serif 20</td><td>List titles, section headings in prose.</td></tr>
+      <tr id="type-18h"><td><span style="font: 600 18px var(--serif); color: var(--soft)">Yesterday</span></td><td>Serif 18, 600, soft</td><td>Day and section headings (Pinned, New, Today).</td></tr>
+      <tr id="type-18"><td><span style="font: 18px/1.6 var(--serif)">Body text reads like this.</span></td><td>Serif 18 / 1.6 (17 on phones)</td><td>Post and reply text, notices, pop-ups, inputs.</td></tr>
+      <tr id="type-16"><td><span style="font: 16px var(--sans)">Submit · Dark · Button</span></td><td>Sans 16</td><td>Header words, buttons.</td></tr>
+      <tr id="type-15"><td><span style="font: 15px var(--sans); color: var(--meta)">3 hours ago, 5 comments, 60 views</span></td><td>Sans 15</td><td>Details lines, actions, labels (600), notes, footer, empty states.</td></tr>
+      <tr id="type-13"><td><span style="font: 13px var(--sans); color: var(--meta)">Up to 3, separated by commas.</span></td><td>Sans 13</td><td>Help under fields, fine print, badges (600).</td></tr>
+      <tr id="type-14"><td><span style="font: 14px var(--mono)">curl -H "Authorization: …"</span></td><td>Mono 14</td><td>Code samples only.</td></tr>
+    </tbody>
+  </table>
+  <ul class="rules">
+    <li id="type-weights">Weights: 400, and 600 for titles, labels, the selected sort and badges. 700 only on the wordmark. Bold in running text only through Markdown.</li>
+    <li id="type-case">Sentence case everywhere. No all-caps words, no letter-spaced labels.</li>
+    <li id="type-scale-only">Emoji, arrows and the (i) glyph are sized as icons, outside the scale. Nothing else gets a new size.</li>
+  </ul>
+</section>
+
+<section id="layout" class="ds-section">
+  <h2>Layout and spacing</h2>
+  <ul class="rules">
+    <li id="l-column">One centred column, 700px wide, 20px side padding. The footer sits at the bottom on short pages. The scrollbar's space is always reserved, so pages don't shift.</li>
+    <li id="l-phone">Phones are anything 560px or narrower; 380px is the smallest checked (and 320px for the header). On phones the header becomes two rows: MAF, Submit, then Dates, NSFW, Dark on the right; search and Feed below.</li>
+    <li id="l-header-order">Header order, left to right: MAF, Submit, search (with #), Feed, Dates, NSFW, Dark. The words share one size and one gap.</li>
+    <li id="l-sections">Section headings (Pinned, New, Today, Profiles): 26px above, 6px below. Rows: 8px top and bottom.</li>
+    <li id="l-notice">Notices: 16px by 18px inside, 30px above, 24px before a form that follows.</li>
+    <li id="l-indent">Replies indent 26px per level (16px on phones). A reply box indents one step under what it answers; an edit box replaces the text in place, with no indent.</li>
+    <li id="l-button-gap">A button sits 18px under the last line of text above it, whether that's a box or plain text.</li>
+    <li id="l-tap">Small controls keep a 24 × 24px tap area without looking bigger.</li>
+  </ul>
+</section>
+
+<section id="components" class="ds-section">
+  <h2>Components</h2>
+  <p>The live examples use the site's real classes. Reach for these before writing new CSS.</p>
+
+  <h3 id="c-buttons">Buttons</h3>
+  <div class="example">
+    <div class="row"><button class="button" type="button">Post</button><button class="button plain" type="button">Cancel</button><button class="button" type="button" disabled>Posting…</button></div>
+  </div>
+  <p class="note"><code>.button</code> is a soft fill (the tint), with a border only on hover. <code>.button.plain</code> is the secondary action: just grey text. One soft button per row. While sending: disabled, and the label says what's happening (<code>data-pending</code>). Inside a grey notice the soft button sits on the page colour.</p>
+
+  <h3 id="c-list">List rows</h3>
+  <div class="example">
+    <ol class="list">
+      <li><a class="title" href="#c-list">Best quiet places to study near the residence?</a><div class="meta">3 hours ago, 5 comments, 60 views <span class="dot">·</span> <a class="tag" href="#c-list">#help</a> <span class="new-tag">New</span></div></li>
+      <li class="hot"><a class="title" href="#c-list">Hot take: the city tour should be optional</a><div class="meta">5 hours ago, 3 comments <span class="dot">·</span> <a class="hot-tag" href="#c-list">#hottakes</a></div></li>
+    </ol>
+  </div>
+  <p class="note">Title in serif 20, details in sans 15 meta, hashtags after a centred dot. A link post adds its host in grey after the title. <code>li.hot</code> puts #hottakes rows on the ember wash. A pin appears at the right on hover (always, on touch screens).</p>
+
+  <h3 id="c-meta">Details line and actions</h3>
+  <div class="example">
+    <div class="meta">Posted by <button class="id" type="button">jade-penguin</button> 2 hours ago, 12 views <span class="sep">|</span> <button class="meta-action" type="button">Flag Post</button> <span class="sep">|</span> <button class="meta-action" type="button">Edit</button> <span class="sep">|</span> <button class="meta-action" type="button">Hide Post</button></div>
+    <div class="meta"><button class="meta-action flagged" type="button">Flagged</button> <span class="flag-note">5 flags hide a post. Urgent? Email <a href="#c-meta">hello@maforum.net</a>.</span></div>
+    <div class="actions"><a href="#c-meta">Reply</a><button type="button">Edit</button><button type="button">Delete</button><button type="button">Flag</button></div>
+  </div>
+  <p class="note">Actions are grey words that darken on hover, never buttons with boxes. On a post they're separated by pipes in the details line; under a reply they sit in a row (<code>.actions</code>). The only red on the site is a flag you placed.</p>
+
+  <h3 id="c-notice">Notice</h3>
+  <div class="example">
+    <div class="notice"><p>You hid this post. It's off the front page, tags and search, but anyone with the link can still read it and reply.</p></div>
+    <div class="notice etiquette"><p><span class="etiquette-tag">#hottakes</span> etiquette: argue with the take, not the person.</p></div>
+  </div>
+  <p class="note">The one box for telling someone something about the page: what happened, and what they can do, in one or two sentences. Actions inside are underlined links. A house tag's etiquette uses the same box on its wash. Prefer a notice to any new banner.</p>
+
+  <h3 id="c-dialog">Pop-up</h3>
+  <div class="example"><dialog open class="ds-static-dialog"><p>Send your profile to jade-penguin? They can then read it, and match with you.</p><div class="row"><button class="button" type="button">Send profile</button><button class="button plain" type="button">Cancel</button></div></dialog></div>
+  <p class="note">For anything that needs a yes first (sending a profile, matching, unmatching, deleting, turning on NSFW): a centred <code>&lt;dialog&gt;</code>, front and centre, never an inline line. Serif text, then the action and Cancel.</p>
+
+  <h3 id="c-fields">Form fields</h3>
+  <div class="example">
+    <div class="field"><label for="ds-title">Title</label><input id="ds-title" type="text" placeholder="What helped you settle into a new city fast?"><p class="help">Please don't name students or staff.</p></div>
+    <div class="field"><label for="ds-tags">Hashtags</label><input id="ds-tags" type="text" value="#one, #two, #three, #four"><p class="help error">Up to 3 hashtags.</p></div>
+  </div>
+  <p class="note">Label in sans 15 600 above, help in sans 13 under, an error under its field in ink, one plain line. Placeholders are generic but meaningful examples: not "example.com", not an opinion.</p>
+
+  <h3 id="c-reply">Reply box and name warning</h3>
+  <div class="example">
+    <form class="inline-reply" onsubmit="return false"><textarea aria-label="Reply" placeholder="Write a reply"></textarea><p class="help">Replying as: <button class="id" type="button">jade-penguin</button> <span class="dot">·</span> Please don't name students or staff.</p><div class="row"><button class="button" type="button">Reply</button><button class="button plain" type="button">Cancel</button></div>
+      <div class="name-warning"><p>This looks like it names someone. MAF doesn't allow naming students or staff.</p><div class="row"><button class="button plain" type="button">Post anyway</button></div></div></form>
+  </div>
+
+  <h3 id="c-comment">Reply in a thread</h3>
+  <div class="example">
+    <ul class="comments"><li class="comment"><div class="meta"><button class="id" type="button">quiet-otter</button>, 2 hours ago <span class="new-tag">New</span></div><div class="text"><p>The library two stops north is open until midnight.</p></div>
+      <div class="actions"><span class="reactions"><button class="react" type="button" aria-pressed="true"><span class="react-emoji">👍</span><span class="react-count">3</span></button><button class="react" type="button"><span class="react-emoji">🙏</span><span class="react-count">1</span></button></span><a href="#c-comment">Reply</a><button type="button">Flag</button></div></li>
+      <li class="comment"><p class="hidden-comment">Removed because it named someone.</p></li></ul>
+  </div>
+  <p class="note">A reply that's gone keeps its place with one grey sans line saying why, so answers to it still make sense. Your own reactions sit on the tint; others' are just emoji and count.</p>
+
+  <h3 id="c-badges">Badges and counts</h3>
+  <div class="example"><p><span class="new-tag">New</span> <span class="new-tag">New comments</span> <span class="ds-gap"></span> <span class="bell">Feed<span class="bell-count">0</span></span> <span class="bell has-new">Feed<span class="bell-count">4</span></span> <span class="ds-gap"></span> <button class="info" type="button" aria-label="More">i</button></p></div>
+  <p class="note">New is the only filled badge. The Feed count is always there, the same width, grey at 0 and in ink when something's new ("Feed" itself never turns bold). The (i) opens a card with more detail; use it instead of long help text.</p>
+
+  <h3 id="c-empty">Empty state</h3>
+  <div class="example"><p class="empty">No posts yet.</p></div>
+  <p class="note">The page keeps its frame (sort bar, dates, headings) and says so in one short sans line, centred and grey. Never a big illustration or a serif sentence.</p>
+
+  <h3 id="c-embed">Linked thread</h3>
+  <div class="example"><a class="embed" href="#c-embed"><p class="embed-title">Best quiet places to study near the residence?</p><p class="embed-text">The residence gets loud after 9. Anywhere open late with wifi that works?</p><div class="embed-meta">3 hours ago <span class="dot">·</span> 5 comments</div></a></div>
+
+  <h3 id="c-profile">Dates replies</h3>
+  <div class="example"><p class="profile-replies-count">2 people replied with their profiles</p><p class="note">Profiles sent to you are separated by <code>--divider</code> lines; an ended match leaves "This match ended." in grey.</p></div>
+</section>
+
+<section id="writing" class="ds-section">
+  <h2>Writing</h2>
+  <ul class="rules">
+    <li id="w-short"><strong>Short and plain.</strong> One idea per sentence, everyday words, no jargon. If it can lose a sentence, it should.</li>
+    <li id="w-what">Say what happened and what the person can do: "That code didn't match. Check the 6 digits, or ask for a new code."</li>
+    <li id="w-you">Talk to the person as "you". MAF is "MAF", never "we" pretending to be a team.</li>
+    <li id="w-case">Sentence case. Two-word actions about the post itself are Title Case (Flag Post, Hide Post, Flag Profile), and so are the footer links (User Guide, Source Code, Sign Out). Header words start with a capital (Submit, Feed, Dates, NSFW, Dark).</li>
+    <li id="w-progress">Buttons in progress use the verb and an ellipsis: Posting…, Replying…, Saving…, Sending….</li>
+    <li id="w-no-emoji">No emoji in interface text ("Request deletion", not "Request nuke ☢️"). No "Oops", no exclamation marks, no cute.</li>
+    <li id="w-generic">Examples and placeholders are generic but meaningful: real-sounding situations from student life, never "example.com" or a contested opinion.</li>
+    <li id="w-names">Never put a real name in an example. Warnings about names say "names someone", not who.</li>
+    <li id="w-consistent">The same thing has the same name everywhere: in the form, on the page, in the Feed and in the guide.</li>
+  </ul>
+</section>
+
+<section id="access" class="ds-section">
+  <h2>Accessibility</h2>
+  <ul class="rules">
+    <li id="a-contrast">WCAG AA: text 4.5:1 on paper, tint and the washes; input borders 3:1. Check both themes and both tinted sides.</li>
+    <li id="a-colour">Never colour alone: the hot tag is underlined, Flagged is bold as well as red.</li>
+    <li id="a-focus">Visible focus everywhere: a 2px ink outline. Keyboard users get a Skip to content link.</li>
+    <li id="a-tap">24 × 24px tap areas for small controls.</li>
+    <li id="a-motion">Respect reduced motion: transitions switch off.</li>
+    <li id="a-announce">Changes made without a reload (pins, live replies) are announced in an <code>aria-live</code> region.</li>
+  </ul>
+</section>
+
+<section id="files" class="ds-section">
+  <h2>Where things live</h2>
+  <ul class="rules">
+    <li id="f-css"><code>maf/static/style.css</code>: the one stylesheet. Tokens at the top; dark mode right after.</li>
+    <li id="f-templates"><code>maf/templates/</code>: Jinja pages. <code>base.html</code> is the header and footer for all of them.</li>
+    <li id="f-js"><code>maf/static/*.js</code>: small vanilla scripts, one job each. No frameworks, no build step, no inline scripts (the Content-Security-Policy forbids them).</li>
+    <li id="f-copy"><code>maf/housetags.py</code>: house tags' outlines and etiquette. <code>maf/profiles.py</code>: Dates questions and answers.</li>
+    <li id="f-spec"><code>SPEC.md</code>: how everything behaves, in detail. <code>README.md</code>: what MAF does and the privacy audit.</li>
+    <li id="f-design"><code>design/</code>: this page, and <code>screens.py</code>, which makes the Screens tab.</li>
+  </ul>
+</section>
+
+</section>
+
+<!-- ============================================================================================================
+     SCREENS. Built from design/screens.js, which design/screens.py writes. Agents: read design/screens.py for the
+     list of screens (what each shows, who sees it, which files make it) and look at design/screens/*.jpg.
+     ============================================================================================================ -->
+<section id="screens" data-panel="screens" hidden>
+  <h1 class="heading">Screens</h1>
+  <p class="lede">Every screen of MAF, from made-up sample data. Run <code>uv run --with playwright python design/screens.py</code> after any change people will see, then reload.</p>
+  <div class="ds-toolbar">
+    <div class="sort ds-variant" role="group" aria-label="Device">
+      <button type="button" data-device="desktop">Computer</button><button type="button" data-device="phone">Phone</button>
+    </div>
+    <div class="sort ds-variant" role="group" aria-label="Theme">
+      <button type="button" data-shade="light">Light</button><button type="button" data-shade="dark">Dark</button>
+    </div>
+    <span class="note" id="taken"></span>
+  </div>
+  <nav class="ds-groups sort" aria-label="Groups" id="groups"></nav>
+  <div id="screen-list"></div>
+  <div class="notice" id="no-screens" hidden><p>No screens yet. Run <code>uv run --with playwright python design/screens.py</code> from the repo, then reload this page. (First time on this machine: <code>uv run --with playwright playwright install chromium</code>.)</p></div>
+</section>
+
+</main>
+<footer class="foot"><span>MAF design system and screens</span><a href="../AGENTS.md">AGENTS.md</a><a href="../SPEC.md">SPEC.md</a></footer>
+</div>
+
+<dialog id="palette" class="ds-palette" aria-label="Search the design system and screens">
+  <input type="search" id="palette-input" placeholder="Search rules, tokens, components, screens" autocomplete="off" aria-controls="palette-results">
+  <div class="ds-results" id="palette-results" role="listbox"></div>
+  <p class="help">↑ ↓ to move, Enter to open, Esc to close</p>
+</dialog>
+
+<dialog id="viewer" class="ds-viewer" aria-label="Screen">
+  <div class="ds-viewer-head"><div><strong id="viewer-title"></strong> <span class="note" id="viewer-sub"></span></div>
+    <div class="row"><button class="button plain" type="button" data-step="-1">‹ Previous</button><button class="button plain" type="button" data-step="1">Next ›</button><button class="button" type="button" data-close>Close</button></div></div>
+  <div class="ds-viewer-shots" id="viewer-shots"></div>
+</dialog>
+
+<script src="screens.js" onerror="window.MAF_SCREENS = null"></script>
+<script src="design.js"></script>
+</body>
+</html>
