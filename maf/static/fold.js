@@ -72,7 +72,7 @@
     button.setAttribute("aria-label", "Fold this comment");
     const count = Object.assign(document.createElement("span"), { className: "fold-count" });
     count.textContent = n ? ` (${words(n)} hidden)` : " (hidden)";
-    const time = meta.querySelector(":scope > time");
+    const time = meta.querySelector(":scope > .edited") || meta.querySelector(":scope > time"); // after "(edited)"
     // Spaced like the details line's other dots (" · Private, only you and …").
     if (time) time.after(" ", dot, " ", button, count);
     else meta.append(" ", dot, " ", button, count);

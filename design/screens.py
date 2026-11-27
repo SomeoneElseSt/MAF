@@ -99,6 +99,7 @@ def seed_public(conn, people: dict[str, str]) -> Sample:
     gone = reply("me", study, "words the author deleted", 1.4)
     reply("ana", gone, "Thanks, trying it tonight.", 1.3)
     store.delete_own_comment(conn, gone.id)
+    reply("me", r3, "Good to know, thanks.", 1.0)
     for who, emoji in (("ben", "👍"), ("cai", "👍"), ("dee", "🙏"), ("me", "👍")):
         store.toggle_reaction(conn, people[who], study.id, emoji)
     store.toggle_reaction(conn, people["ana"], r1.id, "❤️")
@@ -111,6 +112,7 @@ def seed_public(conn, people: dict[str, str]) -> Sample:
     for flagger in range(store.FLAGS_TO_HIDE):
         store.add_flag(conn, store.create_pass(conn), hidden_reply.id)
     store.toggle_reaction(conn, people["me"], hot.id, "🔥")
+    store.set_subscribed(conn, people["me"], hot.id, True)
     store.toggle_reaction(conn, people["ana"], hot.id, "🤔")
 
     lamp = post("lamp", "me", "Anyone selling a desk lamp before rotation?",
@@ -271,6 +273,81 @@ def hottakes_tag(page):
     page.wait_for_timeout(250)
 
 
+# Folding and New: pretend you last opened the post just before the first reply's first answer, so it and what came
+# after are new; with fold, that first reply was folded on an earlier visit. The old values come back after the shot.
+def new_since_last_visit(fold=False):
+    def act(page):
+        page.evaluate("""fold => {
+          const post = document.querySelector("article.post-head").id;
+          const first = [...document.querySelectorAll("ol.comments > li.comment")].find(li => li.querySelector(":scope > ol.comments"));
+          const child = first.querySelector(":scope > ol.comments > li.comment");
+          const since = new Date(new Date(child.dataset.created).getTime() - 1000).toISOString().slice(0, 19) + "Z";
+          localStorage.setItem("maf.screens-stash", JSON.stringify({"maf.opened": localStorage.getItem("maf.opened"),
+                                                                    "maf.opened-before": localStorage.getItem("maf.opened-before")}));
+          const map = JSON.stringify({[post]: since});
+          localStorage.setItem("maf.opened", map);
+          localStorage.setItem("maf.opened-before", map);
+          if (fold) localStorage.setItem("maf.folded." + post, JSON.stringify([first.id]));
+        }""", fold)
+        page.reload(wait_until="load")
+        page.wait_for_timeout(SETTLE_MS)
+    return act
+
+
+IPHONE_UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Mobile/15E148 Safari/604.1"
+
+
+def as_iphone_safari(page):
+    """The next loads of this page say they're Safari on an iPhone, not on the Home Screen (until the shot's reset)."""
+    if not getattr(page, "_iphone_ready", False):
+        page.add_init_script(f"""if (sessionStorage.getItem("screens-iphone")) Object.defineProperty(navigator, "userAgent",
+                                 {{ get: () => {IPHONE_UA!r}, configurable: true }});""")
+        page._iphone_ready = True
+    page.evaluate("() => sessionStorage.setItem('screens-iphone', '1')")
+
+
+# Alerts: the note that follows what you just did (alerts.js reads it after the reload that shows your post or reply).
+def alert_ask(kind, iphone=False, tap=False):
+    def act(page):
+        page.context.grant_permissions(["notifications"], origin=BASE)  # the test browser blocks them otherwise
+        if iphone:
+            as_iphone_safari(page)
+        page.evaluate("""kind => {
+          if (kind === "comment") location.hash = [...document.querySelectorAll("li.comment[data-mine]")].find(li => li.querySelector(":scope > .text")).id;
+          sessionStorage.setItem("maf.alerts-ask", JSON.stringify({ kind, at: Date.now(), path: location.pathname }));
+        }""", kind)
+        page.reload(wait_until="load")
+        page.wait_for_timeout(SETTLE_MS)
+        if tap:
+            page.click("[data-alert-on]", timeout=5000)
+            page.wait_for_timeout(250)
+        page.locator(".alert-ask").scroll_into_view_if_needed(timeout=5000)
+    return act
+
+
+def feed_menu_on_iphone(page):
+    page.context.grant_permissions(["notifications"], origin=BASE)
+    as_iphone_safari(page)
+    page.reload(wait_until="load")
+    page.wait_for_timeout(SETTLE_MS)
+    page.click(".bell")
+    page.wait_for_timeout(400)
+    page.click("[data-alert-how]", timeout=5000)
+    page.wait_for_timeout(200)
+
+
+# After every shot: folds, alerts state and New's visit times go back to how they were, so later screens start clean.
+RESET_STORAGE = """() => {
+  for (const key of Object.keys(localStorage)) if (/^maf\\.(folded|read-by-folding|alerts-)/.test(key)) localStorage.removeItem(key);
+  const stash = localStorage.getItem("maf.screens-stash");
+  if (stash !== null) {
+    for (const [key, value] of Object.entries(JSON.parse(stash))) value === null ? localStorage.removeItem(key) : localStorage.setItem(key, value);
+    localStorage.removeItem("maf.screens-stash");
+  }
+  sessionStorage.clear();
+}"""
+
+
 SCREENS = [
     # Front page
     Screen("home", "Front page", "Front page", "me", "/",
@@ -292,7 +369,8 @@ SCREENS = [
     Screen("search-none", "Front page", "Search, nothing found", "me", "/search?q=xylophone", "Empty search.",
            files=["list.html"]),
     Screen("bell", "Front page", "Feed menu", "me", "/",
-           "Feed opens a list of replies and reactions to you; new ones say New. The count never changes the header's width.",
+           "Feed opens a list of replies and reactions to you; new ones say New. The count never changes the header's width. "
+           "The bottom line says whether alerts are on for this device, with Turn on / Turn off.",
            click(".bell"), files=["base.html", "bell.js"]),
     Screen("feed", "Front page", "Feed page", "me", "/notifications", "The same list as a page (no JavaScript, or a phone).",
            files=["notifications.html"]),
@@ -333,8 +411,31 @@ SCREENS = [
     Screen("thread-hidden-author", "Threads", "Hidden by its author", "me", "/thread/{laundry}",
            "Only the author sees the note; the link still works for everyone. Unhide Post brings it back.",
            files=["item.html", "post.py"]),
+    Screen("thread-new", "Threads", "New since your last visit", "me", "/thread/{study}",
+           "Replies by others since you last opened the post say New, after the details line's · [–].",
+           new_since_last_visit(), files=["new.js", "fold.js"]),
+    Screen("thread-folded", "Threads", "A folded branch with something new", "me", "/thread/{study}",
+           "[+] (N replies hidden) and one New badge counting what's new inside. Lines on the left show who answered whom.",
+           new_since_last_visit(fold=True), files=["fold.js", "style.css"]),
     Screen("thread-nsfw", "Threads", "NSFW thread", "me", "/thread/{nsfw}", "An NSFW post keeps the tint on its own page.",
            files=["item.html"]),
+
+    # Alerts
+    Screen("alert-ask-post", "Alerts", "Ask, after your post", "me", "/thread/{lamp}",
+           "Right after you post, a grey note under it: 'Get an alert when someone replies to your post?'",
+           alert_ask("post"), files=["alerts.js", "style.css"]),
+    Screen("alert-ask-reply", "Alerts", "Ask, after your reply", "me", "/thread/{study}",
+           "Right after a comment or reply, the note sits under it. Once per device; Not now waits a week.",
+           alert_ask("comment"), files=["alerts.js"]),
+    Screen("alert-ask-subscribe", "Alerts", "Ask, after Subscribe", "me", "/thread/{hot}",
+           "After Subscribe, the note sits under the comment box: 'Get alerts when there's new activity on this post?'",
+           alert_ask("subscribe"), files=["alerts.js"]),
+    Screen("alert-iphone", "Alerts", "iPhone, after Turn on alerts", "me", "/thread/{study}",
+           "Safari on an iPhone: Turn on alerts shows the Home Screen steps, with Safari's share icon.",
+           alert_ask("comment", iphone=True, tap=True), files=["alerts.js"]),
+    Screen("bell-alerts-iphone", "Alerts", "Feed menu on an iPhone", "me", "/",
+           "The bottom of the Feed menu turns alerts on or off; on an iPhone not on the Home Screen, How? shows the steps.",
+           feed_menu_on_iphone, files=["alerts.js", "bell.js"]),
 
     # Posting
     Screen("submit", "Posting", "Submit", "me", "/submit", "Title, link, hashtags, Is NSFW?, text with an example outline.",
@@ -417,7 +518,8 @@ def start_server(db_path: Path) -> subprocess.Popen:
 
 
 def persona_context(p, folder: Path, cookie: str | None, variant: dict):
-    context = p.chromium.launch_persistent_context(str(folder), headless=True, device_scale_factor=2, **variant)
+    # The full browser in headless mode ("chromium"): the lighter default one always blocks notifications.
+    context = p.chromium.launch_persistent_context(str(folder), channel="chromium", headless=True, device_scale_factor=2, **variant)
     if cookie:
         context.add_cookies([{"name": "maf_pass", "value": cookie, "url": BASE}])
     return context
@@ -429,6 +531,8 @@ def shoot(page, screen: Screen, ids: Sample, variant_name: str, errors: dict) ->
         screen.act(page)
     name = f"{screen.id}-{variant_name}.jpg"
     page.screenshot(path=str(OUT / name), full_page=True, type="jpeg", quality=72)
+    if page.url.startswith(BASE):
+        page.evaluate(RESET_STORAGE)
     if "side=nsfw" in screen.path:
         go(page, "/?side=main&next=/")
     return name
