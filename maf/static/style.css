@@ -229,6 +229,13 @@ textarea::placeholder, input::placeholder { color: var(--meta); opacity: 1; }
 .new-tag { display: inline-block; white-space: nowrap; font: 600 13px var(--sans); color: var(--new-ink); background: var(--new-fill); border-radius: 3px; padding: 1px 6px; margin-left: 6px; }
 /* The preceding space separates inline badges but collapses at a line break. */
 .new-list .meta > .new-tag { margin-left: 0; }
+/* Alerts (alerts.js): the note under what you just did, and the line at the bottom of the Feed menu. */
+.alert-fine { font: 14px var(--sans); color: var(--meta); }
+.alert-steps { margin: 4px 0 6px; padding-left: 22px; font: 15px/1.6 var(--sans); }
+.share-icon { width: 13px; height: 17px; vertical-align: -3px; margin: 0 2px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.bell-alerts { padding: 10px 20px 12px; border-top: 1px solid var(--line); font: 13px/1.5 var(--sans); color: var(--meta); }
+.bell-alerts .alert-steps { font-size: 13px; margin: 4px 0 0; }
+.linkish { font: inherit; color: var(--ink); background: none; border: none; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 /* Folding (fold.js): [–] after a comment's time folds it and its replies to the details line. */
 .fold { font: 14px var(--mono); letter-spacing: -1px; color: var(--meta); background: none; border: none; padding: 0; cursor: pointer; }
 .fold:hover { color: var(--ink); }

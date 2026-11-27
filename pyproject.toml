@@ -20,6 +20,7 @@ dependencies = [
     # the spaCy model Presidio uses. lg over md: md blocked "What is Kombucha?" and missed
     # "I saw Priya Raman at lunch"; lg gets both right at the same ~1 ms, for ~500 MB more memory.
     "en-core-web-lg>=3.8",
+    "pywebpush>=2.5.0",
 ]
 
 [project.optional-dependencies]

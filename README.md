@@ -38,6 +38,7 @@ You can check every privacy claim in this repo. Where to look:
 | Unmatch, Hide and deleting a profile erase the messages | `close_profile_reply`, `close_sent_profiles` and `delete_own_post` in `maf/store.py`, all through `_secure_delete`. |
 | No IP addresses or request logs | Access logs are off in the app (`maf/main.py`) and in the web server (`deploy/Caddyfile`). API use is only tallied per endpoint per day, with no post ids or times (`maf/usage.py`). |
 | Pins, drafts and new Dates matches stay on your device | `maf/static/pins.js`, `maf/static/drafts.js` and `maf/static/dates-thread.js` only use your browser's storage. |
+| Alerts carry no one's words | An alert's text is only its Feed line ("New reply to your post"), from `reply_alerts` in `maf/store.py`; `maf/push.py` sends it encrypted to the device (RFC 8291). The only thing stored is each device's push address and keys, tied to its pass (`push_device` in `maf/db.py`); turning alerts off deletes it (`maf/static/alerts.js`). |
 | MAF doesn't track when you check your Feed | What you've seen is kept in your browser (`maf/static/bell.js`); the server only lists replies and reactions (`notifications` in `maf/store.py`). |
 | The name check stays on MAF's server | It runs [Presidio](https://github.com/microsoft/presidio) with spaCy's `en_core_web_lg` English model on the server itself (`maf/namefilter.py`); no text is sent elsewhere. |
 | Deleted and removed words are gone | Deleting overwrites the data on disk (`_secure_delete` in `maf/store.py`). |

@@ -27,6 +27,7 @@ class App:
     signing_key: PrivateKey
     live: Notifier = field(default_factory=Notifier)
     usage: UsageLog = field(default_factory=lambda: UsageLog(None))
+    pusher: object = None
     _local: threading.local = field(default_factory=threading.local)
     templates: object = None
     _: tuple = field(default_factory=tuple)
@@ -60,9 +61,16 @@ def build_app(settings: Settings) -> App:
         emailer=Emailer(settings),
         signing_key=signing_key,
         usage=UsageLog(settings.usage_log_path),
+        pusher=_pusher(settings),
     )
     db.migrate(app.conn)
     return app
+
+
+def _pusher(settings: Settings):
+    from .push import Pusher  # push.py uses web.py, which imports this module
+
+    return Pusher(settings)
 
 
 def load_signing_key(settings: Settings):

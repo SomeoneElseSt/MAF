@@ -905,6 +905,55 @@ def _reply_about(row: sqlite3.Row) -> str:
     return markdown.plain(row["p_title"]) if row["on_profile"] else _snippet(row)
 
 
+def add_push_device(conn: sqlite3.Connection, pass_id: str, endpoint: str, p256dh: str, auth: str) -> None:
+    """Turns alerts on for one device. The same device signing in with another pass moves to that pass."""
+    with conn:
+        conn.execute(
+            "INSERT INTO push_device (endpoint, pass_id, p256dh, auth) VALUES (?, ?, ?, ?) "
+            "ON CONFLICT(endpoint) DO UPDATE SET pass_id = excluded.pass_id, p256dh = excluded.p256dh, auth = excluded.auth",
+            (endpoint, pass_id, p256dh, auth),
+        )
+
+
+def remove_push_device(conn: sqlite3.Connection, endpoint: str, pass_id: str | None = None) -> None:
+    """Turns alerts off for one device (only the owning pass's, when given)."""
+    with conn:
+        if pass_id is None:
+            conn.execute("DELETE FROM push_device WHERE endpoint = ?", (endpoint,))
+        else:
+            conn.execute("DELETE FROM push_device WHERE endpoint = ? AND pass_id = ?", (endpoint, pass_id))
+
+
+def push_devices(conn: sqlite3.Connection, pass_id: str) -> list[dict]:
+    rows = conn.execute("SELECT endpoint, p256dh, auth FROM push_device WHERE pass_id = ?", (pass_id,)).fetchall()
+    return [dict(r) for r in rows]
+
+
+def reply_alerts(conn: sqlite3.Connection, reply: Item) -> dict[str, str]:
+    """Who gets an alert for a new reply, and what it says: the same people and wording as their Feed.
+    The author of what it answers gets the reply line ("New reply to your post", a match on Dates); people
+    subscribed to the post get "New activity on a post you subscribed to" for public replies. Never the replier."""
+    parent = get_item(conn, reply.parent_id)
+    post = get_item(conn, reply.thread_id)
+    if parent is None or post is None:
+        return {}
+    alerts: dict[str, str] = {}
+    if reply.private_to is None:
+        for pass_id in subscribers(conn, reply.thread_id):
+            alerts[pass_id] = "New activity on a post you subscribed to"
+    if reply.private_to in (None, parent.pass_id):
+        on_profile = post.board == "dates" and not post.pinned
+        first_from_owner = (
+            reply.pass_id == post.pass_id and parent.parent_id == post.id
+            and conn.execute("SELECT id FROM item WHERE parent_id = ? AND pass_id = ? ORDER BY created_at, id LIMIT 1",
+                             (parent.id, post.pass_id)).fetchone()["id"] == reply.id
+        )
+        alerts[parent.pass_id] = _reply_label({"on_post": parent.parent_id is None, "on_profile": on_profile,
+                                               "first_from_owner": first_from_owner})
+    alerts.pop(reply.pass_id, None)
+    return alerts
+
+
 def notifications(conn: sqlite3.Connection, pass_id: str) -> list[dict]:
     """What's new on your posts and replies, newest first: replies from others, others' reactions
     (grouped per post or reply, with each reaction's time so the browser can count the new ones), and

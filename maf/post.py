@@ -9,7 +9,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.routing import Route
 
-from . import live, profiles, store
+from . import live, profiles, push, store
 from .email import hidden_reply_email, moderation_email
 from .housetags import submit_placeholder
 from .sealed import parse_sealed, valid_public_key
@@ -168,6 +168,7 @@ async def comment(request: Request) -> Response:
     page.app.live.publish(live.HOME)  # front pages refresh their New section and counts
     _ring(page, parent.pass_id)
     _ring_subscribers(page, parent.thread_id)
+    push.alert_reply(page, reply)
     return to_thread(page, parent.thread_id, f"#{reply.id}")  # land on the new reply, not the top
 
 
@@ -197,6 +198,7 @@ def _private_comment(page, parent: store.Item, private_to: str, raw_sealed: str)
     page.app.live.publish(parent.thread_id)
     if parent.pass_id == private_to:
         _ring(page, private_to)
+    push.alert_reply(page, reply)
     return to_thread(page, thread_id, f"#{reply.id}")
 
 

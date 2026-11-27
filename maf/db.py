@@ -7,7 +7,7 @@ so it can be extended later without a migration framework.
 import sqlite3
 from pathlib import Path
 
-SCHEMA_VERSION = 11
+SCHEMA_VERSION = 12
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS pass (
@@ -167,8 +167,20 @@ AUTHOR_HIDDEN = """
 ALTER TABLE item ADD COLUMN author_hidden INTEGER NOT NULL DEFAULT 0;
 """
 
+# Alerts (web push): one row per device that turned them on, tied to its pass. The endpoint is an address at the
+# browser's push service (Apple, Google, Mozilla); p256dh and auth encrypt each alert so only that device can read it.
+PUSH_DEVICES = """
+CREATE TABLE IF NOT EXISTS push_device (
+    endpoint TEXT PRIMARY KEY,
+    pass_id TEXT NOT NULL,
+    p256dh TEXT NOT NULL,
+    auth TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS push_device_pass ON push_device(pass_id);
+"""
+
 MIGRATIONS = {1: SCHEMA, 2: SEALED_REPLIES, 3: REMOVED_REASON, 4: REPLY_EDITS, 5: REACTION_TIMES, 6: EDITED_AT, 7: SUBSCRIPTIONS,
-              8: NSFW, 9: HIDDEN_REASON, 10: BOARD, 11: AUTHOR_HIDDEN}
+              8: NSFW, 9: HIDDEN_REASON, 10: BOARD, 11: AUTHOR_HIDDEN, 12: PUSH_DEVICES}
 
 
 def connect(path: Path | str) -> sqlite3.Connection:

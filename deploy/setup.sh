@@ -10,6 +10,7 @@ DATA_DIR=/var/lib/maf
 ENV_DIR=/etc/maf
 ENV_FILE=$ENV_DIR/env
 KEY_FILE=$DATA_DIR/signing.key
+VAPID_FILE=$DATA_DIR/vapid.pem  # signs alerts (web push)
 SERVICE_USER=maf
 PLACEHOLDER=CHANGE_ME_TO_THE_MAINTAINER_EMAIL
 
@@ -106,6 +107,16 @@ generate_signing_key() {
   chmod 600 "$KEY_FILE"
 }
 
+generate_vapid_key() {
+  if [ -e "$VAPID_FILE" ]; then
+    return
+  fi
+  log "Generating the alerts (web push) key"
+  (cd "$DATA_DIR" && runuser -u "$SERVICE_USER" -- "$APP_DIR/.venv/bin/python" -c \
+    "from py_vapid import Vapid; k = Vapid(); k.generate_keys(); k.save_key('$VAPID_FILE')")
+  chmod 600 "$VAPID_FILE"
+}
+
 write_env_file() {
   if [ -e "$ENV_FILE" ]; then
     log "$ENV_FILE exists, leaving every secret as it is"
@@ -116,6 +127,7 @@ write_env_file() {
   fi
   log "Writing $ENV_FILE with new secrets"
   generate_signing_key
+  generate_vapid_key
   install -d -m 750 -o root -g "$SERVICE_USER" "$ENV_DIR"
   local tmp
   tmp=$(mktemp "$ENV_DIR/env.XXXXXX")
@@ -123,6 +135,7 @@ write_env_file() {
 MAF_ENV=production
 MAF_DATABASE=$DATA_DIR/maf.db
 MAF_SIGNING_KEY=$KEY_FILE
+MAF_VAPID_KEY=$VAPID_FILE
 LABEL_SECRET=$(random_secret)
 SESSION_SECRET=$(random_secret)
 EMAIL_BACKEND=ses

@@ -149,6 +149,7 @@ def render(page: Page, template: str, status_code: int = 200, **context: Any) ->
         "path": page.request.url.path,
         "server_now": iso(utc_now()),
         "nsfw_mode": page.nsfw,
+        "push_key": page.app.pusher.public_key if page.pass_id and page.app.pusher else "",
     }
     base.update(context)
     base["nav"] = navigation.header_links(

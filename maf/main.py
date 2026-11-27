@@ -12,7 +12,7 @@ from starlette.responses import JSONResponse, RedirectResponse, Response
 from starlette.routing import Mount, Route
 from starlette.staticfiles import StaticFiles
 
-from . import auth, housetags, navigation, post, profiles, reactions, reading, store
+from . import auth, housetags, navigation, post, profiles, push, reactions, reading, store
 from .app import App, build_app
 from .display import day_label, four_day_window, range_label, short_range_label
 from .settings import Settings, load_settings
@@ -279,7 +279,7 @@ class InPlaceRedirects:
 
 
 # Pages a signed-out visitor may open. Everything else needs a pass; the API checks its own bearer tokens.
-PUBLIC_PATHS = {"/sign-in", "/sign-in/code", "/sign-in/sent", "/sign-in/key", "/sign-in/blind-sign", "/sign-in/redeem", "/about", "/privacy"}
+PUBLIC_PATHS = {"/sign-in", "/sign-in/code", "/sign-in/sent", "/sign-in/key", "/sign-in/blind-sign", "/sign-in/redeem", "/about", "/privacy", "/sw.js", "/manifest.webmanifest"}
 PUBLIC_PREFIXES = ("/static/", "/api/")
 
 
@@ -330,6 +330,7 @@ def create_app(settings: Settings | None = None) -> Starlette:
         *auth.routes,
         *api.routes,
         *reactions.routes,
+        *push.routes,
         # Mounts last: a Mount matches any path under its prefix.
         Mount("/static", StaticFiles(directory=str(settings.static_dir)), name="static"),
     ]

@@ -103,6 +103,7 @@
       empty.className = "bell-empty";
       empty.textContent = "Replies and reactions to your posts and comments show up here.";
       menu.replaceChildren(empty);
+      rendered();
       return;
     }
     // Scrolls like the # menu: no scrollbar, faded edges, and chevrons where there's more (from tags.js).
@@ -111,6 +112,12 @@
     scroller.addEventListener("scroll", () => updateTagFade(menu));
     menu.replaceChildren(scrollArrow("up", scroller), scroller, scrollArrow("down", scroller));
     requestAnimationFrame(() => updateTagFade(menu));
+    rendered();
+  }
+
+  // alerts.js adds its line (alerts on this device, and turning them off) to the bottom of the menu.
+  function rendered() {
+    document.dispatchEvent(new CustomEvent("maf:feed-menu", { detail: menu }));
   }
 
   async function load() {

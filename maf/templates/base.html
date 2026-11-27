@@ -26,6 +26,7 @@
    Both are inside the page, so switching is instant. #}
 <link rel="icon" type="image/png" sizes="32x32" href="{{ icon_dark }}" data-dark="{{ icon_dark }}" data-light="{{ icon_light }}">
 <link rel="apple-touch-icon" href="{{ static('icon-180.png') }}">
+<link rel="manifest" href="/manifest.webmanifest">
 {# Link previews (Telegram, iMessage, Slack...). The image is public, like all of /static/. #}
 <meta name="description" content="An anonymous discussion forum only for {{ org.community }}.">
 <meta property="og:site_name" content="{{ org.site_name }}">
@@ -40,7 +41,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <script src="{{ static('theme-init.js') }}"></script>
 </head>
-<body class="{{ body_class|default('') }}" data-now="{{ server_now }}"{% set on_dates = board is defined and board == "dates" %}{% set dates_page = dates_page is defined and dates_page %}{% set nsfw_tint = post_nsfw if post_nsfw is defined else nsfw_mode %}{% if nsfw_tint and not on_dates %} data-nsfw{% endif %}{% if on_dates %} data-board="dates"{% endif %}{% if reply_placeholder is defined and reply_placeholder %} data-reply-placeholder="{{ reply_placeholder|e }}"{% endif %}>
+<body class="{{ body_class|default('') }}" data-now="{{ server_now }}"{% if push_key %} data-push-key="{{ push_key }}"{% endif %}{% set on_dates = board is defined and board == "dates" %}{% set dates_page = dates_page is defined and dates_page %}{% set nsfw_tint = post_nsfw if post_nsfw is defined else nsfw_mode %}{% if nsfw_tint and not on_dates %} data-nsfw{% endif %}{% if on_dates %} data-board="dates"{% endif %}{% if reply_placeholder is defined and reply_placeholder %} data-reply-placeholder="{{ reply_placeholder|e }}"{% endif %}>
 <a class="skip" href="#main">Skip to content</a>
 <div class="page">
   <header class="top">
@@ -95,7 +96,7 @@
 <script src="{{ static('grow.js') }}"></script>
 {% if tags %}<script type="application/json" id="tag-data">{{ tags|tojson }}</script>{% endif %}
 <script src="{{ static('tags.js') }}"></script>
-{% if viewer %}<script src="{{ static('bell.js') }}"></script><script src="{{ static('nsfw.js') }}"></script>{% endif %}
+{% if viewer %}<script src="{{ static('bell.js') }}"></script><script src="{{ static('nsfw.js') }}"></script><script src="{{ static('alerts.js') }}"></script>{% endif %}
 {% block scripts %}{% endblock %}
 </body>
 </html>
