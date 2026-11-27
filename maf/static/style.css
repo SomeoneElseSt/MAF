@@ -235,6 +235,7 @@ textarea::placeholder, input::placeholder { color: var(--meta); opacity: 1; }
 .share-icon { width: 13px; height: 17px; vertical-align: -3px; margin: 0 2px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .bell-alerts { padding: 10px 20px 12px; border-top: 1px solid var(--line); font: 13px/1.5 var(--sans); color: var(--meta); }
 .bell-alerts .alert-steps { font-size: 13px; margin: 4px 0 0; }
+.tag-menu .bell-alerts .linkish, .tag-menu .bell-alerts .linkish:hover { display: inline; width: auto; padding: 0; font: inherit; color: var(--ink); background: none; }
 .linkish { font: inherit; color: var(--ink); background: none; border: none; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 /* Folding (fold.js): [–] after a comment's time folds it and its replies to the details line. */
 .fold { font: 14px var(--mono); letter-spacing: -1px; color: var(--meta); background: none; border: none; padding: 0; cursor: pointer; }
