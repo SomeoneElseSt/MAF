@@ -882,6 +882,8 @@ def site_stats(conn: sqlite3.Connection, since: str) -> list[Metric]:
         metric("people with a post", "SELECT COUNT(DISTINCT pass_id) FROM item WHERE parent_id IS NULL"),
         metric("posts", f"SELECT COUNT(*) FROM item WHERE {public}",
                f"SELECT COUNT(*) FROM item WHERE {public} AND created_at >= ?"),
+        # Views aren't timed (a count on each post), so they have no delta.
+        metric("post views", "SELECT COALESCE(SUM(views), 0) FROM item WHERE parent_id IS NULL"),
         metric("replies", f"SELECT COUNT(*) FROM item WHERE {reply}",
                f"SELECT COUNT(*) FROM item WHERE {reply} AND created_at >= ?"),
         metric("private replies", "SELECT COUNT(*) FROM item WHERE private_to IS NOT NULL",

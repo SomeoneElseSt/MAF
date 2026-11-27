@@ -32,6 +32,14 @@ def test_rows_without_a_time_have_no_delta(app, pass_id):
     assert metrics["passes"].total == 1
 
 
+def test_post_views_add_up_with_no_delta(app, pass_id):
+    first, second = make_post(app, pass_id), make_post(app, pass_id)
+    for post_id in (first.id, second.id, second.id):
+        store.increment_views(app.conn, post_id)
+    metrics = by_name(store.site_stats(app.conn, iso(utc_now() - timedelta(hours=12))))
+    assert metrics["post views"].total == 3 and metrics["post views"].recent is None
+
+
 def test_private_replies_are_counted_apart(app, pass_id):
     post = make_post(app, pass_id)
     other = store.create_pass(app.conn)
