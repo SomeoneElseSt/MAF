@@ -495,7 +495,7 @@ main { display: block; }
 /* Subscribed: the button stays clickable (a click stops it) but reads as done. */
 .subscribe.subscribed { color: var(--meta); }
 .subscribe.subscribed:hover { color: var(--ink); }
-.subscribe-info { position: relative; display: inline-flex; align-items: center; }
+.subscribe-info, .private-info { position: relative; display: inline-flex; align-items: center; }
 .subscribe-info { margin-left: 4px; }
 
 /* Real app only: rules for markup the static mockups didn't need. */

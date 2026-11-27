@@ -30,7 +30,12 @@
 {% macro meta_line(entry) %}
   <div class="meta">
     <button class="id" type="button">{{ label_of[entry.pass_id] }}</button>{% if entry.pass_id == op_pass %} (OP){% elif entry.pass_id == viewer %} (you){% endif %}, {{ entry.created_at|rel }}{% if entry.edited_at %} <span class="edited">(edited)</span>{% endif %}
-    {% if entry.private_to %} <span class="dot">·</span> <span class="private-note">Private, only you and {{ label_of[entry.private_to] if entry.pass_id == viewer else label_of[entry.pass_id] }}</span> <button class="info" type="button" aria-label="About private replies" aria-expanded="false">i</button>{% endif %}
+    {% if entry.private_to %} <span class="dot">·</span> <span class="private-note">Private, only you and {{ label_of[entry.private_to] if entry.pass_id == viewer else label_of[entry.pass_id] }}</span> <span class="private-info"><button class="info" type="button" aria-label="About private replies" aria-expanded="false">i</button><div class="info-card" role="dialog" aria-label="About private replies" hidden>
+  <p class="info-title">Private replies</p>
+  <p>Only the two of you can read this, inside this thread. Everyone else sees the thread as if it weren't there.</p>
+  <p>It was encrypted in the sender's browser, so {{ org.site_name }}'s server only stores scrambled text. It can be read only on the devices the two of you used in this thread.</p>
+  <p class="info-fine">Other students can't see or flag it.</p>
+</div></span>{% endif %}
   </div>
 {% endmacro %}
 
