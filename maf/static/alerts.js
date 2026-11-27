@@ -21,7 +21,6 @@
     sent: "Get an alert if they match with you?",
     message: "Get an alert when they reply?",
   };
-  const FINE_PRINT = "Alerts only say what happened, never anyone's words.";
   const BLOCKED = "Alerts are blocked for maforum.net in this browser's settings.";
   const SHARE_ICON = '<svg class="share-icon" viewBox="0 0 17 22" aria-label="Share" role="img"><path d="M5.5 8H3.5a2 2 0 0 0-2 2v8.5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-2"/><path d="M8.5 13.5V1.5"/><path d="M4.8 5 8.5 1.3 12.2 5"/></svg>';
   const HOME_SCREEN_STEPS = `<ol class="alert-steps"><li>Tap Share ${SHARE_ICON} in Safari.</li><li>Tap <b>Add to Home Screen</b>.</li><li>Open MAF from your Home Screen and turn alerts on there.</li></ol>`;
@@ -170,7 +169,7 @@
     if (supported && Notification.permission === "denied") return;
     if (Date.now() - Number(read(NOT_NOW_KEY) || 0) < NOT_NOW_MS) return;
     if (await currentSubscription()) return;
-    const box = note(`<p>${QUESTIONS[ask.kind]} <span class="alert-fine">${FINE_PRINT}</span></p>
+    const box = note(`<p>${QUESTIONS[ask.kind]}</p>
       <div class="row"><button class="button" type="button" data-alert-on>Turn on alerts</button><button class="button plain" type="button" data-alert-later>Not now</button></div>`);
     box.querySelector("[data-alert-on]").addEventListener("click", async () => settle(box, await turnOn()));
     box.querySelector("[data-alert-later]").addEventListener("click", () => {
