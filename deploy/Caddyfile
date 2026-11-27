@@ -29,9 +29,9 @@ maforum.net {
 		Referrer-Policy no-referrer
 		X-Frame-Options DENY
 		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
-		# Same-origin only. Pages have no inline <script> or style="" (the theme bootstrap lives in
+		# Same-origin only (manifest-src and worker-src: alerts need the Home Screen manifest and /sw.js). Pages have no inline <script> or style="" (the theme bootstrap lives in
 		# /static/theme-init.js), so there is no 'unsafe-inline'. data: images: one CSS mask icon.
-		Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; form-action 'self'; base-uri 'self'; frame-ancestors 'none'"
+		Content-Security-Policy "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; form-action 'self'; base-uri 'self'; frame-ancestors 'none'"
 		-Server
 	}
 
