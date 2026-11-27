@@ -137,7 +137,7 @@
     const tag = document.createElement("span");
     tag.className = "new-tag";
     tag.textContent = label;
-    row.querySelector(".meta")?.append(tag);
+    row.querySelector(".meta")?.append(" ", tag);
     newList.append(row);
   }
 
@@ -146,7 +146,11 @@
     Object.assign(openedAt, opened());
     for (const row of [...newList.children]) {
       if (whatsNew(row)) continue;
-      row.querySelector(".new-tag")?.remove();
+      const badge = row.querySelector(".new-tag");
+      if (badge?.previousSibling?.nodeType === Node.TEXT_NODE && badge.previousSibling.nodeValue === " ") {
+        badge.previousSibling.remove();
+      }
+      badge?.remove();
       const [list, next] = homes.get(row) ?? [];
       if (!list) row.remove();
       else if (next?.parentElement === list) list.insertBefore(row, next);
