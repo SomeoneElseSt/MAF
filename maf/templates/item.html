@@ -185,6 +185,10 @@
 </div>
 {% endif %}
 
+{% if post_mine and post.author_hidden and not post.unlisted %}
+<div class="notice"><p>You hid this post. It's off the front page, tags and search, but anyone with the link can still read it and reply.</p></div>
+{% endif %}
+
 {% if etiquette_banner %}
 <div class="notice etiquette">
   <p><span class="etiquette-tag">#{{ etiquette_banner[0] }}</span> etiquette: {{ etiquette_banner[1] }}</p>
@@ -199,6 +203,7 @@
     {% if not post.unlisted %} <span class="sep">|</span>
     <form action="/flag" method="post" class="inline-form"><input type="hidden" name="item_id" value="{{ post.id }}"><input type="hidden" name="thread_id" value="{{ post.id }}"><button class="meta-action{% if flags.get(post.id) %} flagged{% endif %}" type="submit" aria-pressed="{{ 'true' if flags.get(post.id) else 'false' }}">{% if flags.get(post.id) %}Flagged{% else %}Flag {{ 'Profile' if is_profile else 'Post' }}{% endif %}{{ flag_count(post) }}</button></form>{% if flags.get(post.id) %} <span class="flag-note">5 flags hide a {{ "profile" if is_profile else "post" }}. Urgent? Email <a href="mailto:{{ org.contact_email }}">{{ org.contact_email }}</a>.</span>{% endif %}
     {% if post_mine and not is_profile %} <span class="sep">|</span> <button class="reply-toggle meta-action" type="button" data-edit="edit-{{ post.id }}" aria-controls="edit-{{ post.id }}" aria-expanded="false">Edit</button>{% endif %}
+    {% if post_mine and not is_profile %} <span class="sep">|</span> <form action="/hide-post" method="post" class="inline-form"><input type="hidden" name="thread_id" value="{{ post.id }}"><button class="meta-action" type="submit">{{ 'Unhide Post' if post.author_hidden else 'Hide Post' }}</button></form>{% endif %}
     {% endif %}
   </div>
   {% if post.url %}<p class="post-link"><a href="{{ post.url }}" rel="nofollow noopener" target="_blank">{{ post.url|host }}<span class="sr-only"> (opens in a new tab)</span></a></p>{% endif %}

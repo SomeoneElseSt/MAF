@@ -42,3 +42,22 @@ def test_a_hidden_post_leaves_the_list_and_says_why(signed_in, app):
 def test_hiding_nothing_says_so(app, capsys):
     assert _hide(app, "no-such-item") == 1
     assert "No item no-such-item" in capsys.readouterr().out
+
+
+def test_hide_post_unlists_your_own_post_and_unhide_brings_it_back(signed_in, app, pass_id):
+    post = store.create_post(app.conn, pass_id, "Mine to hide", None, "findable words", ["help"])
+    store.create_comment(app.conn, store.create_pass(app.conn), post, "a reply", None)
+    signed_in.post("/hide-post", data={"thread_id": post.id})
+    assert f'data-id="{post.id}"' not in signed_in.get("/").text
+    assert not store.search(app.conn, "findable") and not store.tagged_posts(app.conn, "help", "new")
+    page = signed_in.get(f"/thread/{post.id}").text
+    assert "You hid this post." in page and "Unhide Post" in page and "a reply" in page
+    signed_in.post("/hide-post", data={"thread_id": post.id})
+    assert f'data-id="{post.id}"' in signed_in.get("/").text
+
+
+def test_only_the_author_can_hide_a_post(signed_in, app):
+    post = store.create_post(app.conn, store.create_pass(app.conn), "Not mine", None, None, ["help"])
+    assert "Hide Post" not in signed_in.get(f"/thread/{post.id}").text
+    signed_in.post("/hide-post", data={"thread_id": post.id})
+    assert not store.get_item(app.conn, post.id).author_hidden

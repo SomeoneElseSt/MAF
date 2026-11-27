@@ -110,6 +110,7 @@ class Item:
     nsfw: int = 0
     nsfw_marked: int | None = None
     board: str = "main"
+    author_hidden: int = 0
     tags: list[str] = field(default_factory=list)
     comment_count: int = 0
     thread_title: str | None = None
@@ -156,6 +157,7 @@ def _row_to_item(row: sqlite3.Row, tags: list[str] | None = None) -> Item:
         nsfw=row["nsfw"],
         nsfw_marked=row["nsfw_marked"],
         board=row["board"],
+        author_hidden=row["author_hidden"],
         tags=tags or [],
     )
 
@@ -322,7 +324,7 @@ def new_activity(conn: sqlite3.Connection, viewer_pass: str, since: str, nsfw: b
         "  SELECT i.*, (SELECT MAX(c.created_at) FROM item c WHERE c.thread_id = i.id AND c.parent_id IS NOT NULL"
         "    AND c.private_to IS NULL AND c.removed_reason IS NULL AND c.pass_id IS NOT ?) AS latest_other"
         "  FROM item i WHERE i.parent_id IS NULL AND i.private_to IS NULL AND i.removed_reason IS NULL"
-        "    AND NOT (i.hidden = 1 AND i.restored = 0) AND i.nsfw = ? AND i.board = 'main'"
+        "    AND NOT (i.hidden = 1 AND i.restored = 0) AND i.author_hidden = 0 AND i.nsfw = ? AND i.board = 'main'"
         ") WHERE (pass_id IS NOT ? AND created_at > ?) OR latest_other > ? "
         "ORDER BY MAX(created_at, COALESCE(latest_other, '')) DESC LIMIT ?",
         (viewer_pass, int(nsfw), viewer_pass, since, since, NEW_ACTIVITY_LIMIT),
@@ -430,6 +432,7 @@ def _post_where(public_only: bool = True, nsfw: bool = False, board: str = MAIN)
     if public_only:
         clauses.append("private_to IS NULL")
         clauses.append("NOT (hidden = 1 AND restored = 0)")
+        clauses.append("author_hidden = 0")
     return " AND ".join(clauses)
 
 
@@ -517,7 +520,7 @@ def tagged_count(conn: sqlite3.Connection, tag: str, nsfw: bool = False) -> int:
     row = conn.execute(
         "SELECT COUNT(*) AS n FROM item_tag t JOIN item i ON i.id = t.item_id "
         "WHERE t.tag = ? AND i.parent_id IS NULL AND i.private_to IS NULL "
-        "AND NOT (i.hidden = 1 AND i.restored = 0) AND i.nsfw = ? AND i.board = 'main'",
+        "AND NOT (i.hidden = 1 AND i.restored = 0) AND i.author_hidden = 0 AND i.nsfw = ? AND i.board = 'main'",
         (tag, int(nsfw)),
     ).fetchone()
     return row["n"]
@@ -527,7 +530,7 @@ def tag_counts(conn: sqlite3.Connection, nsfw: bool = False) -> list[tuple[str, 
     """Every tag on a visible public post on this side, most used first then alphabetical."""
     rows = conn.execute(
         "SELECT t.tag AS tag, COUNT(*) AS n FROM item_tag t JOIN item i ON i.id = t.item_id "
-        "WHERE i.parent_id IS NULL AND i.private_to IS NULL AND NOT (i.hidden = 1 AND i.restored = 0) "
+        "WHERE i.parent_id IS NULL AND i.private_to IS NULL AND NOT (i.hidden = 1 AND i.restored = 0) AND i.author_hidden = 0 "
         "AND i.nsfw = ? AND i.board = 'main' GROUP BY t.tag ORDER BY n DESC, t.tag ASC",
         (int(nsfw),),
     ).fetchall()
@@ -565,7 +568,7 @@ def search(
     order = {"new": "i.created_at DESC", "old": "i.created_at ASC", "views": "i.views DESC"}[sort]
     sql = (
         "SELECT i.* FROM item_fts f JOIN item i ON i.rowid = f.rowid JOIN item p ON p.id = i.thread_id "
-        "WHERE item_fts MATCH ? AND NOT (i.hidden = 1 AND i.restored = 0) AND p.nsfw = ? AND p.board = 'main' "
+        "WHERE item_fts MATCH ? AND NOT (i.hidden = 1 AND i.restored = 0) AND p.author_hidden = 0 AND p.nsfw = ? AND p.board = 'main' "
         f"ORDER BY i.parent_id IS NOT NULL, {order} LIMIT ? OFFSET ?"
     )
     try:
@@ -778,6 +781,12 @@ def set_board(conn: sqlite3.Connection, item_id: str, board: str) -> bool:
     with conn:
         cur = conn.execute("UPDATE item SET board = ? WHERE id = ? AND parent_id IS NULL", (board, item_id))
     return cur.rowcount > 0
+
+
+def set_author_hidden(conn: sqlite3.Connection, item_id: str, hidden: bool) -> None:
+    """The author's Hide Post: off every list and search, the link still works. Unhide brings it back."""
+    with conn:
+        conn.execute("UPDATE item SET author_hidden = ? WHERE id = ?", (int(hidden), item_id))
 
 
 def set_pinned(conn: sqlite3.Connection, item_id: str, pinned: bool) -> bool:

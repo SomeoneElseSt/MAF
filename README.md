@@ -11,6 +11,7 @@ A template for an anonymous forum for your organization: a university, a company
 - **Replies.** Reply to the original poster (OP) or to any other reply. Tick "Make only visible to [name]" and only you and that person can read it: it's encrypted in your browser, so not even MAF can see it.
 - **Edit and delete your own replies.** Edit rewrites the reply; it's marked "(edited)". Deleting removes the words for good.
 - **Edit your own posts.** The same Edit for your own post's text; its title, link and hashtags stay as they were.
+- **Hide your own posts.** Hide Post takes it off every list and search; the link still works. Unhide brings it back.
 - **Emoji reactions** on posts and replies.
 - **Feed.** The Feed button in the header counts new replies and reactions to your posts and replies, and lists them. What you've already seen is remembered in your browser only.
 - **Main page.** Pin posts, search by text, browse by hashtag with the # icon, and by date with the range switcher.

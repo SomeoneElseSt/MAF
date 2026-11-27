@@ -7,7 +7,7 @@ so it can be extended later without a migration framework.
 import sqlite3
 from pathlib import Path
 
-SCHEMA_VERSION = 10
+SCHEMA_VERSION = 11
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS pass (
@@ -162,8 +162,13 @@ BOARD = """
 ALTER TABLE item ADD COLUMN board TEXT NOT NULL DEFAULT 'main';
 """
 
+# The author hid their own post (Hide Post): it's off every list and search, but its link still works.
+AUTHOR_HIDDEN = """
+ALTER TABLE item ADD COLUMN author_hidden INTEGER NOT NULL DEFAULT 0;
+"""
+
 MIGRATIONS = {1: SCHEMA, 2: SEALED_REPLIES, 3: REMOVED_REASON, 4: REPLY_EDITS, 5: REACTION_TIMES, 6: EDITED_AT, 7: SUBSCRIPTIONS,
-              8: NSFW, 9: HIDDEN_REASON, 10: BOARD}
+              8: NSFW, 9: HIDDEN_REASON, 10: BOARD, 11: AUTHOR_HIDDEN}
 
 
 def connect(path: Path | str) -> sqlite3.Connection:

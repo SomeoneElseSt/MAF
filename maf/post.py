@@ -334,6 +334,19 @@ async def subscribe(request: Request) -> Response:
     return to_thread(page, post.id, back)
 
 
+async def hide_post(request: Request) -> Response:
+    """Hide Post, for its author: off every list and search, the link still works. Sent again, it unhides."""
+    page = page_of(request)
+    values = await form_values(request, "thread_id")
+    post = store.get_item(page.conn, values["thread_id"])
+    if page.pass_id is None or post is None or not post.is_post:
+        return gone(page, values["thread_id"])
+    if not _own_item(page, post) or store.is_profile(post):
+        return to_thread(page, post.id, "?notice=You+can+only+hide+your+own+posts.")
+    store.set_author_hidden(page.conn, post.id, not post.author_hidden)
+    return to_thread(page, post.id, "")
+
+
 async def delete_reply(request: Request) -> Response:
     """Deletes your own reply for good; if others replied to it, "Deleted by its author." stays in its place."""
     page = page_of(request)
@@ -450,6 +463,7 @@ routes = [
     Route("/edit", edit, methods=["POST"]),
     Route("/subscribe", subscribe, methods=["POST"]),
     Route("/delete-reply", delete_reply, methods=["POST"]),
+    Route("/hide-post", hide_post, methods=["POST"]),
     Route("/thread-key", thread_key, methods=["POST"]),
     Route("/flag", flag, methods=["POST"]),
     Route("/moderation-request", moderation_request, methods=["POST"]),
