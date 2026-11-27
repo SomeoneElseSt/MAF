@@ -558,7 +558,8 @@ button.note:disabled { cursor: default; }
 .bell-item { display: block; padding: 12px 20px; color: var(--ink); }
 .bell-item:hover { background: var(--tint); text-decoration: none; }
 .bell-what { display: block; font: 15px var(--sans); }
-.bell-what .new-tag { margin-left: 8px; }
+/* Inline, so the badge stays on the line with the label's last word instead of wrapping alone (new-tag is inline-block). */
+.bell-what .new-tag { display: inline; margin-left: 8px; }
 .bell-meta { display: block; font: 13px var(--sans); color: var(--meta); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bell-menu .tag-scroll { max-height: 440px; padding: 8px 0; }
 .bell-empty { margin: 0; padding: 14px 20px; font: 14px/1.5 var(--sans); color: var(--meta); }
