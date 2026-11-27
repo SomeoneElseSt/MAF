@@ -230,6 +230,10 @@ textarea::placeholder, input::placeholder { color: var(--meta); opacity: 1; }
 /* The preceding space separates inline badges but collapses at a line break. */
 .new-list .meta > .new-tag { margin-left: 0; }
 /* Alerts (alerts.js): the note under what you just did, and the line at the bottom of the Feed menu. */
+/* Even space inside the note (its last line has no margin below it), and a comment's gap above it. */
+.notice.alert-ask { margin-top: 18px; padding: 12px 18px; } /* 12px plus the line's own spacing looks like 18px */
+.notice.alert-ask > :last-child { margin-bottom: 0; }
+.notice.alert-ask > .row:last-child { margin-bottom: 6px; } /* a button's edge has no line spacing to borrow */
 .alert-steps { margin: 4px 0 6px; padding-left: 22px; font: 15px/1.6 var(--sans); }
 .share-icon { width: 13px; height: 17px; vertical-align: -3px; margin: 0 2px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .bell-alerts { padding: 10px 20px 12px; border-top: 1px solid var(--line); font: 13px/1.5 var(--sans); color: var(--meta); }
