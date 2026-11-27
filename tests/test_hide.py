@@ -45,8 +45,9 @@ def test_hiding_nothing_says_so(app, capsys):
 
 
 def test_hide_post_unlists_your_own_post_and_unhide_brings_it_back(signed_in, app, pass_id):
-    post = store.create_post(app.conn, pass_id, "Mine to hide", None, "findable words", ["help"])
+    post = store.create_post(app.conn, pass_id, "Mine to hide", "findable words", None, ["help"])
     store.create_comment(app.conn, store.create_pass(app.conn), post, "a reply", None)
+    assert store.search(app.conn, "findable") and store.tagged_posts(app.conn, "help", "new")
     signed_in.post("/hide-post", data={"thread_id": post.id})
     assert f'data-id="{post.id}"' not in signed_in.get("/").text
     assert not store.search(app.conn, "findable") and not store.tagged_posts(app.conn, "help", "new")
