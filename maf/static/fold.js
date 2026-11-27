@@ -1,7 +1,7 @@
 // Folding comments: [–] after a comment's time folds it and its replies down to its details line; [+] opens it.
 // Folds are remembered in this browser, per post. Folding a comment yourself counts as reading it and what's under
-// it, so their New badges go and stay gone. A branch folded on an earlier visit shows one badge with how much is new
-// inside it (and the comment itself, if it's new). Without JS, nothing folds.
+// it, so their New badges go and stay gone; replying to a comment does the same for it. A branch folded on an earlier
+// visit shows one badge with how much is new inside it (and the comment itself, if it's new). Without JS, nothing folds.
 (function () {
   const post = document.querySelector("article.post-head");
   if (!post) return;
@@ -92,6 +92,16 @@
     if (li.closest(".profile-replies")) return;
     addFold(li);
   });
+
+  // Replying to a comment counts as reading it: its New badge goes, and stays gone after the reload that follows.
+  document.addEventListener("submit", event => {
+    const form = event.target.closest?.("form.inline-reply[id^='reply-']");
+    const li = form?.closest("li.comment");
+    if (!li) return;
+    ownBadge(li)?.remove();
+    read.add(li.id);
+    writeSet(READ_KEY, read);
+  }, true);
 
   // A link to a reply inside a folded branch (from the Feed, or after sending one) opens the branch to it.
   function openTo(id) {
