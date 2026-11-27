@@ -110,7 +110,10 @@
     const scroller = Object.assign(document.createElement("div"), { className: "tag-scroll" });
     scroller.append(...items.map(row));
     scroller.addEventListener("scroll", () => updateTagFade(menu));
-    menu.replaceChildren(scrollArrow("up", scroller), scroller, scrollArrow("down", scroller));
+    // The chevrons float over the list itself, so the alerts line below it (alerts.js) stays clear of them.
+    const list = Object.assign(document.createElement("div"), { className: "bell-list" });
+    list.append(scrollArrow("up", scroller), scroller, scrollArrow("down", scroller));
+    menu.replaceChildren(list);
     requestAnimationFrame(() => updateTagFade(menu));
     rendered();
   }

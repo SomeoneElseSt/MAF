@@ -582,6 +582,7 @@ button.note:disabled { cursor: default; }
 .bell-what .new-tag { display: inline; margin-left: 8px; }
 .bell-meta { display: block; font: 13px var(--sans); color: var(--meta); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bell-menu .tag-scroll { max-height: 440px; padding: 8px 0; }
+.bell-list { position: relative; }
 .bell-empty { margin: 0; padding: 14px 20px; font: 14px/1.5 var(--sans); color: var(--meta); }
 /* bell.js slides the list left (or right) when centring it would go past the window edge. */
 
