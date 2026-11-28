@@ -351,8 +351,9 @@ RESET_STORAGE = """() => {
 SCREENS = [
     # Front page
     Screen("home", "Front page", "Front page", "me", "/",
-           "Pinned, then New (posts since your last visit), then each day. #hottakes rows sit on the ember wash.",
-           with_new_section, files=["list.html", "_rows.html", "new.js", "pins.js"]),
+           "Pinned, then New (posts since your last visit), then each day. #hottakes rows sit on the ember wash. "
+           "The header keeps search, Feed and NSFW but no Dates link.",
+           with_new_section, files=["base.html", "list.html", "_rows.html", "new.js", "pins.js"]),
     Screen("home-empty", "Front page", "Front page, no posts", "me", "/",
            "Empty state: sort bar and dates stay; 'No posts yet.' centred in small grey sans.", stage="empty",
            files=["list.html"]),

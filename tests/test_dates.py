@@ -39,9 +39,11 @@ def test_dates_has_its_colour_and_its_thread_keeps_it(signed_in, app):
     assert "data-board" not in signed_in.get("/").text.split("<body", 1)[1].split(">", 1)[0]
 
 
-def test_the_header_link_goes_to_dates_and_toggles_back_from_it(signed_in):
-    assert '<a class="dates-toggle" href="/dates">Dates</a>' in signed_in.get("/").text
-    assert '<a class="dates-toggle" href="/?side=main" aria-current="page">Dates</a>' in signed_in.get("/dates").text  # toggles back
+def test_dates_is_absent_from_the_header_on_all_boards(signed_in):
+    for path in ("/", "/dates", "/submit"):
+        header = signed_in.get(path).text.split("</header>", 1)[0]
+        assert 'class="dates-toggle"' not in header
+        assert 'class="find"' in header and 'class="bell"' in header and 'class="nsfw-toggle"' in header
 
 
 def test_dates_needs_signing_in(client):
@@ -78,11 +80,10 @@ def test_submit_on_dates_opens_the_profile_form(signed_in):
     assert 'name="title"' not in form and 'data-board="dates"' in form
 
 
-def test_on_the_dates_form_the_logo_and_dates_lead_to_the_dates_home(signed_in):
-    assert '<a class="dates-toggle" href="/dates">' in signed_in.get("/submit").text
+def test_on_the_dates_form_the_logo_and_nsfw_links_still_work(signed_in):
     dates_form = signed_in.get("/dates/submit").text
     assert '<a class="brand" href="/dates">' in dates_form
-    assert '<a class="dates-toggle" href="/dates" aria-current="page">' in dates_form
+    assert 'class="dates-toggle"' not in dates_form
     assert '<a class="nsfw-toggle" href="/?side=nsfw">NSFW' in dates_form
 
 
@@ -122,10 +123,10 @@ def test_the_logo_on_a_post_goes_home_to_its_board(signed_in, app):
     assert "maf_nsfw=0" in signed_in.get("/?side=main", follow_redirects=False).headers["set-cookie"]
 
 
-def test_on_a_dates_post_the_header_link_goes_to_the_dates_page(signed_in, app):
+def test_on_a_dates_post_the_header_has_no_dates_link(signed_in, app):
     post = _post(app, "On dates")
     _move(app, post.id, "dates")
-    assert '<a class="dates-toggle" href="/dates" aria-current="page">' in signed_in.get(f"/thread/{post.id}").text
+    assert 'class="dates-toggle"' not in signed_in.get(f"/thread/{post.id}").text
 
 
 def test_a_pinned_dates_post_takes_normal_comments_and_a_profile_does_not(signed_in, app):

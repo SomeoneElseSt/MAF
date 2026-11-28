@@ -87,7 +87,7 @@
       <tr id="t-danger"><td><span class="swatch" style="--s: var(--danger)"></span></td><td><code>--danger</code></td><td>#8a0303</td><td>#ff6b6b</td><td>Only a flag you've placed ("Flagged").</td></tr>
       <tr id="t-visited"><td><span class="swatch" style="--s: var(--visited)"></span></td><td><code>--visited</code></td><td>#6f6f6f</td><td>#909090</td><td>Visited titles.</td></tr>
       <tr id="t-nsfw"><td><span class="swatch" style="--s: var(--nsfw-paper)"></span></td><td><code>--nsfw-paper</code>, <code>--nsfw-tint</code></td><td>#f8e8e2, #efdcd5</td><td>#22100c, #34211c</td><td>The NSFW side takes this tint on every page, so you always know where you are. The NSFW word turns #E2805A.</td></tr>
-      <tr id="t-dates"><td><span class="swatch" style="--s: var(--dates-paper)"></span></td><td><code>--dates-paper</code>, <code>--dates-tint</code>, <code>--dates-accent</code></td><td>#fbe9ee, #f1dbe2, #c2456b</td><td>#2e1520, #432633, #e87d9c</td><td>Dates only: its tint, and the Dates word in rose while you're there.</td></tr>
+      <tr id="t-dates"><td><span class="swatch" style="--s: var(--dates-paper)"></span></td><td><code>--dates-paper</code>, <code>--dates-tint</code>, <code>--dates-accent</code></td><td>#fbe9ee, #f1dbe2, #c2456b</td><td>#2e1520, #432633, #e87d9c</td><td>Dates only: its tint and rose accent.</td></tr>
     </tbody>
   </table>
   <p class="note">Surfaces are switched with <code>body[data-nsfw]</code> and <code>body[data-board="dates"]</code>, which swap <code>--paper</code>, <code>--tint</code> and <code>--meta</code>. Components never need to know which side they're on.</p>
@@ -121,8 +121,8 @@
   <h2>Layout and spacing</h2>
   <ul class="rules">
     <li id="l-column">One centred column, 700px wide, 20px side padding. The footer sits at the bottom on short pages. The scrollbar's space is always reserved, so pages don't shift.</li>
-    <li id="l-phone">Phones are anything 560px or narrower; 380px is the smallest checked (and 320px for the header). On phones the header becomes two rows: MAF, Submit, then Dates, NSFW, Dark on the right; search and Feed below.</li>
-    <li id="l-header-order">Header order, left to right: MAF, Submit, search (with #), Feed, Dates, NSFW, Dark. The words share one size and one gap.</li>
+    <li id="l-phone">Phones are anything 560px or narrower; 380px is the smallest checked (and 320px for the header). On phones the header becomes two rows: MAF, Submit, then NSFW and Dark on the right; search and Feed below.</li>
+    <li id="l-header-order">Header order, left to right: MAF, Submit, search (with #), Feed, NSFW, Dark. The words share one size and one gap.</li>
     <li id="l-sections">Section headings (Pinned, New, Today, Profiles): 26px above, 6px below. Rows: 8px top and bottom.</li>
     <li id="l-notice">Notices: 16px by 18px inside, 30px above, 24px before a form that follows.</li>
     <li id="l-indent">Replies indent 26px per level (16px on phones). A reply box indents one step under what it answers; an edit box replaces the text in place, with no indent.</li>
@@ -211,7 +211,7 @@
     <li id="w-short"><strong>Short and plain.</strong> One idea per sentence, everyday words, no jargon. If it can lose a sentence, it should.</li>
     <li id="w-what">Say what happened and what the person can do: "That code didn't match. Check the 6 digits, or ask for a new code."</li>
     <li id="w-you">Talk to the person as "you". MAF is "MAF", never "we" pretending to be a team.</li>
-    <li id="w-case">Sentence case. Two-word actions about the post itself are Title Case (Flag Post, Hide Post, Flag Profile), and so are the footer links (User Guide, Source Code, Sign Out). Header words start with a capital (Submit, Feed, Dates, NSFW, Dark).</li>
+    <li id="w-case">Sentence case. Two-word actions about the post itself are Title Case (Flag Post, Hide Post, Flag Profile), and so are the footer links (User Guide, Source Code, Sign Out). Header words start with a capital (Submit, Feed, NSFW, Dark).</li>
     <li id="w-progress">Buttons in progress use the verb and an ellipsis: Posting…, Replying…, Saving…, Sending….</li>
     <li id="w-no-emoji">No emoji in interface text ("Request deletion", not "Request nuke ☢️"). No "Oops", no exclamation marks, no cute.</li>
     <li id="w-generic">Examples and placeholders are generic but meaningful: real-sounding situations from student life, never "example.com" or a contested opinion.</li>

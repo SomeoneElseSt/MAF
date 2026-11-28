@@ -68,9 +68,7 @@
       <div class="tag-menu bell-menu" id="bell-menu" hidden></div>
     </div>
     {% endif %}
-    {# Where the logo, Dates and NSFW lead is worked out in one place: navigation.py (nav). The first time a link
-       turns NSFW on in this browser, a warning asks first (nsfw.js). #}
-    {% if viewer %}<a class="dates-toggle" href="{{ nav.dates }}"{% if nav.on_dates %} aria-current="page"{% endif %}>Dates</a>{% endif %}
+    {# The first time NSFW is turned on in this browser, a warning asks first (nsfw.js). #}
     {% if viewer %}<a class="nsfw-toggle" href="{{ nav.nsfw }}"{% if nav.nsfw_on %} data-on{% endif %}>NSFW</a>{% endif %}
     <button class="theme-toggle" type="button">Dark</button>
   </header>
