@@ -52,6 +52,7 @@ class Settings:
     source_url: str = "https://github.com/SomeoneElseSt/MAF"  # the code this site runs (the AGPL asks forks to link theirs)
     usage_log_path: Path | None = None  # one line per API request; unset writes nothing
     vapid_key_path: Path | None = None  # signs alerts (web push); made next to the database in development
+    dates_open: bool = False  # MAF_DATES=on opens the Dates page; closed, every Dates page and action is a 404
     static_dir: Path = field(default_factory=lambda: Path(__file__).parent / "static")
     templates_dir: Path = field(default_factory=lambda: Path(__file__).parent / "templates")
 
@@ -100,6 +101,7 @@ def load_settings(env: dict[str, str] | None = None) -> Settings:
         azure_email_connection=source.get("AZURE_EMAIL_CONNECTION_STRING", ""),
         name_filter_threshold=float(source.get("NAME_FILTER_THRESHOLD", "0.85")),
         name_filter_enabled=_bool("NAME_FILTER_ENABLED", True),
+        dates_open=_bool("MAF_DATES", False),
         spacy_model=source.get("SPACY_MODEL", DEFAULT_SPACY_MODEL),
         base_url=source.get("MAF_BASE_URL", "http://localhost:8000").rstrip("/"),
         email_domain=source.get("MAF_EMAIL_DOMAIN", Settings.email_domain).strip().lower().lstrip("@"),

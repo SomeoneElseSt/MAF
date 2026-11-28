@@ -18,6 +18,7 @@ def settings(tmp_path: Path) -> Settings:
         email_backend="console",
         maintainer_email="maintainer@example.com",
         name_filter_enabled=False,
+        dates_open=True,
     )
 
 

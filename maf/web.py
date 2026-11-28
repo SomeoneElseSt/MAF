@@ -168,6 +168,14 @@ def redirect(url: str, status_code: int = 303) -> RedirectResponse:
     return RedirectResponse(url, status_code=status_code)
 
 
+def open_item(page, item_id: str) -> store.Item | None:
+    """A post or reply to show or act on: None if there's none, or it's on Dates while Dates is closed."""
+    item = store.get_item(page.conn, item_id)
+    if item is None or page.settings.dates_open or not store.on_dates(page.conn, item):
+        return item
+    return None
+
+
 def to_thread(page, item_id: str, rest: str = "") -> Response:
     """Back to a thread (or something in it) at its one address, under its board (navigation.thread_url), so
     the browser doesn't take a second hop and scripts comparing addresses see the page they're on."""

@@ -6,7 +6,7 @@ from starlette.routing import Route
 
 from . import live, store
 from .emoji import PICKER_EMOJI
-from .web import form_values, gone, page_of, redirect, to_thread
+from .web import form_values, gone, open_item, page_of, redirect, to_thread
 
 REACTIONS_PER_MINUTE = 60
 
@@ -14,7 +14,7 @@ REACTIONS_PER_MINUTE = 60
 async def react(request: Request) -> Response:
     page = page_of(request)
     values = await form_values(request, "item_id", "thread_id", "emoji")
-    item = store.get_item(page.conn, values["item_id"])
+    item = open_item(page, values["item_id"])
     if page.pass_id is None or item is None:
         return gone(page, values["thread_id"])
     if values["emoji"] not in PICKER_EMOJI:

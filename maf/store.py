@@ -480,6 +480,12 @@ def has_profile(conn: sqlite3.Connection, pass_id: str | None) -> bool:
     return own_profile(conn, pass_id) is not None
 
 
+def on_dates(conn: sqlite3.Connection, item: Item) -> bool:
+    """Whether a post or reply is on the Dates page (replies follow their post)."""
+    post = item if item.parent_id is None else get_item(conn, item.thread_id)
+    return post is not None and post.board == "dates"
+
+
 def board_posts(conn: sqlite3.Connection, board: str, sort: str = "new", limit: int = PAGE_SIZE) -> list[Item]:
     """A board's listed posts, newest, oldest or most viewed first, pinned ones left out (they show above)."""
     order = {"new": "created_at DESC, rowid DESC", "old": "created_at ASC, rowid ASC", "views": "views DESC, created_at DESC"}[sort]
@@ -1001,11 +1007,12 @@ def reply_alerts(conn: sqlite3.Connection, reply: Item) -> dict[str, str]:
     return alerts
 
 
-def notifications(conn: sqlite3.Connection, pass_id: str) -> list[dict]:
+def notifications(conn: sqlite3.Connection, pass_id: str, dates: bool = True) -> list[dict]:
     """What's new on your posts and replies, newest first: replies from others, others' reactions
     (grouped per post or reply, with each reaction's time so the browser can count the new ones), and
     everything new on posts you subscribed to. Replies you can't see, removed or in-review replies,
-    and your own activity never appear."""
+    and your own activity never appear. dates=False leaves out everything on the Dates page (it's closed)."""
+    on_board = "" if dates else " AND p.board = 'main'"
     replies = conn.execute(
         "SELECT c.id, c.thread_id, c.created_at, t.parent_id IS NULL AS on_post, "
         "t.title AS t_title, t.text AS t_text, t.sealed AS t_sealed, "
@@ -1015,25 +1022,26 @@ def notifications(conn: sqlite3.Connection, pass_id: str) -> list[dict]:
         "  AND f.pass_id = p.pass_id ORDER BY f.created_at, f.id LIMIT 1) AS first_from_owner "
         "FROM item c JOIN item t ON t.id = c.parent_id JOIN item p ON p.id = c.thread_id "
         "WHERE t.pass_id = ? AND c.pass_id != ? AND (c.private_to IS NULL OR c.private_to = ?) "
-        "AND c.removed_reason IS NULL AND NOT (c.hidden = 1 AND c.restored = 0) AND t.removed_reason IS NULL "
-        "ORDER BY c.created_at DESC LIMIT ?",
+        "AND c.removed_reason IS NULL AND NOT (c.hidden = 1 AND c.restored = 0) AND t.removed_reason IS NULL"
+        f"{on_board} ORDER BY c.created_at DESC LIMIT ?",
         (pass_id, pass_id, pass_id, NOTIFICATIONS_SHOWN),
     ).fetchall()
     reactions = conn.execute(
         "SELECT t.id, t.thread_id, t.parent_id IS NULL AS on_post, t.title AS t_title, t.text AS t_text, "
         "t.sealed AS t_sealed, GROUP_CONCAT(r.created_at, ' ') AS times, GROUP_CONCAT(r.emoji, ' ') AS emoji, "
         "MAX(r.created_at) AS latest "
-        "FROM reaction r JOIN item t ON t.id = r.item_id "
-        "WHERE t.pass_id = ? AND r.pass_id != ? AND r.created_at IS NOT NULL AND t.removed_reason IS NULL "
-        "GROUP BY t.id ORDER BY latest DESC LIMIT ?",
+        "FROM reaction r JOIN item t ON t.id = r.item_id JOIN item p ON p.id = t.thread_id "
+        "WHERE t.pass_id = ? AND r.pass_id != ? AND r.created_at IS NOT NULL AND t.removed_reason IS NULL"
+        f"{on_board} GROUP BY t.id ORDER BY latest DESC LIMIT ?",
         (pass_id, pass_id, NOTIFICATIONS_SHOWN),
     ).fetchall()
     followed = conn.execute(
         "SELECT c.id, c.thread_id, c.created_at, c.parent_id, t.title AS t_title, t.text AS t_text, t.sealed AS t_sealed "
         "FROM subscription s JOIN item c ON c.thread_id = s.thread_id JOIN item t ON t.id = c.id "
+        "JOIN item p ON p.id = c.thread_id "
         "WHERE s.pass_id = ? AND c.id != c.thread_id AND c.pass_id != ? AND c.removed_reason IS NULL "
-        "AND NOT (c.hidden = 1 AND c.restored = 0) AND (c.private_to IS NULL OR c.private_to = ?) "
-        "ORDER BY c.created_at DESC LIMIT ?",
+        "AND NOT (c.hidden = 1 AND c.restored = 0) AND (c.private_to IS NULL OR c.private_to = ?)"
+        f"{on_board} ORDER BY c.created_at DESC LIMIT ?",
         (pass_id, pass_id, pass_id, NOTIFICATIONS_SHOWN),
     ).fetchall()
     found = [

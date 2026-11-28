@@ -105,7 +105,7 @@ async def item(request: Request) -> Response:
     conn = app.conn
     item_id = request.path_params["id"]
     root = store.get_item(conn, item_id)
-    if root is None or root.private_to or root.unlisted:
+    if root is None or root.private_to or root.unlisted or (not app.settings.dates_open and store.on_dates(conn, root)):
         return _json({"error": "not found"}, 404)
     thread_id = root.thread_id
     items = [i for i in store.thread_items(conn, thread_id, None) if not i.unlisted]

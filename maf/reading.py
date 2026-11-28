@@ -10,7 +10,7 @@ from starlette.routing import Route
 from . import embed, live, markdown, navigation, profiles, store
 from .housetags import etiquette, is_hot, reply_placeholder
 from .util import iso, utc_now
-from .web import error_page, page_of, redirect, render
+from .web import error_page, open_item, page_of, redirect, render
 
 
 NAMES_FORM = re.compile(r"(comment-form|reply-[a-z]+(?:-[a-z]+)*|edit-[a-z]+(?:-[a-z]+)*)")
@@ -23,7 +23,7 @@ def _names_form(value: str) -> str | None:
 def item(request: Request) -> Response:
     page = page_of(request)
     item_id = request.path_params["id"]
-    root = store.get_item(page.conn, item_id)
+    root = open_item(page, item_id)
     if root is None:
         return error_page(page, 404, "That post doesn't exist.")
     if root.private_to and page.pass_id not in (root.pass_id, root.private_to):
@@ -133,7 +133,7 @@ async def events(request: Request) -> Response:
     """Pings an open thread page when someone replies or reacts; the page then checks what it may see."""
     page = page_of(request)
     thread_id = request.path_params["id"]
-    post = store.get_item(page.conn, thread_id)
+    post = open_item(page, thread_id)
     if page.pass_id is None or post is None or not post.is_post:
         return Response(status_code=404)
     return _event_stream(page, thread_id)
@@ -152,7 +152,7 @@ def notifications_json(request: Request) -> Response:
     page = page_of(request)
     if page.pass_id is None:
         return Response(status_code=401)
-    return JSONResponse({"items": store.notifications(page.conn, page.pass_id)}, headers={"Cache-Control": "no-store"})
+    return JSONResponse({"items": store.notifications(page.conn, page.pass_id, page.settings.dates_open)}, headers={"Cache-Control": "no-store"})
 
 
 def notifications_page(request: Request) -> Response:
@@ -160,7 +160,7 @@ def notifications_page(request: Request) -> Response:
     page = page_of(request)
     if page.pass_id is None:
         return redirect("/sign-in")
-    return render(page, "notifications.html", title="Feed", items=store.notifications(page.conn, page.pass_id))
+    return render(page, "notifications.html", title="Feed", items=store.notifications(page.conn, page.pass_id, page.settings.dates_open))
 
 
 async def bell_events(request: Request) -> Response:

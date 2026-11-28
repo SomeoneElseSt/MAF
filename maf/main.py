@@ -334,6 +334,8 @@ def create_app(settings: Settings | None = None) -> Starlette:
         # Mounts last: a Mount matches any path under its prefix.
         Mount("/static", StaticFiles(directory=str(settings.static_dir)), name="static"),
     ]
+    if not settings.dates_open:  # Dates is closed: its pages and forms don't exist
+        routes = [r for r in routes if not getattr(r, "path", "").startswith("/dates")]
     starlette = Starlette(routes=routes, exception_handlers={404: not_found},
                           middleware=[Middleware(GZipMiddleware, minimum_size=500), Middleware(WithApp), Middleware(InPlaceRedirects), Middleware(RequireSignIn)])
     starlette.state.maf = app

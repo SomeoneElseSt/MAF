@@ -14,7 +14,7 @@ from .email import hidden_reply_email, moderation_email
 from .housetags import submit_placeholder
 from .sealed import parse_sealed, valid_public_key
 from .util import sha256_hex
-from .web import form_values, gone, page_of, redirect, render, render_dates, to_thread
+from .web import form_values, gone, open_item, page_of, redirect, render, render_dates, to_thread
 
 POSTS_PER_MINUTE = 6
 # The thread page shows the name-check warning by the box it belongs to, so the reply or edit stays
@@ -147,7 +147,7 @@ def _name_warning(page, values, tags) -> Response:
 async def comment(request: Request) -> Response:
     page = page_of(request)
     values = await form_values(request, "parent_id", "thread_id", "text", "private", "confirm_names", "sealed")
-    parent = store.get_item(page.conn, values["parent_id"])
+    parent = open_item(page, values["parent_id"])
     if page.pass_id is None or parent is None:
         return gone(page, values["thread_id"])
     private_to = _private_recipient(page, parent, values["private"] == "on")
@@ -253,7 +253,7 @@ async def hide_profile_reply(request: Request) -> Response:
 async def _profile_reply_of(request: Request, page) -> tuple[store.Item | None, store.Item | None]:
     """The open profile reply a form names, with its profile; (None, profile or None) if it isn't one."""
     values = await form_values(request, "reply_id")
-    reply = store.get_item(page.conn, values["reply_id"])
+    reply = open_item(page, values["reply_id"])
     post = store.get_item(page.conn, reply.thread_id) if reply else None
     if page.pass_id is None or post is None or not store.is_profile(post):
         return None, post
@@ -286,7 +286,7 @@ async def edit(request: Request) -> Response:
     """Changes your own post or reply to the words you send. The thread notes it was edited."""
     page = page_of(request)
     values = await form_values(request, "item_id", "thread_id", "text", "sealed", "confirm_names")
-    item = store.get_item(page.conn, values["item_id"])
+    item = open_item(page, values["item_id"])
     if page.pass_id is None or item is None:
         return gone(page, values["thread_id"])
     thread_id = item.thread_id
@@ -325,7 +325,7 @@ async def subscribe(request: Request) -> Response:
     """Follow a whole post: its activity then comes to your Feed. Clicking again stops it."""
     page = page_of(request)
     values = await form_values(request, "thread_id", "back")
-    post = store.get_item(page.conn, values["thread_id"])
+    post = open_item(page, values["thread_id"])
     if page.pass_id is None or post is None or not post.is_post:
         return gone(page, values["thread_id"])
     back = "#" + values["back"] if values["back"] else ""
@@ -340,7 +340,7 @@ async def hide_post(request: Request) -> Response:
     """Hide Post, for its author: off every list and search, the link still works. Sent again, it unhides."""
     page = page_of(request)
     values = await form_values(request, "thread_id")
-    post = store.get_item(page.conn, values["thread_id"])
+    post = open_item(page, values["thread_id"])
     if page.pass_id is None or post is None or not post.is_post:
         return gone(page, values["thread_id"])
     if not _own_item(page, post) or store.is_profile(post):
@@ -353,7 +353,7 @@ async def delete_reply(request: Request) -> Response:
     """Deletes your own reply for good; if others replied to it, "Deleted by its author." stays in its place."""
     page = page_of(request)
     values = await form_values(request, "item_id", "thread_id")
-    item = store.get_item(page.conn, values["item_id"])
+    item = open_item(page, values["item_id"])
     if page.pass_id is None or item is None:
         return gone(page, values["thread_id"])
     if not _own_reply(page, item):
@@ -398,7 +398,7 @@ def _private_recipient(page, parent: store.Item, wants_private: bool) -> str | N
 async def flag(request: Request) -> Response:
     page = page_of(request)
     values = await form_values(request, "item_id", "thread_id")
-    item = store.get_item(page.conn, values["item_id"])
+    item = open_item(page, values["item_id"])
     if page.pass_id is None or item is None:
         return gone(page, values["thread_id"])
     # Clicking again takes the flag back.
@@ -420,7 +420,7 @@ def _alert_if_reply_hidden(page, item_id: str) -> None:
 async def moderation_request(request: Request) -> Response:
     page = page_of(request)
     values = await form_values(request, "item_id", "thread_id", "kind")
-    item = store.get_item(page.conn, values["item_id"])
+    item = open_item(page, values["item_id"])
     if page.pass_id is None or item is None or values["kind"] not in {"unhide", "nuke"}:
         return gone(page, values["thread_id"])
     if store.add_moderation_request(page.conn, page.pass_id, item.id, values["kind"]):
