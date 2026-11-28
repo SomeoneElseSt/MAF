@@ -16,7 +16,7 @@ from . import auth, housetags, navigation, post, profiles, push, reactions, read
 from .app import App, build_app
 from .display import day_label, four_day_window, range_label, short_range_label
 from .settings import Settings, load_settings
-from .util import iso, parse_date, today, utc_now
+from .util import iso, parse_date, parse_iso, today, utc_now
 from .web import NSFW_COOKIE, make_templates, page_of, redirect, render, render_dates, sort_param
 
 APP: App = None  # set by create_app
@@ -111,25 +111,30 @@ def render_home(page, sort, before, after):
 
     first_day = store.first_post_day(conn, nsfw)
     window_end = _window_end(conn, sort, before, after, nsfw)
-    # Nothing to show before the first post: a window ending earlier opens the earliest one instead.
-    if first_day and window_end < first_day:
+    # Nothing to show before the first post: a window ending earlier opens the earliest one instead. (Ending the
+    # day before it is allowed: in a time zone behind UTC, the first post can fall on that day.)
+    if first_day and window_end < first_day - timedelta(days=1):
         window_end = first_day + timedelta(days=3)
     start, end = four_day_window(window_end)
-    pinned: list = []
-    exclude_pinned = False
-    if sort == "new" and before is None:
-        pinned = store.with_comment_counts(conn, store.pinned_posts(conn, nsfw))
-        exclude_pinned = True
-    posts = store.with_comment_counts(conn, store.posts_between(conn, start, end, sort, exclude_pinned=exclude_pinned, nsfw=nsfw))
-    latest = store.latest_comment_times(conn, [post.thread_id for post in pinned + posts], not_by=page.pass_id)
+    # Pinned posts stay on top of every Newest page, and out of the days below.
+    pinned = store.with_comment_counts(conn, store.pinned_posts(conn, nsfw)) if sort == "new" else []
+    # A day either side too, hidden: the browser shows the 4 days in its own time zone (localdays.js), which can
+    # start or end up to a day away from UTC's. The time zone never reaches the server.
+    fetched = store.posts_between(conn, start - timedelta(days=1), end + timedelta(days=1), sort,
+                                  exclude_pinned=sort == "new", nsfw=nsfw)
+    fetched = store.with_comment_counts(conn, fetched)
+    posts = [p for p in fetched if start <= parse_iso(p.created_at).date() <= end]
+    edges = [p for p in fetched if not start <= parse_iso(p.created_at).date() <= end]
+    latest = store.latest_comment_times(conn, [post.thread_id for post in pinned + fetched], not_by=page.pass_id)
     groups = [(day_label(day), rows) for day, rows in store.day_groups(posts)]
     # The ‹ arrow stops at the window holding the first post.
-    prev_url = _page_url(sort, (start - timedelta(days=1)).isoformat()) if first_day and start > first_day else None
+    prev_url = _page_url(sort, start.isoformat()) if first_day and start > first_day else None
     next_url = _next_url(sort, end)
     return render(page, "list.html", kind="home", title="", empty=False,
-                  groups=groups, pinned=pinned, latest_comments=latest, date_range=range_label(start, end), date_range_short=short_range_label(start, end),
+                  groups=groups, edge_posts=edges, pinned=pinned, latest_comments=latest,
+                  date_range=range_label(start, end), date_range_short=short_range_label(start, end),
                   prev_url=prev_url, next_url=next_url, sort_links=HOME_SORT_LINKS,
-                  day_param=end.isoformat(), now=iso(utc_now()),
+                  day_param=end.isoformat(), now=iso(utc_now()), first_day=first_day.isoformat() if first_day else "",
                   range_start=start.isoformat(), range_end=end.isoformat())
 
 
@@ -154,13 +159,13 @@ def _page_url(sort: str, before: str) -> str:
 
 
 def _next_url(sort: str, end) -> str | None:
-    """The › arrow is disabled when the window already reaches today."""
+    """The › arrow: the 4 days after this window (before = the day after them). Disabled when it reaches today."""
     if end >= today():
         return None
-    later = end + timedelta(days=4)
+    after_next = end + timedelta(days=5)
     if sort == "new":
-        return "/" if later >= today() else f"/?before={later.isoformat()}"
-    return f"/?before={later.isoformat()}&sort={sort}"
+        return "/" if after_next > today() else f"/?before={after_next.isoformat()}"
+    return f"/?before={after_next.isoformat()}&sort={sort}"
 
 
 def search(request: Request) -> Response:

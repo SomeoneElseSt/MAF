@@ -148,9 +148,9 @@ def test_home_shows_four_days_grouped_by_day(client, app, pass_id):
     make_post(app, pass_id, title="Today post", days_ago=0)
     make_post(app, pass_id, title="Older post", days_ago=3)
     make_post(app, pass_id, title="Too old", days_ago=4)
-    body = client.get("/").text
+    body, edges = client.get("/").text.split("edge-list")
     assert "Today post" in body and "Older post" in body
-    assert "Too old" not in body
+    assert "Too old" not in body and "Too old" in edges  # hidden: the day before, for time zones behind UTC
     assert "Today" in body
 
 
@@ -196,7 +196,7 @@ def test_sort_views_orders_by_views(client, app, pass_id):
     assert body.index("Loud post") < body.index("Quiet post")
 
 
-def test_pinned_posts_show_above_today_only_on_newest_latest(client, app, pass_id):
+def test_pinned_posts_top_every_newest_page(client, app, pass_id):
     pinned = make_post(app, pass_id, title="Welcome post")
     store.set_pinned(app.conn, pinned.id, True)
     make_post(app, pass_id, title="A normal post")
@@ -206,6 +206,22 @@ def test_pinned_posts_show_above_today_only_on_newest_latest(client, app, pass_i
     assert main.count('class="title" href="/thread/') == main.count(">Welcome post<") + main.count(">A normal post<")
     assert ">Pinned<" not in client.get("/?sort=old").text
     assert ">Pinned<" not in client.get("/?sort=views").text
+    make_post(app, pass_id, title="An old post", days_ago=10)
+    older = client.get(f"/?before={(utc_now().date() - timedelta(days=6)).isoformat()}").text
+    assert ">Welcome post<" in older and ">An old post<" in older and ">A normal post<" not in older
+
+
+def test_the_arrows_step_exactly_four_days_with_no_gap(client, app, pass_id):
+    today = utc_now().date()
+    for back in range(12):
+        make_post(app, pass_id, title=f"Day {back} back", days_ago=back)
+    latest = client.get("/").text
+    earlier = f"/?before={(today - timedelta(days=3)).isoformat()}"
+    assert f'href="{earlier}"' in latest
+    middle = client.get(earlier).text.split("edge-list")[0]
+    assert all(f">Day {back} back<" in middle for back in range(4, 8))
+    assert ">Day 3 back<" not in middle and ">Day 8 back<" not in middle
+    assert 'href="/"' in middle.split('aria-label="Later 4 days"')[0].rsplit("<a", 1)[1]
 
 
 def test_empty_state(client):

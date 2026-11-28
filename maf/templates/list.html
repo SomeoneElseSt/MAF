@@ -33,7 +33,7 @@
     {% endfor %}
   </div>
   {% if date_range %}
-  <span class="range"{% if range_start %} data-start="{{ range_start }}" data-end="{{ range_end }}"{% endif %}>
+  <span class="range"{% if range_start %} data-start="{{ range_start }}" data-end="{{ range_end }}" data-first="{{ first_day }}" data-sort="{{ sort }}"{% endif %}>
     {% if prev_url %}<a class="arrow" href="{{ prev_url }}" aria-label="Earlier 4 days">‹</a>{% else %}<span class="arrow" aria-disabled="true">‹</span>{% endif %}
     <span class="long-date">{{ date_range }}</span>{% if date_range_short %}<span class="short-date">{{ date_range_short }}</span>{% endif %}
     {% if next_url %}<a class="arrow" href="{{ next_url }}" aria-label="Later 4 days">›</a>{% else %}<span class="arrow" aria-disabled="true">›</span>{% endif %}
@@ -104,12 +104,14 @@
   {% if empty %}
   <p class="empty">No posts yet.</p>
   {% else %}
-  {# Pinned shows under Newest on the latest page: the maintainer's pins, then this browser's own (added by pins.js). #}
-  {% if sort == "new" and not next_url %}
+  {# Pinned tops every Newest page: the maintainer's pins, then this browser's own (added by pins.js). #}
+  {% if sort == "new" %}
   <h2 class="day"{% if not pinned %} hidden{% endif %}>Pinned</h2>
   <ol class="list pinned-list"{% if not pinned %} hidden{% endif %} data-hot-tags="{% for tag, rules in house_tags.items() if rules.highlight %}{{ tag }} {% endfor %}">
     {% for post in pinned %}{{ row(post, fixed=true) }}{% endfor %}
   </ol>
+  {% endif %}
+  {% if sort == "new" and not next_url %}
   {# New: posts and comments you haven't opened yet, until you open them. Filled by new.js from this page's
      rows and /new-activity; what you've opened stays in this browser. #}
   <h2 class="day" id="new-heading" hidden>New</h2>
@@ -121,6 +123,13 @@
     {% for post in posts %}{{ row(post) }}{% endfor %}
   </ol>
   {% endfor %}
+  {# The day either side of the window, in UTC: localdays.js shows the ones inside your own 4 days. #}
+  {% if edge_posts %}
+  <h2 class="day" hidden></h2>
+  <ol class="list day-list edge-list" data-sort="{{ sort }}" hidden>
+    {% for post in edge_posts %}{{ row(post) }}{% endfor %}
+  </ol>
+  {% endif %}
   {% endif %}
 {% endif %}
 {% endblock %}
